@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Nitro Type Top 1000 Racers</title>
+  <style>
+    :root {
+      --bg-color: #2a2a2a;
+      --panel-bg: #333;
+      --accent: #b71c1c;
+      --text-light: #e0e0e0;
+      --text-dark: #121212;
+      --font-sans: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-light);
+      font-family: var(--font-sans);
+      padding: 20px;
+      line-height: 1.4;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    header p {
+      font-size: 1rem;
+    }
+
+    header p a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    header p a:hover {
+      text-decoration: underline;
+    }
+
+    #fileInput {
+      display: block;
+      margin: 0 auto 20px;
+      padding: 8px;
+      background: var(--panel-bg);
+      border: 1px solid var(--accent);
+      color: var(--text-light);
+      font-size: 1rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--panel-bg);
+      font-size: 1rem;
+      margin-bottom: 40px;
+    }
+
+    th, td {
+      padding: 10px 8px;
+      text-align: center;
+    }
+
+    thead th {
+      background: var(--accent);
+      color: #fff;
+      font-weight: normal;
+      font-size: 1.1rem;
+    }
+
+    tbody tr:nth-child(odd) {
+      background: #343434;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #3a3a3a;
+    }
+
+    td a.profile-link {
+      color: var(--accent);
+      text-decoration: none;
+      word-break: break-all;
+    }
+
+    td a.profile-link:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 800px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      thead {
+        display: none;
+      }
+      tr {
+        margin-bottom: 15px;
+      }
+      td {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 12px;
+      }
+      td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        color: var(--text-light);
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Nitro Type Top 1000 Racers</h1>
+    <p>
+      made by 
+      <a href="https://www.youtube.com/@InternetTyper" target="_blank">
+        @InternetTyper on YouTube
+      </a>
+    </p>
+  </header>
+
+  <input type="file" id="fileInput" accept=".json" multiple />
+
+  <table id="results">
+    <thead>
+      <tr>
+        <th>Rank</th>
+        <th>Username</th>
+        <th>Team Tag</th>
+        <th>Title</th>
+        <th>Total Races</th>
+        <th>Avg WPM</th>
+        <th>Top WPM</th>
+        <th>Profile Views</th>
+        <th>Member Since</th>
+        <th>Garage Cars</th>
+        <th>Profile URL</th>
+        <th>Membership</th>
+        <th>Nitros Used</th>
+        <th>Longest Session (s)</th>
+        <th>League Tier</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    let racers = [];
+    const fileInput = document.getElementById('fileInput');
+    const tbody = document.querySelector('#results tbody');
+
+    fileInput.addEventListener('change', async () => {
+      const files = Array.from(fileInput.files);
+      racers = [];
+
+      for (const file of files) {
+        try {
+          const text = await file.text();
+          const json = JSON.parse(text);
+          const info = json.RACER_INFO || json;
+          if (!info.username) continue;
+
+          // parse join date
+          const joinDate = info.joinDate
+            ? info.joinDate.split('T')[0]
+            : info.createdStamp
+              ? new Date(info.createdStamp * 1000).toISOString().split('T')[0]
+              : '';
+
+          // determine garage count
+          let garageCount = 0;
+          if (Array.isArray(info.cars))        garageCount = info.cars.length;
+          else if (Array.isArray(info.garage)) garageCount = info.garage.length;
+          else if (typeof info.totalCars === 'number') garageCount = info.totalCars;
+
+          racers.push({
+            username:       info.username,
+            tag:            info.tag || '',
+            title:          info.title || '',
+            racesPlayed:    info.racesPlayed || 0,
+            avgSpeed:       info.avgSpeed || 0,
+            highestSpeed:   info.highestSpeed || 0,
+            profileViews:   info.profileViews || 0,
+            joinDate,
+            garageCars:     garageCount,
+            profileURL:     `https://www.nitrotype.com/racer/${info.username}`,
+            membership:     info.membership || '',
+            nitrosUsed:     info.nitrosUsed || 0,
+            longestSession: info.longestSession || 0,
+            leagueTier:     info.leagueTier || 0
+          });
+        } catch {
+          // skip invalid JSON files
+        }
+      }
+
+      // sort by races played descending
+      racers.sort((a, b) => b.racesPlayed - a.racesPlayed);
+
+      // render table
+      tbody.innerHTML = '';
+      const frag = document.createDocumentFragment();
+      racers.forEach((r, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td data-label="Rank">${idx + 1}</td>
+          <td data-label="Username">${r.username}</td>
+          <td data-label="Team Tag">${r.tag}</td>
+          <td data-label="Title">${r.title}</td>
+          <td data-label="Total Races">${r.racesPlayed}</td>
+          <td data-label="Avg WPM">${r.avgSpeed}</td>
+          <td data-label="Top WPM">${r.highestSpeed}</td>
+          <td data-label="Profile Views">${r.profileViews}</td>
+          <td data-label="Member Since">${r.joinDate}</td>
+          <td data-label="Garage Cars">${r.garageCars}</td>
+          <td data-label="Profile URL">
+            <a class="profile-link" href="${r.profileURL}" target="_blank">
+              ${r.profileURL}
+            </a>
+          </td>
+          <td data-label="Membership">${r.membership}</td>
+          <td data-label="Nitros Used">${r.nitrosUsed}</td>
+          <td data-label="Longest Session">${r.longestSession}</td>
+          <td data-label="League Tier">${r.leagueTier}</td>
+        `;
+        frag.appendChild(tr);
+      });
+      tbody.appendChild(frag);
+    });
+  </script>
+</body>
+</html>
