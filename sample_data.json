@@ -1,5 +1,21 @@
 [
   {
+    "username": "moilyn",
+    "tag": "PR2W",
+    "title": "League Champion",
+    "racesPlayed": 1056581,
+    "avgSpeed": 66,
+    "highestSpeed": 120,
+    "profileViews": 2102353,
+    "joinDate": "2016-11-13",
+    "garageCars": 345,
+    "profileURL": "https://www.nitrotype.com/racer/moilyn",
+    "membership": "gold",
+    "nitrosUsed": 1214261,
+    "longestSession": 3501,
+    "leagueTier": 11
+  },
+  {
     "username": "jesustake_the_wheel",
     "tag": "P1RE",
     "title": "Operation: Typing",
@@ -13504,38 +13520,6 @@
     "leagueTier": 3
   },
   {
-    "username": "thekeyboard2342",
-    "tag": "PENGER",
-    "title": "Happy New Year!",
-    "racesPlayed": 8126,
-    "avgSpeed": 98,
-    "highestSpeed": 167,
-    "profileViews": 1528,
-    "joinDate": "2019-05-08",
-    "garageCars": 136,
-    "profileURL": "https://www.nitrotype.com/racer/thekeyboard2342",
-    "membership": "gold",
-    "nitrosUsed": 6423,
-    "longestSession": 400,
-    "leagueTier": 6
-  },
-  {
-    "username": "jalmeida",
-    "tag": "",
-    "title": "Solid Gold",
-    "racesPlayed": 401,
-    "avgSpeed": 61,
-    "highestSpeed": 74,
-    "profileViews": 9225,
-    "joinDate": "2017-05-02",
-    "garageCars": 99,
-    "profileURL": "https://www.nitrotype.com/racer/jalmeida",
-    "membership": "basic",
-    "nitrosUsed": 289,
-    "longestSession": 79,
-    "leagueTier": 0
-  },
-  {
     "username": "asherarmstrong",
     "tag": "NT",
     "title": "Solid Gold",
@@ -13550,37 +13534,5 @@
     "nitrosUsed": 155,
     "longestSession": 18,
     "leagueTier": 4
-  },
-  {
-    "username": "rainbowspyro2022",
-    "tag": "",
-    "title": "Raw Racing Recruit",
-    "racesPlayed": 26,
-    "avgSpeed": 143,
-    "highestSpeed": 174,
-    "profileViews": 98,
-    "joinDate": "2025-07-01",
-    "garageCars": 4,
-    "profileURL": "https://www.nitrotype.com/racer/rainbowspyro2022",
-    "membership": "basic",
-    "nitrosUsed": 0,
-    "longestSession": 14,
-    "leagueTier": 1
-  },
-  {
-    "username": "matsuno",
-    "tag": "TALK",
-    "title": "Raw Racing Recruit",
-    "racesPlayed": 17,
-    "avgSpeed": 152,
-    "highestSpeed": 162,
-    "profileViews": 57,
-    "joinDate": "2025-07-16",
-    "garageCars": 4,
-    "profileURL": "https://www.nitrotype.com/racer/matsuno",
-    "membership": "basic",
-    "nitrosUsed": 0,
-    "longestSession": 10,
-    "leagueTier": 1
   }
 ]
