@@ -4,29 +4,30 @@
   <meta charset="UTF-8" />
   <title>Nitro Type Top 1000 Racers</title>
   <style>
-    /* ============================================
-       Root Variables for Colors and Typography
-       ============================================ */
+    /* ===================================================
+       Root Color & Typography Variables
+       =================================================== */
     :root {
-      --bg-color: #2a2a2a;
-      --panel-bg: #333333;
-      --header-bg: #3a3a3a;
-      --accent: #b71c1c;
-      --accent-light: #d32f2f;
-      --text-light: #e0e0e0;
-      --text-dark: #121212;
-      --font-sans: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      --font-size-base: 18px;
-      --font-size-lg: 2rem;
-      --font-size-md: 1.25rem;
-      --font-size-sm: 0.9rem;
-      --transition-speed: 0.3s;
+      --bg-color:        #2a2a2a;  /* dark background */
+      --panel-bg:        #333333;  /* panel background */
+      --header-bg:       #3a3a3a;  /* header / tab background */
+      --accent:          #b71c1c;  /* dark red accent */
+      --accent-light:    #d32f2f;  /* lighter red on hover */
+      --text-light:      #e0e0e0;  /* light text */
+      --text-dim:        #bbbbbb;  /* secondary text */
+      --font-family:     'Segoe UI', Tahoma, Verdana, sans-serif;
+      --font-size-base:  1rem;     /* 16px */
+      --font-size-lg:    2rem;     /* 32px */
+      --font-size-md:    1.25rem;  /* 20px */
+      --font-size-sm:    0.875rem; /* 14px */
+      --transition:      0.3s ease;
     }
 
-    /* ============================================
-       Global Reset and Base Styles
-       ============================================ */
-    * {
+
+    /* ===================================================
+       Global Reset & Base Styles
+       =================================================== */
+    *, *::before, *::after {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
@@ -35,94 +36,96 @@
     html, body {
       width: 100%;
       height: 100%;
-    }
-
-    body {
-      background-color: var(--bg-color);
+      background: var(--bg-color);
       color: var(--text-light);
-      font-family: var(--font-sans);
+      font-family: var(--font-family);
       font-size: var(--font-size-base);
       line-height: 1.5;
-      padding: 20px;
+      overflow-x: hidden;
     }
 
     a {
       color: var(--accent);
       text-decoration: none;
-      transition: color var(--transition-speed);
+      transition: color var(--transition);
     }
-
     a:hover {
       color: var(--accent-light);
     }
 
-    /* ============================================
-       Header Section
-       ============================================ */
+
+    /* ===================================================
+       Header / Branding Styles
+       =================================================== */
     header {
       text-align: center;
-      margin-bottom: 30px;
+      padding: 20px 0;
+      margin-bottom: 20px;
+      background: var(--header-bg);
+      border-radius: 4px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
     }
 
     header h1 {
       font-size: var(--font-size-lg);
-      color: var(--accent);
       margin-bottom: 8px;
+      color: var(--accent);
     }
 
     header p {
       font-size: var(--font-size-md);
-      color: var(--text-light);
+      color: var(--text-dim);
     }
 
     header p a {
       font-weight: bold;
     }
 
-    /* ============================================
-       Navigation Tabs
-       ============================================ */
+
+    /* ===================================================
+       Tab Navigation Styles
+       =================================================== */
     .tabs {
       display: flex;
       justify-content: center;
-      margin-bottom: 20px;
       background: var(--header-bg);
+      margin-bottom: 20px;
       border-radius: 4px;
       overflow: hidden;
       box-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
 
-    .tab {
+    .tabs .tab {
       flex: 1;
       padding: 12px 20px;
       text-align: center;
       cursor: pointer;
       font-size: var(--font-size-md);
-      transition: background var(--transition-speed);
       color: var(--text-light);
+      transition: background var(--transition);
     }
 
-    .tab:hover {
+    .tabs .tab:hover {
       background: var(--panel-bg);
     }
 
-    .tab.active {
+    .tabs .tab.active {
       background: var(--accent);
-      color: #fff;
+      color: #ffffff;
     }
 
-    /* ============================================
-       Table Container Styles
-       ============================================ */
+
+    /* ===================================================
+       Table Container and Table Styles
+       =================================================== */
     .table-container {
       display: none;
       background: var(--panel-bg);
-      padding: 10px;
       border-radius: 4px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+      padding: 10px;
       margin-bottom: 40px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
     }
-
     .table-container.active {
       display: block;
     }
@@ -130,7 +133,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      margin: 0 auto;
+      margin: auto;
       font-size: var(--font-size-sm);
     }
 
@@ -142,6 +145,8 @@
       font-weight: normal;
       padding: 12px;
       border-bottom: 2px solid var(--bg-color);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
     }
 
     th, td {
@@ -153,7 +158,6 @@
     tbody tr:nth-child(odd) {
       background: #3a3a3a;
     }
-
     tbody tr:nth-child(even) {
       background: #343434;
     }
@@ -161,63 +165,47 @@
     td a.profile-link {
       color: var(--accent);
       word-break: break-all;
+      font-size: var(--font-size-sm);
     }
-
     td a.profile-link:hover {
       color: var(--accent-light);
     }
 
-    /* ============================================
-       Responsive Breakpoints
-       ============================================ */
-    @media (max-width: 800px) {
+
+    /* ===================================================
+       Responsive Styles for Narrow Viewports
+       =================================================== */
+    @media (max-width: 900px) {
       table, thead, tbody, th, td, tr {
         display: block;
       }
-      thead {
-        display: none;
-      }
+      thead { display: none; }
       tr {
         margin-bottom: 15px;
       }
       td {
         display: flex;
         justify-content: space-between;
+        align-items: center;
         padding: 8px 12px;
       }
       td::before {
         content: attr(data-label);
+        flex: 1 1 40%;
+        color: var(--text-dim);
         font-weight: bold;
-        width: 45%;
-        color: var(--text-light);
+        text-transform: uppercase;
+      }
+      td span {
+        flex: 1 1 60%;
+        text-align: right;
       }
     }
 
-    /* ============================================
-       File Input Styling
-       ============================================ */
-    #fileInput {
-      display: block;
-      margin: 0 auto 30px;
-      padding: 10px 15px;
-      background: var(--panel-bg);
-      border: 1px solid var(--accent);
-      border-radius: 4px;
-      color: var(--text-light);
-      font-size: var(--font-size-md);
-      width: 300px;
-      text-align: center;
-      cursor: pointer;
-      transition: border var(--transition-speed);
-    }
 
-    #fileInput:hover {
-      border-color: var(--accent-light);
-    }
-
-    /* ============================================
-       Utility Helpers
-       ============================================ */
+    /* ===================================================
+       Utility & Helper Classes
+       =================================================== */
     .hidden {
       display: none !important;
     }
@@ -226,13 +214,14 @@
       text-align: center;
     }
 
+    /* end of CSS */
   </style>
 </head>
 <body>
 
-  <!-- ============================
+  <!-- ================================
        Header / Branding
-       ============================ -->
+       ================================ -->
   <header>
     <h1>Nitro Type Top 1000 Racers</h1>
     <p>
@@ -243,30 +232,20 @@
     </p>
   </header>
 
-  <!-- ============================
-       File Input for JSON Data
-       ============================ -->
-  <input
-    type="file"
-    id="fileInput"
-    accept=".json"
-  />
 
-  <!-- ============================
-       Navigation Tabs
-       ============================ -->
+  <!-- ================================
+       Tab Navigation
+       ================================ -->
   <div class="tabs">
     <div class="tab active" data-target="leaderboardSection">Leaderboard</div>
     <div class="tab" data-target="racesPerDaySection">Races Per Day</div>
   </div>
 
-  <!-- ============================
+
+  <!-- ================================
        Leaderboard Section
-       ============================ -->
-  <div
-    id="leaderboardSection"
-    class="table-container active"
-  >
+       ================================ -->
+  <section id="leaderboardSection" class="table-container active">
     <table id="leaderboardTable">
       <thead>
         <tr>
@@ -287,17 +266,17 @@
           <th>League Tier</th>
         </tr>
       </thead>
-      <tbody></tbody>
+      <tbody>
+        <!-- Rows are injected by JavaScript -->
+      </tbody>
     </table>
-  </div>
+  </section>
 
-  <!-- ============================
+
+  <!-- ================================
        Races Per Day Section
-       ============================ -->
-  <div
-    id="racesPerDaySection"
-    class="table-container"
-  >
+       ================================ -->
+  <section id="racesPerDaySection" class="table-container">
     <table id="racesPerDayTable">
       <thead>
         <tr>
@@ -308,68 +287,89 @@
           <th>Races / Day</th>
         </tr>
       </thead>
-      <tbody></tbody>
+      <tbody>
+        <!-- Rows are injected by JavaScript -->
+      </tbody>
     </table>
-  </div>
+  </section>
 
+
+  <!-- ===================================================
+       JavaScript
+       - Fetch sample_data.json automatically
+       - Tab switching logic
+       - Render Leaderboard
+       - Render Races Per Day
+       =================================================== -->
   <script>
-    /**
-     * Main script to load and render racer data.
-     * - Fetches JSON from sample_data.json
-     * - Populates Leaderboard and Races Per Day tables
-     * - Handles tab switching
-     */
+    // Wait for DOM to be fully parsed
     document.addEventListener('DOMContentLoaded', () => {
-      const fileInput = document.getElementById('fileInput');
-      const tabs = document.querySelectorAll('.tab');
-      const sections = document.querySelectorAll('.table-container');
-      let racers = [];
 
-      /**
-       * Switches active tab and section
-       */
+      /*** TAB SWITCHING SETUP ***/
+      const tabs      = document.querySelectorAll('.tabs .tab');
+      const sections  = document.querySelectorAll('.table-container');
+
       tabs.forEach(tab => {
         tab.addEventListener('click', () => {
+          // deactivate all tabs & sections
           tabs.forEach(t => t.classList.remove('active'));
           sections.forEach(s => s.classList.remove('active'));
+          // activate selected
           tab.classList.add('active');
-          document.getElementById(tab.dataset.target).classList.add('active');
+          document
+            .getElementById(tab.dataset.target)
+            .classList.add('active');
         });
       });
 
-      /**
-       * Reads local JSON file, parses it, and triggers rendering
-       */
-      fileInput.addEventListener('change', async () => {
-        const file = fileInput.files[0];
-        if (!file) return;
 
-        try {
-          const text = await file.text();
-          racers = JSON.parse(text);
+      /*** DATA FETCH & RENDER ***/
+      fetch('sample_data.json')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status} - ${response.statusText}`);
+          }
+          return response.json();
+        })
+        .then(racers => {
+          if (!Array.isArray(racers)) {
+            throw new Error('sample_data.json must be an array of racer objects');
+          }
+          // enrich & render both tables
           renderLeaderboard(racers);
           renderRacesPerDay(racers);
-        } catch (err) {
-          console.error('Invalid JSON file:', err);
-        }
-      });
+        })
+        .catch(err => {
+          console.error('Failed to load data:', err);
+          const msg = document.createElement('p');
+          msg.textContent = 'Error loading sample_data.json – check console.';
+          msg.style.color = '#ff5252';
+          msg.style.textAlign = 'center';
+          document.body.appendChild(msg);
+        });
+
 
       /**
-       * Renders the main leaderboard table
+       * Renders the main leaderboard table.
+       * Sorts by total races descending.
        */
       function renderLeaderboard(data) {
         // sort descending by racesPlayed
         data.sort((a, b) => b.racesPlayed - a.racesPlayed);
 
-        const tbody = document.querySelector('#leaderboardTable tbody');
-        tbody.innerHTML = '';
-        const frag = document.createDocumentFragment();
+        const tbody = document
+          .querySelector('#leaderboardTable tbody');
+        tbody.innerHTML = ''; // clear
 
-        data.forEach((r, i) => {
+        const fragment = document.createDocumentFragment();
+
+        data.forEach((r, idx) => {
+          // build a table row for each racer
           const tr = document.createElement('tr');
 
+          // use data-label for responsive
           tr.innerHTML = `
-            <td data-label="Rank">${i + 1}</td>
+            <td data-label="Rank">${idx + 1}</td>
             <td data-label="Username">${r.username}</td>
             <td data-label="Team Tag">${r.tag}</td>
             <td data-label="Title">${r.title}</td>
@@ -388,59 +388,64 @@
             <td data-label="Nitros Used">${r.nitrosUsed}</td>
             <td data-label="Longest Session">${r.longestSession}</td>
             <td data-label="League Tier">${r.leagueTier}</td>
-          `;
+          `.trim();
 
-          frag.appendChild(tr);
+          fragment.appendChild(tr);
         });
 
-        tbody.appendChild(frag);
+        tbody.appendChild(fragment);
       }
 
+
       /**
-       * Calculates days active and races/day, then renders table
+       * Renders the Races Per Day table.
+       * Calculates daysActive & races per day.
        */
       function renderRacesPerDay(data) {
-        // copy array and sort by races/day descending
+        // map to new array with per-day metric
         const list = data.map(r => {
-          // parse join date string into Date
-          const join = new Date(r.joinDate);
-          const now = new Date();
-          // calculate difference in ms, convert to days
-          const diffMs = now - join;
-          let days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-          // ensure at least 1 day
-          days = days < 1 ? 1 : days;
-          // compute races per day
-          const perDay = (r.racesPlayed / days).toFixed(2);
+          // parse joinDate (YYYY-MM-DD)
+          const joinDate = new Date(r.joinDate + 'T00:00:00Z');
+          const now      = new Date();
+          let diffMs      = now - joinDate;
+          // convert ms to days
+          let daysActive  = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+          if (daysActive < 1) daysActive = 1; // everyone has at least 1 day
+          // races per day, two-decimal
+          const racesPerDay = (r.racesPlayed / daysActive).toFixed(2);
           return {
-            username: r.username,
-            racesPlayed: r.racesPlayed,
-            daysActive: days,
-            racesPerDay: perDay
+            username:     r.username,
+            racesPlayed:  r.racesPlayed,
+            daysActive:   daysActive,
+            racesPerDay:  racesPerDay
           };
         });
 
+        // sort descending by racesPerDay
         list.sort((a, b) => b.racesPerDay - a.racesPerDay);
 
-        const tbody = document.querySelector('#racesPerDayTable tbody');
-        tbody.innerHTML = '';
-        const frag = document.createDocumentFragment();
+        const tbody = document
+          .querySelector('#racesPerDayTable tbody');
+        tbody.innerHTML = ''; // clear
 
-        list.forEach((r, i) => {
+        const fragment = document.createDocumentFragment();
+
+        list.forEach((r, idx) => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td data-label="Rank">${i + 1}</td>
+            <td data-label="Rank">${idx + 1}</td>
             <td data-label="Username">${r.username}</td>
             <td data-label="Total Races">${r.racesPlayed}</td>
             <td data-label="Days Active">${r.daysActive}</td>
             <td data-label="Races / Day">${r.racesPerDay}</td>
-          `;
-          frag.appendChild(tr);
+          `.trim();
+          fragment.appendChild(tr);
         });
 
-        tbody.appendChild(frag);
+        tbody.appendChild(fragment);
       }
-    });
+
+    }); // end DOMContentLoaded
   </script>
 </body>
 </html>
