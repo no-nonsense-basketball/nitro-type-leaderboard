@@ -23,7 +23,6 @@
       --transition:      0.3s ease;
     }
 
-
     /* ===================================================
        Global Reset & Base Styles
        =================================================== */
@@ -53,7 +52,6 @@
       color: var(--accent-light);
     }
 
-
     /* ===================================================
        Header / Branding Styles
        =================================================== */
@@ -75,12 +73,12 @@
     header p {
       font-size: var(--font-size-md);
       color: var(--text-dim);
+      margin: 4px 0;
     }
 
     header p a {
       font-weight: bold;
     }
-
 
     /* ===================================================
        Tab Navigation Styles
@@ -113,7 +111,6 @@
       background: var(--accent);
       color: #ffffff;
     }
-
 
     /* ===================================================
        Table Container and Table Styles
@@ -171,7 +168,6 @@
       color: var(--accent-light);
     }
 
-
     /* ===================================================
        Responsive Styles for Narrow Viewports
        =================================================== */
@@ -202,7 +198,6 @@
       }
     }
 
-
     /* ===================================================
        Utility & Helper Classes
        =================================================== */
@@ -213,7 +208,6 @@
     .center {
       text-align: center;
     }
-
     /* end of CSS */
   </style>
 </head>
@@ -230,8 +224,9 @@
         @InternetTyper on YouTube
       </a>
     </p>
+    <p id="lastUpdated">Last updated: <span></span></p>
+    <p>Contact: azrael.for.god on Discord</p>
   </header>
-
 
   <!-- ================================
        Tab Navigation
@@ -240,7 +235,6 @@
     <div class="tab active" data-target="leaderboardSection">Leaderboard</div>
     <div class="tab" data-target="racesPerDaySection">Races Per Day</div>
   </div>
-
 
   <!-- ================================
        Leaderboard Section
@@ -272,7 +266,6 @@
     </table>
   </section>
 
-
   <!-- ================================
        Races Per Day Section
        ================================ -->
@@ -293,35 +286,35 @@
     </table>
   </section>
 
-
   <!-- ===================================================
        JavaScript
        - Fetch sample_data.json automatically
+       - Populate "Last updated" timestamp
        - Tab switching logic
        - Render Leaderboard
        - Render Races Per Day
        =================================================== -->
   <script>
-    // Wait for DOM to be fully parsed
     document.addEventListener('DOMContentLoaded', () => {
+      // Populate last-updated timestamp
+      const lastUpdatedSpan = document.querySelector('#lastUpdated span');
+      if (lastUpdatedSpan) {
+        const now = new Date();
+        lastUpdatedSpan.textContent = now.toLocaleString();
+      }
 
       /*** TAB SWITCHING SETUP ***/
-      const tabs      = document.querySelectorAll('.tabs .tab');
-      const sections  = document.querySelectorAll('.table-container');
+      const tabs     = document.querySelectorAll('.tabs .tab');
+      const sections = document.querySelectorAll('.table-container');
 
       tabs.forEach(tab => {
         tab.addEventListener('click', () => {
-          // deactivate all tabs & sections
           tabs.forEach(t => t.classList.remove('active'));
           sections.forEach(s => s.classList.remove('active'));
-          // activate selected
           tab.classList.add('active');
-          document
-            .getElementById(tab.dataset.target)
-            .classList.add('active');
+          document.getElementById(tab.dataset.target).classList.add('active');
         });
       });
-
 
       /*** DATA FETCH & RENDER ***/
       fetch('sample_data.json')
@@ -333,9 +326,8 @@
         })
         .then(racers => {
           if (!Array.isArray(racers)) {
-            throw new Error('sample_data.json must be an array of racer objects');
+            throw new Error('sample_data.json must be an array');
           }
-          // enrich & render both tables
           renderLeaderboard(racers);
           renderRacesPerDay(racers);
         })
@@ -348,26 +340,18 @@
           document.body.appendChild(msg);
         });
 
-
       /**
        * Renders the main leaderboard table.
        * Sorts by total races descending.
        */
       function renderLeaderboard(data) {
-        // sort descending by racesPlayed
         data.sort((a, b) => b.racesPlayed - a.racesPlayed);
-
-        const tbody = document
-          .querySelector('#leaderboardTable tbody');
-        tbody.innerHTML = ''; // clear
-
+        const tbody    = document.querySelector('#leaderboardTable tbody');
+        tbody.innerHTML = '';
         const fragment = document.createDocumentFragment();
 
         data.forEach((r, idx) => {
-          // build a table row for each racer
           const tr = document.createElement('tr');
-
-          // use data-label for responsive
           tr.innerHTML = `
             <td data-label="Rank">${idx + 1}</td>
             <td data-label="Username">${r.username}</td>
@@ -389,45 +373,35 @@
             <td data-label="Longest Session">${r.longestSession}</td>
             <td data-label="League Tier">${r.leagueTier}</td>
           `.trim();
-
           fragment.appendChild(tr);
         });
 
         tbody.appendChild(fragment);
       }
 
-
       /**
        * Renders the Races Per Day table.
        * Calculates daysActive & races per day.
        */
       function renderRacesPerDay(data) {
-        // map to new array with per-day metric
         const list = data.map(r => {
-          // parse joinDate (YYYY-MM-DD)
-          const joinDate = new Date(r.joinDate + 'T00:00:00Z');
-          const now      = new Date();
-          let diffMs      = now - joinDate;
-          // convert ms to days
-          let daysActive  = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-          if (daysActive < 1) daysActive = 1; // everyone has at least 1 day
-          // races per day, two-decimal
-          const racesPerDay = (r.racesPlayed / daysActive).toFixed(2);
+          const joinDate   = new Date(r.joinDate + 'T00:00:00Z');
+          const now        = new Date();
+          let diffMs       = now - joinDate;
+          let daysActive   = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+          if (daysActive < 1) daysActive = 1;
+          const perDay     = (r.racesPlayed / daysActive).toFixed(2);
           return {
-            username:     r.username,
-            racesPlayed:  r.racesPlayed,
-            daysActive:   daysActive,
-            racesPerDay:  racesPerDay
+            username:    r.username,
+            racesPlayed: r.racesPlayed,
+            daysActive:  daysActive,
+            racesPerDay: perDay
           };
         });
 
-        // sort descending by racesPerDay
         list.sort((a, b) => b.racesPerDay - a.racesPerDay);
-
-        const tbody = document
-          .querySelector('#racesPerDayTable tbody');
-        tbody.innerHTML = ''; // clear
-
+        const tbody    = document.querySelector('#racesPerDayTable tbody');
+        tbody.innerHTML = '';
         const fragment = document.createDocumentFragment();
 
         list.forEach((r, idx) => {
