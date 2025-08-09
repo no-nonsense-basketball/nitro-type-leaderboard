@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <title>Nitro Type Top 1000 Racers</title>
   <style>
+    /* ===================================================
+       Root Color & Typography Variables
+       =================================================== */
     :root {
       --bg-color:        #2a2a2a;
       --panel-bg:        #333333;
@@ -20,6 +23,9 @@
       --transition:      0.3s ease;
     }
 
+    /* ===================================================
+       Global Reset & Base Styles
+       =================================================== */
     *, *::before, *::after {
       box-sizing: border-box;
       margin: 0;
@@ -46,6 +52,9 @@
       color: var(--accent-light);
     }
 
+    /* ===================================================
+       Header / Branding Styles
+       =================================================== */
     header {
       text-align: center;
       padding: 20px 0;
@@ -70,6 +79,9 @@
       font-weight: bold;
     }
 
+    /* ===================================================
+       Tab Navigation Styles
+       =================================================== */
     .tabs {
       display: flex;
       justify-content: center;
@@ -89,14 +101,19 @@
       color: var(--text-light);
       transition: background var(--transition);
     }
+
     .tabs .tab:hover {
       background: var(--panel-bg);
     }
+
     .tabs .tab.active {
       background: var(--accent);
       color: #ffffff;
     }
 
+    /* ===================================================
+       Table Container and Table Styles
+       =================================================== */
     .table-container {
       display: none;
       background: var(--panel-bg);
@@ -126,12 +143,14 @@
       border-bottom: 2px solid var(--bg-color);
       text-transform: uppercase;
       letter-spacing: 0.03em;
-      cursor: pointer;               /* make headers clickable */
+      cursor: pointer;
       user-select: none;
     }
+
     thead th.asc::after {
       content: ' ▲';
     }
+
     thead th.desc::after {
       content: ' ▼';
     }
@@ -158,10 +177,17 @@
       color: var(--accent-light);
     }
 
+    /* ===================================================
+       Responsive Styles for Narrow Viewports
+       =================================================== */
     @media (max-width: 900px) {
-      table, thead, tbody, th, td, tr { display: block; }
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
       thead { display: none; }
-      tr { margin-bottom: 15px; }
+      tr {
+        margin-bottom: 15px;
+      }
       td {
         display: flex;
         justify-content: space-between;
@@ -175,15 +201,29 @@
         font-weight: bold;
         text-transform: uppercase;
       }
-      td span { flex: 1 1 60%; text-align: right; }
+      td span {
+        flex: 1 1 60%;
+        text-align: right;
+      }
     }
 
-    .hidden { display: none !important; }
-    .center { text-align: center; }
+    /* ===================================================
+       Utility & Helper Classes
+       =================================================== */
+    .hidden {
+      display: none !important;
+    }
+
+    .center {
+      text-align: center;
+    }
   </style>
 </head>
 <body>
 
+  <!-- ================================
+       Header / Branding
+       ================================ -->
   <header>
     <h1>Nitro Type Top 1000 Racers</h1>
     <p>
@@ -196,11 +236,17 @@
     <p>Contact: azrael.for.god on Discord</p>
   </header>
 
+  <!-- ================================
+       Tab Navigation
+       ================================ -->
   <div class="tabs">
     <div class="tab active" data-target="leaderboardSection">Leaderboard</div>
     <div class="tab" data-target="racesPerDaySection">Races Per Day</div>
   </div>
 
+  <!-- ================================
+       Leaderboard Section
+       ================================ -->
   <section id="leaderboardSection" class="table-container active">
     <table id="leaderboardTable">
       <thead>
@@ -222,10 +268,15 @@
           <th>League Tier</th>
         </tr>
       </thead>
-      <tbody></tbody>
+      <tbody>
+        <!-- Rows injected by JavaScript -->
+      </tbody>
     </table>
   </section>
 
+  <!-- ================================
+       Races Per Day Section
+       ================================ -->
   <section id="racesPerDaySection" class="table-container">
     <table id="racesPerDayTable">
       <thead>
@@ -237,17 +288,30 @@
           <th>Races / Day</th>
         </tr>
       </thead>
-      <tbody></tbody>
+      <tbody>
+        <!-- Rows injected by JavaScript -->
+      </tbody>
     </table>
   </section>
 
+  <!-- ===================================================
+       JavaScript
+        - Fetch sample_data.json
+        - Populate "Last updated"
+        - Tab switching logic
+        - Render Leaderboard
+        - Render Races Per Day
+        - Enable click-to-sort on every column (with rank renumbering)
+     =================================================== -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // set last-updated
-      const span = document.querySelector('#lastUpdated span');
-      span.textContent = new Date().toLocaleString();
+      // Populate last-updated timestamp
+      const lastUpdatedSpan = document.querySelector('#lastUpdated span');
+      if (lastUpdatedSpan) {
+        lastUpdatedSpan.textContent = new Date().toLocaleString();
+      }
 
-      // tab logic
+      // Tab switching setup
       const tabs     = document.querySelectorAll('.tabs .tab');
       const sections = document.querySelectorAll('.table-container');
       tabs.forEach(tab => {
@@ -259,33 +323,44 @@
         });
       });
 
-      // fetch & render
+      // Fetch data & render tables
       fetch('sample_data.json')
-        .then(r => r.ok ? r.json() : Promise.reject(r.status))
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status} - ${response.statusText}`);
+          }
+          return response.json();
+        })
         .then(racers => {
+          if (!Array.isArray(racers)) {
+            throw new Error('sample_data.json must be an array');
+          }
           renderLeaderboard(racers);
           renderRacesPerDay(racers);
           enableSorting('leaderboardTable');
           enableSorting('racesPerDayTable');
         })
         .catch(err => {
-          console.error(err);
+          console.error('Failed to load data:', err);
           const msg = document.createElement('p');
-          msg.textContent = 'Error loading data – check console.';
+          msg.textContent = 'Error loading sample_data.json – check console.';
           msg.style.color = '#ff5252';
           msg.style.textAlign = 'center';
           document.body.appendChild(msg);
         });
 
-      // render functions (unchanged)…
+      /**
+       * Renders the main leaderboard table.
+       * Sorts by total races descending initially.
+       */
       function renderLeaderboard(data) {
-        data.sort((a,b) => b.racesPlayed - a.racesPlayed);
+        data.sort((a, b) => b.racesPlayed - a.racesPlayed);
         const tbody = document.querySelector('#leaderboardTable tbody');
         tbody.innerHTML = '';
-        data.forEach((r, i) => {
+        data.forEach((r, idx) => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td data-label="Rank">${i+1}</td>
+            <td data-label="Rank">${idx + 1}</td>
             <td data-label="Username">${r.username}</td>
             <td data-label="Team Tag">${r.tag}</td>
             <td data-label="Title">${r.title}</td>
@@ -302,14 +377,22 @@
             <td data-label="Nitros Used">${r.nitrosUsed}</td>
             <td data-label="Longest Session">${r.longestSession}</td>
             <td data-label="League Tier">${r.leagueTier}</td>
-          `;
+          `.trim();
           tbody.appendChild(tr);
         });
       }
 
+      /**
+       * Renders the Races Per Day table.
+       * Calculates daysActive & racesPerDay, sorts descending initially.
+       */
       function renderRacesPerDay(data) {
         const list = data.map(r => {
-          const daysActive = Math.max(1, Math.floor((new Date() - new Date(r.joinDate+'T00:00:00Z')) / (1000*60*60*24)));
+          const joinDate = new Date(r.joinDate + 'T00:00:00Z');
+          const now      = new Date();
+          let diffMs     = now - joinDate;
+          let daysActive = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+          if (daysActive < 1) daysActive = 1;
           return {
             username:    r.username,
             racesPlayed: r.racesPlayed,
@@ -317,36 +400,44 @@
             racesPerDay: (r.racesPlayed / daysActive).toFixed(2)
           };
         });
-        list.sort((a,b) => b.racesPerDay - a.racesPerDay);
+
+        list.sort((a, b) => b.racesPerDay - a.racesPerDay);
         const tbody = document.querySelector('#racesPerDayTable tbody');
         tbody.innerHTML = '';
-        list.forEach((r,i) => {
+        list.forEach((r, idx) => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td data-label="Rank">${i+1}</td>
+            <td data-label="Rank">${idx + 1}</td>
             <td data-label="Username">${r.username}</td>
             <td data-label="Total Races">${r.racesPlayed}</td>
             <td data-label="Days Active">${r.daysActive}</td>
             <td data-label="Races / Day">${r.racesPerDay}</td>
-          `;
+          `.trim();
           tbody.appendChild(tr);
         });
       }
 
-      // generic sorting for any table
+      /**
+       * Attaches click handlers to each <th> in the given table,
+       * toggles asc/desc classes, re-sorts rows, AND renumbers Rank.
+       */
       function enableSorting(tableId) {
         const table   = document.getElementById(tableId);
         const headers = table.querySelectorAll('th');
+
         headers.forEach((th, idx) => {
           th.addEventListener('click', () => {
             const tbody = table.querySelector('tbody');
             const rows  = Array.from(tbody.querySelectorAll('tr'));
             const asc   = !th.classList.contains('asc');
+
+            // sort by this column
             rows.sort((a, b) => {
               const aText = a.children[idx].textContent.trim();
               const bText = b.children[idx].textContent.trim();
               const aNum  = parseFloat(aText.replace(/[^0-9.\-]/g, ''));
               const bNum  = parseFloat(bText.replace(/[^0-9.\-]/g, ''));
+
               if (!isNaN(aNum) && !isNaN(bNum)) {
                 return asc ? aNum - bNum : bNum - aNum;
               }
@@ -355,18 +446,24 @@
                 : bText.localeCompare(aText);
             });
 
-            // clear old indicators
+            // reset sort arrows
             headers.forEach(h => h.classList.remove('asc','desc'));
+            // set new arrow on clicked header
             th.classList.add(asc ? 'asc' : 'desc');
 
-            // reattach sorted rows
+            // renumber the Rank column
+            rows.forEach((row, newIndex) => {
+              row.children[0].textContent = newIndex + 1;
+            });
+
+            // re-attach sorted rows
             tbody.innerHTML = '';
             rows.forEach(r => tbody.appendChild(r));
           });
         });
       }
 
-    }); // DOMContentLoaded
+    }); // end DOMContentLoaded
   </script>
 </body>
 </html>
