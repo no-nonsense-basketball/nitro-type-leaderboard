@@ -4,101 +4,172 @@
   <meta charset="UTF-8" />
   <title>Nitro Type Top 1000 Racers</title>
   <style>
+    /* ============================================
+       Root Variables for Colors and Typography
+       ============================================ */
     :root {
       --bg-color: #2a2a2a;
-      --panel-bg: #333;
+      --panel-bg: #333333;
+      --header-bg: #3a3a3a;
       --accent: #b71c1c;
+      --accent-light: #d32f2f;
       --text-light: #e0e0e0;
       --text-dark: #121212;
       --font-sans: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      --font-size-base: 18px;
+      --font-size-lg: 2rem;
+      --font-size-md: 1.25rem;
+      --font-size-sm: 0.9rem;
+      --transition-speed: 0.3s;
     }
 
+    /* ============================================
+       Global Reset and Base Styles
+       ============================================ */
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
 
+    html, body {
+      width: 100%;
+      height: 100%;
+    }
+
     body {
       background-color: var(--bg-color);
       color: var(--text-light);
       font-family: var(--font-sans);
+      font-size: var(--font-size-base);
+      line-height: 1.5;
       padding: 20px;
-      line-height: 1.4;
     }
 
+    a {
+      color: var(--accent);
+      text-decoration: none;
+      transition: color var(--transition-speed);
+    }
+
+    a:hover {
+      color: var(--accent-light);
+    }
+
+    /* ============================================
+       Header Section
+       ============================================ */
     header {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 30px;
     }
 
     header h1 {
-      font-size: 2.5rem;
+      font-size: var(--font-size-lg);
       color: var(--accent);
       margin-bottom: 8px;
     }
 
     header p {
-      font-size: 1rem;
+      font-size: var(--font-size-md);
+      color: var(--text-light);
     }
 
     header p a {
-      color: var(--accent);
-      text-decoration: none;
+      font-weight: bold;
     }
 
-    header p a:hover {
-      text-decoration: underline;
+    /* ============================================
+       Navigation Tabs
+       ============================================ */
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+      background: var(--header-bg);
+      border-radius: 4px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
 
-    #fileInput {
-      display: block;
-      margin: 0 auto 20px;
-      padding: 8px;
-      background: var(--panel-bg);
-      border: 1px solid var(--accent);
+    .tab {
+      flex: 1;
+      padding: 12px 20px;
+      text-align: center;
+      cursor: pointer;
+      font-size: var(--font-size-md);
+      transition: background var(--transition-speed);
       color: var(--text-light);
-      font-size: 1rem;
+    }
+
+    .tab:hover {
+      background: var(--panel-bg);
+    }
+
+    .tab.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    /* ============================================
+       Table Container Styles
+       ============================================ */
+    .table-container {
+      display: none;
+      background: var(--panel-bg);
+      padding: 10px;
+      border-radius: 4px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+      margin-bottom: 40px;
+    }
+
+    .table-container.active {
+      display: block;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      background: var(--panel-bg);
-      font-size: 1rem;
-      margin-bottom: 40px;
+      margin: 0 auto;
+      font-size: var(--font-size-sm);
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background: var(--accent-light);
+      color: #fff;
+      font-weight: normal;
+      padding: 12px;
+      border-bottom: 2px solid var(--bg-color);
     }
 
     th, td {
       padding: 10px 8px;
       text-align: center;
-    }
-
-    thead th {
-      background: var(--accent);
-      color: #fff;
-      font-weight: normal;
-      font-size: 1.1rem;
+      border-bottom: 1px solid #444;
     }
 
     tbody tr:nth-child(odd) {
-      background: #343434;
+      background: #3a3a3a;
     }
 
     tbody tr:nth-child(even) {
-      background: #3a3a3a;
+      background: #343434;
     }
 
     td a.profile-link {
       color: var(--accent);
-      text-decoration: none;
       word-break: break-all;
     }
 
     td a.profile-link:hover {
-      text-decoration: underline;
+      color: var(--accent-light);
     }
 
+    /* ============================================
+       Responsive Breakpoints
+       ============================================ */
     @media (max-width: 800px) {
       table, thead, tbody, th, td, tr {
         display: block;
@@ -117,129 +188,258 @@
       td::before {
         content: attr(data-label);
         font-weight: bold;
+        width: 45%;
         color: var(--text-light);
       }
     }
+
+    /* ============================================
+       File Input Styling
+       ============================================ */
+    #fileInput {
+      display: block;
+      margin: 0 auto 30px;
+      padding: 10px 15px;
+      background: var(--panel-bg);
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      color: var(--text-light);
+      font-size: var(--font-size-md);
+      width: 300px;
+      text-align: center;
+      cursor: pointer;
+      transition: border var(--transition-speed);
+    }
+
+    #fileInput:hover {
+      border-color: var(--accent-light);
+    }
+
+    /* ============================================
+       Utility Helpers
+       ============================================ */
+    .hidden {
+      display: none !important;
+    }
+
+    .center {
+      text-align: center;
+    }
+
   </style>
 </head>
 <body>
+
+  <!-- ============================
+       Header / Branding
+       ============================ -->
   <header>
     <h1>Nitro Type Top 1000 Racers</h1>
     <p>
-      made by 
+      made by
       <a href="https://www.youtube.com/@InternetTyper" target="_blank">
         @InternetTyper on YouTube
       </a>
     </p>
   </header>
 
-  <input type="file" id="fileInput" accept=".json" multiple />
+  <!-- ============================
+       File Input for JSON Data
+       ============================ -->
+  <input
+    type="file"
+    id="fileInput"
+    accept=".json"
+  />
 
-  <table id="results">
-    <thead>
-      <tr>
-        <th>Rank</th>
-        <th>Username</th>
-        <th>Team Tag</th>
-        <th>Title</th>
-        <th>Total Races</th>
-        <th>Avg WPM</th>
-        <th>Top WPM</th>
-        <th>Profile Views</th>
-        <th>Member Since</th>
-        <th>Garage Cars</th>
-        <th>Profile URL</th>
-        <th>Membership</th>
-        <th>Nitros Used</th>
-        <th>Longest Session (s)</th>
-        <th>League Tier</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <!-- ============================
+       Navigation Tabs
+       ============================ -->
+  <div class="tabs">
+    <div class="tab active" data-target="leaderboardSection">Leaderboard</div>
+    <div class="tab" data-target="racesPerDaySection">Races Per Day</div>
+  </div>
+
+  <!-- ============================
+       Leaderboard Section
+       ============================ -->
+  <div
+    id="leaderboardSection"
+    class="table-container active"
+  >
+    <table id="leaderboardTable">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Username</th>
+          <th>Team Tag</th>
+          <th>Title</th>
+          <th>Total Races</th>
+          <th>Avg WPM</th>
+          <th>Top WPM</th>
+          <th>Profile Views</th>
+          <th>Member Since</th>
+          <th>Garage Cars</th>
+          <th>Profile URL</th>
+          <th>Membership</th>
+          <th>Nitros Used</th>
+          <th>Longest Session</th>
+          <th>League Tier</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- ============================
+       Races Per Day Section
+       ============================ -->
+  <div
+    id="racesPerDaySection"
+    class="table-container"
+  >
+    <table id="racesPerDayTable">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Username</th>
+          <th>Total Races</th>
+          <th>Days Active</th>
+          <th>Races / Day</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
   <script>
-    let racers = [];
-    const fileInput = document.getElementById('fileInput');
-    const tbody = document.querySelector('#results tbody');
+    /**
+     * Main script to load and render racer data.
+     * - Fetches JSON from sample_data.json
+     * - Populates Leaderboard and Races Per Day tables
+     * - Handles tab switching
+     */
+    document.addEventListener('DOMContentLoaded', () => {
+      const fileInput = document.getElementById('fileInput');
+      const tabs = document.querySelectorAll('.tab');
+      const sections = document.querySelectorAll('.table-container');
+      let racers = [];
 
-    fileInput.addEventListener('change', async () => {
-      const files = Array.from(fileInput.files);
-      racers = [];
+      /**
+       * Switches active tab and section
+       */
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          tabs.forEach(t => t.classList.remove('active'));
+          sections.forEach(s => s.classList.remove('active'));
+          tab.classList.add('active');
+          document.getElementById(tab.dataset.target).classList.add('active');
+        });
+      });
 
-      for (const file of files) {
+      /**
+       * Reads local JSON file, parses it, and triggers rendering
+       */
+      fileInput.addEventListener('change', async () => {
+        const file = fileInput.files[0];
+        if (!file) return;
+
         try {
           const text = await file.text();
-          const json = JSON.parse(text);
-          const info = json.RACER_INFO || json;
-          if (!info.username) continue;
-
-          // parse join date
-          const joinDate = info.joinDate
-            ? info.joinDate.split('T')[0]
-            : info.createdStamp
-              ? new Date(info.createdStamp * 1000).toISOString().split('T')[0]
-              : '';
-
-          // determine garage count
-          let garageCount = 0;
-          if (Array.isArray(info.cars))        garageCount = info.cars.length;
-          else if (Array.isArray(info.garage)) garageCount = info.garage.length;
-          else if (typeof info.totalCars === 'number') garageCount = info.totalCars;
-
-          racers.push({
-            username:       info.username,
-            tag:            info.tag || '',
-            title:          info.title || '',
-            racesPlayed:    info.racesPlayed || 0,
-            avgSpeed:       info.avgSpeed || 0,
-            highestSpeed:   info.highestSpeed || 0,
-            profileViews:   info.profileViews || 0,
-            joinDate,
-            garageCars:     garageCount,
-            profileURL:     `https://www.nitrotype.com/racer/${info.username}`,
-            membership:     info.membership || '',
-            nitrosUsed:     info.nitrosUsed || 0,
-            longestSession: info.longestSession || 0,
-            leagueTier:     info.leagueTier || 0
-          });
-        } catch {
-          // skip invalid JSON files
+          racers = JSON.parse(text);
+          renderLeaderboard(racers);
+          renderRacesPerDay(racers);
+        } catch (err) {
+          console.error('Invalid JSON file:', err);
         }
+      });
+
+      /**
+       * Renders the main leaderboard table
+       */
+      function renderLeaderboard(data) {
+        // sort descending by racesPlayed
+        data.sort((a, b) => b.racesPlayed - a.racesPlayed);
+
+        const tbody = document.querySelector('#leaderboardTable tbody');
+        tbody.innerHTML = '';
+        const frag = document.createDocumentFragment();
+
+        data.forEach((r, i) => {
+          const tr = document.createElement('tr');
+
+          tr.innerHTML = `
+            <td data-label="Rank">${i + 1}</td>
+            <td data-label="Username">${r.username}</td>
+            <td data-label="Team Tag">${r.tag}</td>
+            <td data-label="Title">${r.title}</td>
+            <td data-label="Total Races">${r.racesPlayed}</td>
+            <td data-label="Avg WPM">${r.avgSpeed}</td>
+            <td data-label="Top WPM">${r.highestSpeed}</td>
+            <td data-label="Profile Views">${r.profileViews}</td>
+            <td data-label="Member Since">${r.joinDate}</td>
+            <td data-label="Garage Cars">${r.garageCars}</td>
+            <td data-label="Profile URL">
+              <a class="profile-link" href="${r.profileURL}" target="_blank">
+                View Profile
+              </a>
+            </td>
+            <td data-label="Membership">${r.membership}</td>
+            <td data-label="Nitros Used">${r.nitrosUsed}</td>
+            <td data-label="Longest Session">${r.longestSession}</td>
+            <td data-label="League Tier">${r.leagueTier}</td>
+          `;
+
+          frag.appendChild(tr);
+        });
+
+        tbody.appendChild(frag);
       }
 
-      // sort by races played descending
-      racers.sort((a, b) => b.racesPlayed - a.racesPlayed);
+      /**
+       * Calculates days active and races/day, then renders table
+       */
+      function renderRacesPerDay(data) {
+        // copy array and sort by races/day descending
+        const list = data.map(r => {
+          // parse join date string into Date
+          const join = new Date(r.joinDate);
+          const now = new Date();
+          // calculate difference in ms, convert to days
+          const diffMs = now - join;
+          let days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+          // ensure at least 1 day
+          days = days < 1 ? 1 : days;
+          // compute races per day
+          const perDay = (r.racesPlayed / days).toFixed(2);
+          return {
+            username: r.username,
+            racesPlayed: r.racesPlayed,
+            daysActive: days,
+            racesPerDay: perDay
+          };
+        });
 
-      // render table
-      tbody.innerHTML = '';
-      const frag = document.createDocumentFragment();
-      racers.forEach((r, idx) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td data-label="Rank">${idx + 1}</td>
-          <td data-label="Username">${r.username}</td>
-          <td data-label="Team Tag">${r.tag}</td>
-          <td data-label="Title">${r.title}</td>
-          <td data-label="Total Races">${r.racesPlayed}</td>
-          <td data-label="Avg WPM">${r.avgSpeed}</td>
-          <td data-label="Top WPM">${r.highestSpeed}</td>
-          <td data-label="Profile Views">${r.profileViews}</td>
-          <td data-label="Member Since">${r.joinDate}</td>
-          <td data-label="Garage Cars">${r.garageCars}</td>
-          <td data-label="Profile URL">
-            <a class="profile-link" href="${r.profileURL}" target="_blank">
-              ${r.profileURL}
-            </a>
-          </td>
-          <td data-label="Membership">${r.membership}</td>
-          <td data-label="Nitros Used">${r.nitrosUsed}</td>
-          <td data-label="Longest Session">${r.longestSession}</td>
-          <td data-label="League Tier">${r.leagueTier}</td>
-        `;
-        frag.appendChild(tr);
-      });
-      tbody.appendChild(frag);
+        list.sort((a, b) => b.racesPerDay - a.racesPerDay);
+
+        const tbody = document.querySelector('#racesPerDayTable tbody');
+        tbody.innerHTML = '';
+        const frag = document.createDocumentFragment();
+
+        list.forEach((r, i) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td data-label="Rank">${i + 1}</td>
+            <td data-label="Username">${r.username}</td>
+            <td data-label="Total Races">${r.racesPlayed}</td>
+            <td data-label="Days Active">${r.daysActive}</td>
+            <td data-label="Races / Day">${r.racesPerDay}</td>
+          `;
+          frag.appendChild(tr);
+        });
+
+        tbody.appendChild(frag);
+      }
     });
   </script>
 </body>
