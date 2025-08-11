@@ -4,229 +4,144 @@
   <meta charset="UTF-8" />
   <title>Nitro Type Top 1000 Racers</title>
   <style>
-    /* ===================================================
-       Root Color & Typography Variables
-       =================================================== */
+    /* ===== Root Variables ===== */
     :root {
-      --bg-color:        #2a2a2a;  /* dark background */
-      --panel-bg:        #333333;  /* panel background */
-      --header-bg:       #3a3a3a;  /* header / tab background */
-      --accent:          #b71c1c;  /* dark red accent */
-      --accent-light:    #d32f2f;  /* lighter red on hover */
-      --text-light:      #e0e0e0;  /* light text */
-      --text-dim:        #bbbbbb;  /* secondary text */
-      --font-family:     'Segoe UI', Tahoma, Verdana, sans-serif;
-      --font-size-base:  1rem;     /* 16px */
-      --font-size-lg:    2rem;     /* 32px */
-      --font-size-md:    1.25rem;  /* 20px */
-      --font-size-sm:    0.875rem; /* 14px */
-      --transition:      0.3s ease;
+      --bg:         #2a2a2a;
+      --panel:      #333333;
+      --header:     #3a3a3a;
+      --accent:     #b71c1c;
+      --accent-hov: #d32f2f;
+      --text:       #e0e0e0;
+      --text-dim:   #bbbbbb;
+      --font:       'Segoe UI', Tahoma, Verdana, sans-serif;
+      --fs-base:    1rem;
+      --fs-lg:      2rem;
+      --fs-md:      1.25rem;
+      --fs-sm:      0.875rem;
+      --trans:      0.3s ease;
     }
 
-    /* ===================================================
-       Global Reset & Base Styles
-       =================================================== */
+    /* ===== Reset & Base ===== */
     *, *::before, *::after {
       box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+      margin: 0; padding: 0;
     }
-
     html, body {
-      width: 100%;
-      height: 100%;
-      background: var(--bg-color);
-      color: var(--text-light);
-      font-family: var(--font-family);
-      font-size: var(--font-size-base);
-      line-height: 1.5;
-      overflow-x: hidden;
+      width:100%; height:100%;
+      background:var(--bg);
+      color:var(--text);
+      font-family:var(--font);
+      font-size:var(--fs-base);
+      line-height:1.5;
+      overflow-x:hidden;
     }
+    a { color:var(--accent); text-decoration:none; transition: color var(--trans); }
+    a:hover { color:var(--accent-hov); }
 
-    a {
-      color: var(--accent);
-      text-decoration: none;
-      transition: color var(--transition);
-    }
-    a:hover {
-      color: var(--accent-light);
-    }
-
-    /* ===================================================
-       Header / Branding Styles
-       =================================================== */
+    /* ===== Header ===== */
     header {
-      text-align: center;
-      padding: 20px 0;
-      margin-bottom: 20px;
-      background: var(--header-bg);
-      border-radius: 4px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+      text-align:center;
+      background:var(--header);
+      padding:20px;
+      margin-bottom:20px;
+      border-radius:4px;
+      box-shadow:0 2px 6px rgba(0,0,0,0.5);
     }
+    header h1 { font-size:var(--fs-lg); color:var(--accent); }
+    header p { font-size:var(--fs-md); color:var(--text-dim); margin:4px 0; }
+    header p a { font-weight:bold; }
 
-    header h1 {
-      font-size: var(--font-size-lg);
-      margin-bottom: 8px;
-      color: var(--accent);
-    }
-
-    header p {
-      font-size: var(--font-size-md);
-      color: var(--text-dim);
-      margin: 4px 0;
-    }
-
-    header p a {
-      font-weight: bold;
-    }
-
-    /* ===================================================
-       Tab Navigation Styles
-       =================================================== */
+    /* ===== Tabs ===== */
     .tabs {
-      display: flex;
-      justify-content: center;
-      background: var(--header-bg);
-      margin-bottom: 20px;
-      border-radius: 4px;
-      overflow: hidden;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+      display:flex;
+      background:var(--header);
+      border-radius:4px;
+      overflow:hidden;
+      margin-bottom:20px;
+      box-shadow:0 2px 4px rgba(0,0,0,0.5);
     }
-
-    .tabs .tab {
-      flex: 1;
-      padding: 12px 20px;
-      text-align: center;
-      cursor: pointer;
-      font-size: var(--font-size-md);
-      color: var(--text-light);
-      transition: background var(--transition);
+    .tab {
+      flex:1;
+      padding:12px 20px;
+      text-align:center;
+      cursor:pointer;
+      font-size:var(--fs-md);
+      color:var(--text);
+      transition: background var(--trans);
     }
+    .tab:hover { background:var(--panel); }
+    .tab.active { background:var(--accent); color:#ffffff; }
 
-    .tabs .tab:hover {
-      background: var(--panel-bg);
-    }
-
-    .tabs .tab.active {
-      background: var(--accent);
-      color: #ffffff;
-    }
-
-    /* ===================================================
-       Table Container and Table Styles
-       =================================================== */
+    /* ===== Table Containers ===== */
     .table-container {
-      display: none;
-      background: var(--panel-bg);
-      border-radius: 4px;
-      padding: 10px;
-      margin-bottom: 40px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+      display:none;
+      background:var(--panel);
+      border-radius:4px;
+      padding:10px;
+      margin-bottom:40px;
+      box-shadow:0 2px 6px rgba(0,0,0,0.5);
     }
-    .table-container.active {
-      display: block;
-    }
+    .table-container.active { display:block; }
 
     table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: auto;
-      font-size: var(--font-size-sm);
+      width:100%;
+      border-collapse:collapse;
+      font-size:var(--fs-sm);
+      margin:auto;
     }
-
     thead th {
-      position: sticky;
-      top: 0;
-      background: var(--accent-light);
-      color: #fff;
-      font-weight: normal;
-      padding: 12px;
-      border-bottom: 2px solid var(--bg-color);
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-      cursor: pointer;
-      user-select: none;
+      position:sticky; top:0;
+      background:var(--accent-hov);
+      color:#fff;
+      font-weight:normal;
+      padding:12px;
+      border-bottom:2px solid var(--bg);
+      text-transform:uppercase;
+      letter-spacing:0.03em;
+      cursor:pointer;
+      user-select:none;
     }
-
-    thead th.asc::after {
-      content: ' ▲';
-    }
-
-    thead th.desc::after {
-      content: ' ▼';
-    }
+    thead th.asc::after  { content:' ▲'; }
+    thead th.desc::after { content:' ▼'; }
 
     th, td {
-      padding: 10px 8px;
-      text-align: center;
-      border-bottom: 1px solid #444;
+      padding:10px 8px;
+      text-align:center;
+      border-bottom:1px solid #444;
     }
-
-    tbody tr:nth-child(odd) {
-      background: #3a3a3a;
-    }
-    tbody tr:nth-child(even) {
-      background: #343434;
-    }
+    tbody tr:nth-child(odd)  { background:#3a3a3a; }
+    tbody tr:nth-child(even) { background:#343434; }
 
     td a.profile-link {
-      color: var(--accent);
-      word-break: break-all;
-      font-size: var(--font-size-sm);
+      color:var(--accent);
+      word-break:break-all;
+      font-size:var(--fs-sm);
     }
-    td a.profile-link:hover {
-      color: var(--accent-light);
-    }
+    td a.profile-link:hover { color:var(--accent-hov); }
 
-    /* ===================================================
-       Responsive Styles for Narrow Viewports
-       =================================================== */
-    @media (max-width: 900px) {
-      table, thead, tbody, th, td, tr {
-        display: block;
-      }
-      thead {
-        display: none;
-      }
-      tr {
-        margin-bottom: 15px;
-      }
+    /* ===== Responsive ===== */
+    @media (max-width:900px) {
+      table, thead, tbody, th, td, tr { display:block; }
+      thead { display:none; }
+      tr { margin-bottom:15px; }
       td {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 8px 12px;
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        padding:8px 12px;
       }
       td::before {
-        content: attr(data-label);
-        flex: 1 1 40%;
-        color: var(--text-dim);
-        font-weight: bold;
-        text-transform: uppercase;
+        content:attr(data-label);
+        flex:1 1 40%;
+        color:var(--text-dim);
+        font-weight:bold;
+        text-transform:uppercase;
       }
-      td span {
-        flex: 1 1 60%;
-        text-align: right;
-      }
-    }
-
-    /* ===================================================
-       Utility & Helper Classes
-       =================================================== */
-    .hidden {
-      display: none !important;
-    }
-
-    .center {
-      text-align: center;
+      td > * { flex:1 1 60%; text-align:right; }
     }
   </style>
 </head>
 <body>
-
-  <!-- ================================
-       Header / Branding
-       ================================ -->
   <header>
     <h1>Nitro Type Top 1000 Racers</h1>
     <p>
@@ -235,273 +150,245 @@
         @InternetTyper on YouTube
       </a>
     </p>
-    <p id="lastUpdated">Last updated: <span></span></p>
+    <p id="lastUpdated">Last updated: <span>—</span></p>
     <p>Contact: azrael.for.god on Discord</p>
   </header>
 
-  <!-- ================================
-       Tab Navigation
-       ================================ -->
   <div class="tabs">
-    <div class="tab active" data-target="leaderboardSection">Leaderboard</div>
-    <div class="tab" data-target="racesPerDaySection">Races Per Day</div>
+    <div class="tab active"        data-target="leaderboardSection">Leaderboard</div>
+    <div class="tab"               data-target="racesPerDaySection">Races Per Day</div>
+    <div class="tab"               data-target="changes24Section">24-Hour Changes</div>
   </div>
 
-  <!-- ================================
-       Leaderboard Section
-       ================================ -->
+  <!-- Leaderboard -->
   <section id="leaderboardSection" class="table-container active">
     <table id="leaderboardTable">
       <thead>
         <tr>
-          <th>Rank</th>
-          <th>Username</th>
-          <th>Team Tag</th>
-          <th>Title</th>
-          <th>Total Races</th>
-          <th>Avg WPM</th>
-          <th>Top WPM</th>
-          <th>Profile Views</th>
-          <th>Member Since</th>
-          <th>Garage Cars</th>
-          <th>Profile URL</th>
-          <th>Membership</th>
-          <th>Nitros Used</th>
-          <th>Longest Session</th>
-          <th>League Tier</th>
+          <th>Rank</th><th>Username</th><th>Team Tag</th><th>Title</th>
+          <th>Total Races</th><th>Avg WPM</th><th>Top WPM</th>
+          <th>Profile Views</th><th>Member Since</th><th>Garage Cars</th>
+          <th>Profile URL</th><th>Membership</th><th>Nitros Used</th>
+          <th>Longest Session</th><th>League Tier</th>
         </tr>
       </thead>
-      <tbody>
-        <!-- Rows injected by JavaScript -->
-      </tbody>
+      <tbody></tbody>
     </table>
   </section>
 
-  <!-- ================================
-       Races Per Day Section
-       ================================ -->
+  <!-- Races Per Day -->
   <section id="racesPerDaySection" class="table-container">
     <table id="racesPerDayTable">
       <thead>
         <tr>
-          <th>Rank</th>
-          <th>Username</th>
-          <th>Total Races</th>
-          <th>Days Active</th>
-          <th>Races / Day</th>
+          <th>Rank</th><th>Username</th><th>Total Races</th>
+          <th>Days Active</th><th>Races / Day</th>
         </tr>
       </thead>
-      <tbody>
-        <!-- Rows injected by JavaScript -->
-      </tbody>
+      <tbody></tbody>
     </table>
   </section>
 
-  <!-- ===================================================
-       JavaScript
-         - Fetch sample_data.json
-         - Populate "Last updated"
-         - Tab switching logic
-         - Render Leaderboard (with comma formatting)
-         - Render Races Per Day (with comma + 2-decimal formatting)
-         - Enable click-to-sort on every column (with rank renumbering)
-     =================================================== -->
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // Populate last-updated timestamp
-      const lastUpdatedSpan = document.querySelector('#lastUpdated span');
-      if (lastUpdatedSpan) {
-        lastUpdatedSpan.textContent = new Date().toLocaleString();
-      }
+  <!-- 24-Hour Changes -->
+  <section id="changes24Section" class="table-container">
+    <table id="changes24Table">
+      <thead>
+        <tr>
+          <th>Rank</th><th>Username</th><th>ΔRaces</th>
+          <th>ΔAvg WPM</th><th>ΔTop WPM</th><th>ΔProfile Views</th>
+          <th>ΔGarage Cars</th><th>ΔNitros</th>
+          <th>ΔLongest Session</th><th>ΔLeague Tier</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
 
-      // Tab switching setup
-      const tabs     = document.querySelectorAll('.tabs .tab');
-      const sections = document.querySelectorAll('.table-container');
-      tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-          tabs.forEach(t => t.classList.remove('active'));
-          sections.forEach(s => s.classList.remove('active'));
-          tab.classList.add('active');
-          document.getElementById(tab.dataset.target).classList.add('active');
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Tab navigation
+    const tabs     = document.querySelectorAll('.tab');
+    const sections = document.querySelectorAll('.table-container');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        sections.forEach(s => s.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.target).classList.add('active');
+      });
+    });
+
+    // Load current & previous snapshots
+    Promise.all([
+      fetch('sample_data.json').then(r => r.json()),
+      fetch('sample_data_prev.json').then(r => r.json()).catch(() => ({ racers: [] }))
+    ])
+    .then(([cur, prev]) => {
+      // Show real last-updated
+      const lu = document.querySelector('#lastUpdated span');
+      if (lu) lu.textContent = new Date(cur.updatedAt).toLocaleString();
+
+      const todayList = cur.racers;
+      const yesterday = new Map(
+        (prev.racers || []).map(r => [r.username.toLowerCase(), r])
+      );
+
+      renderLeaderboard(todayList);
+      renderRacesPerDay(todayList);
+      renderChanges24(todayList, yesterday);
+
+      enableSorting('leaderboardTable');
+      enableSorting('racesPerDayTable');
+      enableSorting('changes24Table');
+    })
+    .catch(err => {
+      console.error('Error loading data:', err);
+      const msg = document.createElement('p');
+      msg.textContent = 'Error loading data – check console.';
+      msg.style.color = '#ff5252';
+      msg.style.textAlign = 'center';
+      document.body.appendChild(msg);
+    });
+
+    function renderLeaderboard(data) {
+      data.sort((a, b) => b.racesPlayed - a.racesPlayed);
+      const tbody = document.querySelector('#leaderboardTable tbody');
+      tbody.innerHTML = '';
+      data.forEach((r, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td data-label="Rank">${i + 1}</td>
+          <td data-label="Username">
+            <a href="${r.profileURL}" target="_blank">${r.username}</a>
+          </td>
+          <td data-label="Team Tag">${r.tag}</td>
+          <td data-label="Title">${r.title}</td>
+          <td data-label="Total Races">${r.racesPlayed.toLocaleString()}</td>
+          <td data-label="Avg WPM">${r.avgSpeed.toLocaleString()}</td>
+          <td data-label="Top WPM">${r.highestSpeed.toLocaleString()}</td>
+          <td data-label="Profile Views">${r.profileViews.toLocaleString()}</td>
+          <td data-label="Member Since">${r.joinDate}</td>
+          <td data-label="Garage Cars">${r.garageCars.toLocaleString()}</td>
+          <td data-label="Profile URL">
+            <a class="profile-link" href="${r.profileURL}" target="_blank">View Profile</a>
+          </td>
+          <td data-label="Membership">${r.membership}</td>
+          <td data-label="Nitros Used">${r.nitrosUsed.toLocaleString()}</td>
+          <td data-label="Longest Session">${r.longestSession.toLocaleString()}</td>
+          <td data-label="League Tier">${r.leagueTier.toLocaleString()}</td>
+        `.trim();
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderRacesPerDay(data) {
+      const list = data.map(r => {
+        const days = Math.max(1,
+          Math.floor((Date.now() - new Date(r.joinDate).getTime()) /
+                     (1000 * 60 * 60 * 24))
+        );
+        return {
+          ...r,
+          days,
+          perDay: r.racesPlayed / days
+        };
+      });
+      list.sort((a, b) => b.perDay - a.perDay);
+      const tbody = document.querySelector('#racesPerDayTable tbody');
+      tbody.innerHTML = '';
+      list.forEach((r, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td data-label="Rank">${i + 1}</td>
+          <td data-label="Username">
+            <a href="${r.profileURL}" target="_blank">${r.username}</a>
+          </td>
+          <td data-label="Total Races">${r.racesPlayed.toLocaleString()}</td>
+          <td data-label="Days Active">${r.days.toLocaleString()}</td>
+          <td data-label="Races / Day">
+            ${r.perDay.toLocaleString(undefined,{
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            })}
+          </td>
+        `.trim();
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderChanges24(today, yesterday) {
+      const diffs = today.map(r => {
+        const prev = yesterday.get(r.username.toLowerCase()) || {};
+        return {
+          username: r.username,
+          profileURL: r.profileURL,
+          dRaces:  r.racesPlayed   - (prev.racesPlayed    || 0),
+          dAvg:    r.avgSpeed      - (prev.avgSpeed       || 0),
+          dTop:    r.highestSpeed  - (prev.highestSpeed   || 0),
+          dViews:  r.profileViews  - (prev.profileViews   || 0),
+          dCars:   r.garageCars    - (prev.garageCars     || 0),
+          dNitros: r.nitrosUsed    - (prev.nitrosUsed     || 0),
+          dSess:   r.longestSession- (prev.longestSession || 0),
+          dTier:   r.leagueTier    - (prev.leagueTier     || 0)
+        };
+      });
+      diffs.sort((a, b) => b.dRaces - a.dRaces);
+      const tbody = document.querySelector('#changes24Table tbody');
+      tbody.innerHTML = '';
+      diffs.forEach((r, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td data-label="Rank">${i + 1}</td>
+          <td data-label="Username">
+            <a href="${r.profileURL}" target="_blank">${r.username}</a>
+          </td>
+          <td data-label="ΔRaces">${r.dRaces.toLocaleString()}</td>
+          <td data-label="ΔAvg WPM">
+            ${r.dAvg.toLocaleString(undefined,{
+              minimumFractionDigits:2,
+              maximumFractionDigits:2
+            })}
+          </td>
+          <td data-label="ΔTop WPM">${r.dTop.toLocaleString()}</td>
+          <td data-label="ΔProfile Views">${r.dViews.toLocaleString()}</td>
+          <td data-label="ΔGarage Cars">${r.dCars.toLocaleString()}</td>
+          <td data-label="ΔNitros">${r.dNitros.toLocaleString()}</td>
+          <td data-label="ΔLongest Session">${r.dSess.toLocaleString()}</td>
+          <td data-label="ΔLeague Tier">${r.dTier.toLocaleString()}</td>
+        `.trim();
+        tbody.appendChild(tr);
+      });
+    }
+
+    function enableSorting(tableId) {
+      const table   = document.getElementById(tableId);
+      const headers = table.querySelectorAll('th');
+      headers.forEach((th, idx) => {
+        th.addEventListener('click', () => {
+          const tbody = table.tBodies[0];
+          const rows  = Array.from(tbody.rows);
+          const asc   = !th.classList.contains('asc');
+          rows.sort((a, b) => {
+            const aText = a.cells[idx].textContent.trim();
+            const bText = b.cells[idx].textContent.trim();
+            const aNum  = parseFloat(aText.replace(/,/g, ''));
+            const bNum  = parseFloat(bText.replace(/,/g, ''));
+            if (!isNaN(aNum) && !isNaN(bNum)) {
+              return asc ? aNum - bNum : bNum - aNum;
+            }
+            return asc
+              ? aText.localeCompare(bText)
+              : bText.localeCompare(aText);
+          });
+          headers.forEach(h => h.classList.remove('asc','desc'));
+          th.classList.add(asc ? 'asc' : 'desc');
+          rows.forEach((r, i) => r.cells[0].textContent = i + 1);
+          tbody.innerHTML = '';
+          rows.forEach(r => tbody.appendChild(r));
         });
       });
-
-      // Fetch data & render tables
-      fetch('sample_data.json')
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status} - ${response.statusText}`);
-          }
-          return response.json();
-        })
-        .then(racers => {
-          if (!Array.isArray(racers)) {
-            throw new Error('sample_data.json must be an array');
-          }
-          renderLeaderboard(racers);
-          renderRacesPerDay(racers);
-          enableSorting('leaderboardTable');
-          enableSorting('racesPerDayTable');
-        })
-        .catch(err => {
-          console.error('Failed to load data:', err);
-          const msg = document.createElement('p');
-          msg.textContent = 'Error loading sample_data.json – check console.';
-          msg.style.color = '#ff5252';
-          msg.style.textAlign = 'center';
-          document.body.appendChild(msg);
-        });
-
-      /**
-       * Renders the main leaderboard table.
-       * Sorts by total races descending initially.
-       * Formats all numeric cells with commas.
-       */
-      function renderLeaderboard(data) {
-        data.sort((a, b) => b.racesPlayed - a.racesPlayed);
-        const tbody = document.querySelector('#leaderboardTable tbody');
-        tbody.innerHTML = '';
-        const fragment = document.createDocumentFragment();
-
-        data.forEach((r, idx) => {
-          const tr = document.createElement('tr');
-          // Format numbers with commas via toLocaleString()
-          const totalRaces   = r.racesPlayed.toLocaleString();
-          const avgWPM        = r.avgSpeed.toLocaleString();
-          const topWPM        = r.highestSpeed.toLocaleString();
-          const profileViews  = r.profileViews.toLocaleString();
-          const garageCars    = r.garageCars.toLocaleString();
-          const nitrosUsed    = r.nitrosUsed.toLocaleString();
-          const longestSess   = r.longestSession.toLocaleString();
-          const leagueTier    = r.leagueTier.toLocaleString();
-
-          tr.innerHTML = `
-            <td data-label="Rank">${idx + 1}</td>
-            <td data-label="Username">${r.username}</td>
-            <td data-label="Team Tag">${r.tag}</td>
-            <td data-label="Title">${r.title}</td>
-            <td data-label="Total Races">${totalRaces}</td>
-            <td data-label="Avg WPM">${avgWPM}</td>
-            <td data-label="Top WPM">${topWPM}</td>
-            <td data-label="Profile Views">${profileViews}</td>
-            <td data-label="Member Since">${r.joinDate}</td>
-            <td data-label="Garage Cars">${garageCars}</td>
-            <td data-label="Profile URL">
-              <a class="profile-link" href="${r.profileURL}" target="_blank">
-                View Profile
-              </a>
-            </td>
-            <td data-label="Membership">${r.membership}</td>
-            <td data-label="Nitros Used">${nitrosUsed}</td>
-            <td data-label="Longest Session">${longestSess}</td>
-            <td data-label="League Tier">${leagueTier}</td>
-          `.trim();
-
-          fragment.appendChild(tr);
-        });
-
-        tbody.appendChild(fragment);
-      }
-
-      /**
-       * Renders the Races Per Day table.
-       * Calculates daysActive & racesPerDay, sorts descending initially.
-       * Formats integers with commas and per-day with commas + 2 decimals.
-       */
-      function renderRacesPerDay(data) {
-        const list = data.map(r => {
-          const joinDate = new Date(r.joinDate + 'T00:00:00Z');
-          const now      = new Date();
-          let diffMs     = now - joinDate;
-          let daysActive = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-          if (daysActive < 1) daysActive = 1;
-
-          const perDayRaw = r.racesPlayed / daysActive;
-          // Format races/day with 2 decimal places
-          const perDayFmt = perDayRaw.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          });
-
-          return {
-            username:    r.username,
-            racesPlayed: r.racesPlayed,
-            daysActive:  daysActive,
-            racesPerDay: perDayRaw,
-            formattedRacesPlayed: r.racesPlayed.toLocaleString(),
-            formattedDaysActive:  daysActive.toLocaleString(),
-            formattedPerDay:      perDayFmt
-          };
-        });
-
-        // Sort by raw racesPerDay descending
-        list.sort((a, b) => b.racesPerDay - a.racesPerDay);
-
-        const tbody = document.querySelector('#racesPerDayTable tbody');
-        tbody.innerHTML = '';
-        const fragment = document.createDocumentFragment();
-
-        list.forEach((r, idx) => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td data-label="Rank">${idx + 1}</td>
-            <td data-label="Username">${r.username}</td>
-            <td data-label="Total Races">${r.formattedRacesPlayed}</td>
-            <td data-label="Days Active">${r.formattedDaysActive}</td>
-            <td data-label="Races / Day">${r.formattedPerDay}</td>
-          `.trim();
-          fragment.appendChild(tr);
-        });
-
-        tbody.appendChild(fragment);
-      }
-
-      /**
-       * Attaches click handlers to each <th> in the given table,
-       * toggles asc/desc classes, re-sorts rows, AND renumbers Rank.
-       */
-      function enableSorting(tableId) {
-        const table   = document.getElementById(tableId);
-        const headers = table.querySelectorAll('th');
-
-        headers.forEach((th, idx) => {
-          th.addEventListener('click', () => {
-            const tbody = table.querySelector('tbody');
-            const rows  = Array.from(tbody.querySelectorAll('tr'));
-            const asc   = !th.classList.contains('asc');
-
-            // Perform sort; strip commas and non-numeric chars for numeric compare
-            rows.sort((a, b) => {
-              const aText = a.children[idx].textContent.trim();
-              const bText = b.children[idx].textContent.trim();
-              const aNum  = parseFloat(aText.replace(/,/g, '').replace(/[^0-9.\-]/g, ''));
-              const bNum  = parseFloat(bText.replace(/,/g, '').replace(/[^0-9.\-]/g, ''));
-
-              if (!isNaN(aNum) && !isNaN(bNum)) {
-                return asc ? aNum - bNum : bNum - aNum;
-              }
-              return asc
-                ? aText.localeCompare(bText)
-                : bText.localeCompare(aText);
-            });
-
-            // Reset and set sort indicators
-            headers.forEach(h => h.classList.remove('asc','desc'));
-            th.classList.add(asc ? 'asc' : 'desc');
-
-            // Renumber the Rank column based on new order
-            rows.forEach((row, newIndex) => {
-              row.children[0].textContent = newIndex + 1;
-            });
-
-            // Re-attach sorted rows
-            tbody.innerHTML = '';
-            rows.forEach(r => tbody.appendChild(r));
-          });
-        });
-      }
-
-    }); // end DOMContentLoaded
+    }
+  });
   </script>
 </body>
 </html>
