@@ -1,70 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!--
-    Nitro Type Top 1000 Racers (Full, unstreamlined, >1100 lines)
-    =================================================================
-    PURPOSE
-    -------
-    A fully integrated, explicit, and auditable leaderboard page for Nitro Type:
-    - Preserves your original styling and structure
-    - Renders: Leaderboard, Races Per Day, 24-Hour Changes, and Event (seasonal)
-    - Robust JSON handling (preferred {updatedAt, racers} and legacy arrays)
-    - Click-to-sort tables with asc/desc indicators and rank renumbering
-    - Security-minded: HTML escaping, numeric safeguards, defensive parsing
-
-    YOUR REQUESTS IMPLEMENTED
-    -------------------------
-    1) Static header text:
-       - "Last updated: 8PM Daily"
-
-    2) 24-Hour Changes:
-       - Exclude Avg WPM and League Tier from tracking and display.
-       - Filter out any entry where Δ Total Races >= 2600.
-       - Exclude any racer with current total races (r.racesPlayed) == 0 from the 24-hour list.
-
-    3) Event leaderboard:
-       - Dropdown moved into the Event tab, uses theme colors, and is functional.
-       - For "Back 2 School 2025", reads:
-         Back2SchoolEvent2025_before.json  (the "before" / baseline snapshot)
-         Back2SchoolEvent2025_after.json   (the "after"  / current snapshot)
-       - Excludes Avg WPM and League Tier from tracking and display.
-       - Excludes any racer with current total races == 0 from the event leaderboard.
-       - Shows "Coming Soon" if the BEFORE file is empty or missing (no racers).
-
-    4) Main Leaderboard + Races Per Day:
-       - Preserved columns and behavior (username links, formatting, sorting).
-       - Not modified to exclude total races 0 (your request was only for daily/event).
-
-    5) Expandability:
-       - Add more <option> elements in the Event tab dropdown with:
-         data-before="YourEvent_before.json"
-         data-after="YourEvent_after.json"
-       - The code auto-fetches these and re-renders when selected.
-
-    FILES TO HOST BESIDE THIS HTML
-    ------------------------------
-    - sample_data.json
-    - sample_data_prev.json
-    - Back2SchoolEvent2025_before.json
-    - Back2SchoolEvent2025_after.json
-
-    CODE ORGANIZATION
-    -----------------
-    - CSS: Theme variables, layout, table styles, responsive rules, and dropdown styles
-    - HTML: Header, tabs, each section, and the event dropdown control block
-    - JS:
-      • Tab switching
-      • Fetch helpers + payload normalization
-      • Renderers: Leaderboard, Races Per Day, 24-Hour Changes (filtered), Event (filtered)
-      • Sorting per table
-      • Utilities: safeNumber, formatDeltaInt, escapeHTML, escapeAttr, parseLocalDate
-
-    NOTES
-    -----
-    - Extensive comments are included for clarity and to meet the 1000+ lines request
-    - All logic is explicit and auditable; no hidden side effects
-  -->
 
   <meta charset="UTF-8" />
   <title>Nitro Type Top 1000 Racers</title>
@@ -981,3 +917,4 @@
 
 </body>
 </html>
+
