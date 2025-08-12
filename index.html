@@ -825,19 +825,12 @@
         return new Date();
       }
 
-      // End of DOMContentLoaded
-    });
+    // End of DOMContentLoaded
+  });
+</script>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const script = document.createElement('script');
-      script.src = 'scripts/removeGlitchedRacers.js';
-      document.body.appendChild(script);
-    });
-  </script>
+<-- Load removeGlitchedRacers.js after DOM is ready -->
+<script src="scripts/removeGlitchedRacers.js"></script>
+
 </body>
 </html>
-
-
-
-
