@@ -827,9 +827,17 @@
 
       // End of DOMContentLoaded
     });
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const script = document.createElement('script');
+      script.src = 'scripts/removeGlitchedRacers.js';
+      document.body.appendChild(script);
+    });
   </script>
-  <script src="scripts/removeGlitchedRacers.js"></script>
 </body>
 </html>
+
+
 
 
