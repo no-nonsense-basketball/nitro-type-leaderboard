@@ -3,28 +3,21 @@
 <head>
   <!--
     Nitro Type Top 1000 Racers
-    - Adds 24-hour Δ filter (exclude Δ Total Races >= 2600)
-    - Adds Event leaderboard (diffs between event.json and prev_event.json)
-      excluding Avg WPM and League Tier from tracking.
-    - Shows "Coming Soon" in Event tab if prev_event.json is empty/missing.
-
-    Notes for GitHub Pages:
-    - Host this file in the repo root or docs/.
-    - Place:
-        sample_data.json
-        sample_data_prev.json
-        event.json
-        prev_event.json
-      alongside this file.
-
-    Data Shapes:
-    - Preferred:
-      {
-        "updatedAt": "2025-08-10T20:00:00-05:00",
-        "racers": [ { ... } ]
-      }
-    - Legacy:
-      [ { ... } ]
+    - Full, unstreamlined index.html
+    - Preserves the original structure and styling
+    - Adds a theme-colored dropdown with a single option: "Back 2 School 2025"
+    - Removes cadence note; header shows "Last updated: 8PM Daily"
+    - 24-Hour Changes:
+        • Excludes Avg WPM and League Tier from columns and tracking
+        • Filters out any racer with Δ Total Races >= 2600
+    - Event Leaderboard:
+        • Compares event.json vs prev_event.json
+        • Excludes Avg WPM and League Tier from columns and tracking
+        • Shows "Coming Soon" if prev_event.json is empty/missing
+    - Robust:
+        • Works with preferred object payloads and legacy array payloads
+        • Safe number handling, HTML escaping, and responsive layout
+        • Click-to-sort with rank renumbering
   -->
 
   <meta charset="UTF-8" />
@@ -32,7 +25,8 @@
 
   <style>
     /* ===================================================
-       Root Color & Typography Variables (Preserved)
+       Root Color & Typography Variables
+       - Defines theme colors, typography, and transitions
        =================================================== */
     :root {
       --bg-color:        #2a2a2a;  /* dark background */
@@ -51,7 +45,8 @@
     }
 
     /* ===================================================
-       Global Reset & Base Styles (Preserved)
+       Global Reset & Base Styles
+       - Normalize box model, margins, and base text
        =================================================== */
     *, *::before, *::after {
       box-sizing: border-box;
@@ -75,12 +70,14 @@
       text-decoration: none;
       transition: color var(--transition);
     }
+
     a:hover {
       color: var(--accent-light);
     }
 
     /* ===================================================
-       Header / Branding Styles (Preserved)
+       Header / Branding Styles
+       - Centered branding, subtle shadow, theme background
        =================================================== */
     header {
       text-align: center;
@@ -108,7 +105,56 @@
     }
 
     /* ===================================================
-       Tab Navigation Styles (Preserved; + 24-hour + Event)
+       Dropdown Styles (Theme Colors)
+       - Matches header/tab aesthetic
+       =================================================== */
+    .dropdown-wrap {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    select#eventSelector {
+      background: var(--header-bg);
+      color: var(--text-light);
+      border: 1px solid var(--accent);
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: var(--font-size-md);
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      box-shadow: 0 0 0 rgba(0,0,0,0);
+      appearance: none;          /* Hide native arrow in some browsers */
+      -webkit-appearance: none;  /* Safari */
+      -moz-appearance: none;     /* Firefox */
+      background-image:
+        linear-gradient(45deg, transparent 50%, var(--text-light) 50%),
+        linear-gradient(135deg, var(--text-light) 50%, transparent 50%),
+        linear-gradient(to right, var(--header-bg), var(--header-bg));
+      background-position:
+        calc(100% - 20px) calc(50% - 5px),
+        calc(100% - 15px) calc(50% - 5px),
+        calc(100% - 2.5em) 0.5em;
+      background-size:
+        5px 5px,
+        5px 5px,
+        1px 1.8em;
+      background-repeat: no-repeat;
+      cursor: pointer;
+    }
+
+    select#eventSelector:hover {
+      border-color: var(--accent-light);
+    }
+
+    select#eventSelector:focus {
+      box-shadow: 0 0 0 2px rgba(211,47,47,0.3);
+      border-color: var(--accent-light);
+    }
+
+    /* ===================================================
+       Tab Navigation Styles
+       - Horizontal tabs with active/hover states
        =================================================== */
     .tabs {
       display: flex;
@@ -140,7 +186,8 @@
     }
 
     /* ===================================================
-       Table Container and Table Styles (Preserved)
+       Table Container and Table Styles
+       - Panelized sections for each tab view
        =================================================== */
     .table-container {
       display: none;
@@ -150,6 +197,7 @@
       margin-bottom: 40px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.5);
     }
+
     .table-container.active {
       display: block;
     }
@@ -193,6 +241,7 @@
     tbody tr:nth-child(odd) {
       background: #3a3a3a;
     }
+
     tbody tr:nth-child(even) {
       background: #343434;
     }
@@ -202,29 +251,35 @@
       word-break: break-all;
       font-size: var(--font-size-sm);
     }
+
     td a.profile-link:hover {
       color: var(--accent-light);
     }
 
     /* ===================================================
-       Responsive Styles for Narrow Viewports (Preserved)
+       Responsive Styles for Narrow Viewports
+       - Converts tables to stacked cards
        =================================================== */
     @media (max-width: 900px) {
       table, thead, tbody, th, td, tr {
         display: block;
       }
+
       thead {
         display: none;
       }
+
       tr {
         margin-bottom: 15px;
       }
+
       td {
         display: flex;
         justify-content: space-between;
         align-items: center;
         padding: 8px 12px;
       }
+
       td::before {
         content: attr(data-label);
         flex: 1 1 40%;
@@ -232,6 +287,7 @@
         font-weight: bold;
         text-transform: uppercase;
       }
+
       td span, td a, td div {
         flex: 1 1 60%;
         text-align: right;
@@ -239,7 +295,8 @@
     }
 
     /* ===================================================
-       Utility & Helper Classes (Preserved)
+       Utility & Helper Classes
+       - Small helpers for visibility and alignment
        =================================================== */
     .hidden {
       display: none !important;
@@ -249,9 +306,6 @@
       text-align: center;
     }
 
-    /* ===================================================
-       Additional Minor UI Helpers (non-functional, for clarity)
-       =================================================== */
     .note {
       color: #e8e8e8;
       font-size: 0.9rem;
@@ -268,28 +322,41 @@
       font-size: 0.75rem;
     }
 
-    /* End of CSS. All original styles preserved and used. */
+    /* End of CSS */
   </style>
 </head>
 
 <body>
   <!-- ===================================================
-       Header (Preserved content; Last updated text populated by JS)
+       Header (Last updated text is static: 8PM Daily)
+       - Includes maker credit, contact, and dropdown
        =================================================== -->
   <header>
     <h1>Nitro Type Top 1000 Racers</h1>
+
     <p>
       made by
       <a href="https://www.youtube.com/@InternetTyper" target="_blank">
         @InternetTyper on YouTube
       </a>
     </p>
-    <p id="lastUpdated">Last updated: <span></span></p>
+
+    <!-- Static update cadence text per request -->
+    <p id="lastUpdated">Last updated: 8PM Daily</p>
+
     <p>Contact: azrael.for.god on Discord</p>
+
+    <!-- Theme-colored dropdown with single option -->
+    <div class="dropdown-wrap">
+      <select id="eventSelector" aria-label="Event Selector">
+        <option value="b2s2025">Back 2 School 2025</option>
+      </select>
+    </div>
   </header>
 
   <!-- ===================================================
-       Tab Navigation (Added Event; set 24-Hour Changes active by default)
+       Tab Navigation
+       - Leaderboard, Races Per Day, 24-Hour Changes, Event
        =================================================== -->
   <div class="tabs">
     <div class="tab" data-target="leaderboardSection">Leaderboard</div>
@@ -298,13 +365,9 @@
     <div class="tab" data-target="eventSection">Event</div>
   </div>
 
-  <!-- Optional note explaining data cadence (non-blocking UI text) -->
-  <div class="note">
-    Data snapshots are intended for 8:00 PM America/Chicago daily. The "Last updated" time comes directly from the JSON snapshot when available.
-  </div>
-
   <!-- ===================================================
-       Leaderboard Section (Preserved Columns)
+       Leaderboard Section
+       - Full stat view
        =================================================== -->
   <section id="leaderboardSection" class="table-container">
     <table id="leaderboardTable">
@@ -328,13 +391,14 @@
         </tr>
       </thead>
       <tbody>
-        <!-- Rows injected by JavaScript (preserved approach) -->
+        <!-- Rows injected by JavaScript -->
       </tbody>
     </table>
   </section>
 
   <!-- ===================================================
-       Races Per Day Section (Preserved Columns)
+       Races Per Day Section
+       - Derived metrics: days active and races per day
        =================================================== -->
   <section id="racesPerDaySection" class="table-container">
     <table id="racesPerDayTable">
@@ -348,15 +412,15 @@
         </tr>
       </thead>
       <tbody>
-        <!-- Rows injected by JavaScript (preserved approach) -->
+        <!-- Rows injected by JavaScript -->
       </tbody>
     </table>
   </section>
 
   <!-- ===================================================
        24-Hour Changes Section
-       - Deltas for numeric stats excluding non-numeric fields.
-       - Filters out Δ Total Races >= 2600.
+       - Excludes Avg WPM and League Tier per request
+       - Filters out Δ Total Races >= 2600
        =================================================== -->
   <section id="changes24Section" class="table-container active">
     <table id="changes24Table">
@@ -365,13 +429,11 @@
           <th>Rank</th>
           <th>Username</th>
           <th class="desc">Δ Total Races</th>
-          <th>Δ Avg WPM</th>
           <th>Δ Top WPM</th>
           <th>Δ Profile Views</th>
           <th>Δ Garage Cars</th>
           <th>Δ Nitros Used</th>
           <th>Δ Longest Session</th>
-          <th>Δ League Tier</th>
         </tr>
       </thead>
       <tbody>
@@ -382,9 +444,8 @@
 
   <!-- ===================================================
        Event Section
-       - Deltas for event.json vs prev_event.json.
-       - Excludes Δ Avg WPM and Δ League Tier from tracking.
-       - Shows "Coming Soon" if prev_event.json is empty/missing.
+       - Excludes Avg WPM and League Tier
+       - Shows "Coming Soon" if prev_event.json is empty/missing
        =================================================== -->
   <section id="eventSection" class="table-container">
     <div id="eventComingSoon" class="note hidden">Coming Soon</div>
@@ -409,40 +470,53 @@
 
   <!-- ===================================================
        JavaScript
-     =================================================== -->
+       - Tab switching
+       - Fetch and normalization
+       - Rendering and sorting
+       - Utilities
+       =================================================== -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       // ===================================================
-      // Constants
+      // Constants & Settings
+      // - MAX_24H_RACES sets the exclusion threshold for Δ Total Races
       // ===================================================
-      const MAX_24H_RACES = 2600; // exclude >= this value
+      const MAX_24H_RACES = 2600; // exclude rows where delta >= this value
 
       // ===================================================
-      // Populate last-updated timestamp (now a real value from JSON if present)
+      // Tab switching setup
+      // - Clicking a tab shows its associated table section
+      // - Uses data-target to find the section by ID
       // ===================================================
-      const lastUpdatedSpan = document.querySelector('#lastUpdated span');
-      if (lastUpdatedSpan) {
-        lastUpdatedSpan.textContent = 'Loading...';
-      }
-
-      // ===================================================
-      // Tab switching setup (Preserved)
-      // ===================================================
-      const tabs     = document.querySelectorAll('.tabs .tab');
+      const tabs = document.querySelectorAll('.tabs .tab');
       const sections = document.querySelectorAll('.table-container');
+
       tabs.forEach(tab => {
         tab.addEventListener('click', () => {
           tabs.forEach(t => t.classList.remove('active'));
           sections.forEach(s => s.classList.remove('active'));
           tab.classList.add('active');
-          document.getElementById(tab.dataset.target).classList.add('active');
+          const targetId = tab.dataset.target;
+          const section = document.getElementById(targetId);
+          if (section) section.classList.add('active');
         });
       });
 
+      // Optional: placeholder handler if we later expand the dropdown
+      const eventSelector = document.getElementById('eventSelector');
+      if (eventSelector) {
+        eventSelector.addEventListener('change', (e) => {
+          // For now: no switching behavior since only one option exists
+          // Future-ready: could trigger re-fetching different event files
+          // console.log('Selected event:', e.target.value);
+        });
+      }
+
       // ===================================================
       // Data Fetch & Render Tables
-      //   - Fetches current/previous snapshots for main & event.
-      //   - Accepts both legacy array and new object payloads.
+      // - Fetches current/previous snapshots for main & event
+      // - Accepts both legacy array and new object payloads
+      // - Renders all tables and enables sorting
       // ===================================================
       Promise.all([
         fetchJSON('sample_data.json'),
@@ -451,23 +525,17 @@
         fetchJSON('prev_event.json', { allow404Empty: true })
       ])
       .then(([curData, prevData, curEventData, prevEventData]) => {
-        const cur  = normalizeData(curData);
+        // Normalize payloads to consistent { updatedAt, racers } shape
+        const cur = normalizeData(curData);
         const prev = normalizeData(prevData);
-        const curEvent  = normalizeData(curEventData);
+        const curEvent = normalizeData(curEventData);
         const prevEvent = normalizeData(prevEventData);
 
-        // Update Last Updated from JSON updatedAt if present, else fallback
-        if (lastUpdatedSpan) {
-          const dateToShow = cur.updatedAt
-            ? new Date(cur.updatedAt)
-            : new Date(); // fallback to "now" if no updatedAt
-          lastUpdatedSpan.textContent = dateToShow.toLocaleString();
-        }
-
-        // Build previous maps by username (case-insensitive)
+        // Build quick lookup maps keyed by lowercase username
         const prevMap = new Map(
           (prev.racers || []).map(r => [String(r.username || '').toLowerCase(), r])
         );
+
         const prevEventMap = new Map(
           (prevEvent.racers || []).map(r => [String(r.username || '').toLowerCase(), r])
         );
@@ -476,14 +544,16 @@
         renderLeaderboard(cur.racers);
         renderRacesPerDay(cur.racers);
 
-        // Render 24-hour changes with filtering
+        // Render 24-hour changes (with filtering and excluded fields)
         renderChanges24(cur.racers, prevMap);
 
-        // Render Event leaderboard or show "Coming Soon"
+        // Render Event or show "Coming Soon"
         const eventComingSoon = document.getElementById('eventComingSoon');
         const eventTable = document.getElementById('eventTable');
-        if (!prevEvent.racers || prevEvent.racers.length === 0) {
-          // Show "Coming Soon"
+
+        const prevHasData = Array.isArray(prevEvent.racers) && prevEvent.racers.length > 0;
+
+        if (!prevHasData) {
           if (eventComingSoon) eventComingSoon.classList.remove('hidden');
           if (eventTable) eventTable.classList.add('hidden');
         } else {
@@ -499,10 +569,8 @@
         enableSorting('eventTable');
       })
       .catch(err => {
-        console.error('Failed to load data:', err);
-        if (lastUpdatedSpan) {
-          lastUpdatedSpan.textContent = new Date().toLocaleString();
-        }
+        // Generic error message appended to the body
+        console.error('Failed to load data files:', err);
         const msg = document.createElement('p');
         msg.textContent = 'Error loading data files – check console.';
         msg.style.color = '#ff5252';
@@ -511,10 +579,13 @@
       });
 
       // ===================================================
-      // JSON Fetch helper with optional empty fallback
+      // JSON Fetch Helper
+      // - allow404Empty: returns an empty { racers: [] } for 404/204
+      // - Robust against transient fetch errors
       // ===================================================
       function fetchJSON(url, opts = {}) {
         const { allow404Empty = false } = opts;
+
         return fetch(url)
           .then(r => {
             if (!r.ok) {
@@ -531,26 +602,28 @@
           });
       }
 
-      /**
-       * Normalize data payloads so downstream logic can rely on a consistent shape.
-       * Accepts array (legacy) or object { updatedAt, racers } (preferred).
-       */
+      // ===================================================
+      // normalizeData(payload)
+      // - Accepts array (legacy) or object { updatedAt, racers } (preferred)
+      // - Returns a consistent shape for downstream logic
+      // ===================================================
       function normalizeData(payload) {
         if (Array.isArray(payload)) {
-          // Legacy mode: no updatedAt; racers = payload
+          // Legacy mode: array of racers, no updatedAt
           return {
             updatedAt: null,
             racers: payload
           };
         }
+
         if (payload && Array.isArray(payload.racers)) {
-          // Preferred mode
           return {
             updatedAt: payload.updatedAt || null,
             racers: payload.racers
           };
         }
-        // Fallback empty
+
+        // Fallback to empty
         return {
           updatedAt: null,
           racers: []
@@ -558,10 +631,17 @@
       }
 
       // ===================================================
-      // Renders the main leaderboard table. (Preserved)
+      // renderLeaderboard(data)
+      // - Renders the main leaderboard table
+      // - Sorted by total races descending initially
+      // - Formats numbers with commas
       // ===================================================
       function renderLeaderboard(data) {
-        const sorted = [...data].sort((a, b) => b.racesPlayed - a.racesPlayed);
+        // Defensive copy to avoid mutating the original
+        const sorted = [...data].sort((a, b) => {
+          return safeNumber(b.racesPlayed) - safeNumber(a.racesPlayed);
+        });
+
         const tbody = document.querySelector('#leaderboardTable tbody');
         tbody.innerHTML = '';
         const fragment = document.createDocumentFragment();
@@ -578,10 +658,10 @@
           const longestSess  = safeNumber(r.longestSession).toLocaleString();
           const leagueTier   = safeNumber(r.leagueTier).toLocaleString();
 
-          const username = r.username || '';
-          const teamTag  = r.tag || '';
-          const title    = r.title || '';
-          const joinDate = r.joinDate || '';
+          const username   = r.username || '';
+          const teamTag    = r.tag || '';
+          const title      = r.title || '';
+          const joinDate   = r.joinDate || '';
           const membership = r.membership || '';
           const profileURL = r.profileURL || '#';
 
@@ -616,34 +696,43 @@
       }
 
       // ===================================================
-      // Renders the Races Per Day table. (Preserved)
+      // renderRacesPerDay(data)
+      // - Calculates days active and races per day
+      // - Sorted descending by races/day
+      // - Formats numbers appropriately
       // ===================================================
       function renderRacesPerDay(data) {
-        const list = data.map(r => {
-          const joinDate = parseLocalDate(r.joinDate);
-          const now = new Date();
-          let diffMs = now - joinDate;
-          let daysActive = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-          if (!Number.isFinite(daysActive) || daysActive < 1) daysActive = 1;
+        const now = new Date();
 
-          const perDayRaw = safeNumber(r.racesPlayed) / daysActive;
+        const list = data.map(r => {
+          // Parse the join date and calculate days active
+          const joinDate = parseLocalDate(r.joinDate);
+          const diffMs = now - joinDate;
+          let daysActive = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+          if (!Number.isFinite(daysActive) || daysActive < 1) {
+            daysActive = 1; // avoid divide-by-zero and negatives
+          }
+
+          const totalRaces = safeNumber(r.racesPlayed);
+          const perDayRaw = totalRaces / daysActive;
           const perDayFmt = perDayRaw.toLocaleString(undefined, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
           });
 
           return {
-            username:    r.username || '',
-            profileURL:  r.profileURL || '#',
-            racesPlayed: safeNumber(r.racesPlayed),
-            daysActive:  daysActive,
-            racesPerDay: perDayRaw,
-            formattedRacesPlayed: safeNumber(r.racesPlayed).toLocaleString(),
-            formattedDaysActive:  daysActive.toLocaleString(),
-            formattedPerDay:      perDayFmt
+            username:                r.username || '',
+            profileURL:              r.profileURL || '#',
+            racesPlayed:             totalRaces,
+            daysActive:              daysActive,
+            racesPerDay:             perDayRaw,
+            formattedRacesPlayed:    totalRaces.toLocaleString(),
+            formattedDaysActive:     daysActive.toLocaleString(),
+            formattedPerDay:         perDayFmt
           };
         });
 
+        // Sort by raw racesPerDay descending
         list.sort((a, b) => b.racesPerDay - a.racesPerDay);
 
         const tbody = document.querySelector('#racesPerDayTable tbody');
@@ -668,40 +757,41 @@
       }
 
       // ===================================================
-      // Renders the 24-Hour Changes table. (Filtered)
-      // - Filters out any Δ Total Races >= MAX_24H_RACES.
+      // renderChanges24(currentRacers, prevMap)
+      // - Computes diffs vs previous snapshot
+      // - Excludes Avg WPM and League Tier from both display and tracking
+      // - Filters out entries where Δ Total Races >= MAX_24H_RACES
+      // - Sorted by Δ Total Races descending
       // ===================================================
       function renderChanges24(currentRacers, prevMap) {
-        const diffs = currentRacers.map(r => {
-          const key = String(r.username || '').toLowerCase();
-          const p = prevMap.get(key) || {};
+        const diffs = (currentRacers || [])
+          .map(r => {
+            const key = String(r.username || '').toLowerCase();
+            const p = prevMap.get(key) || {};
 
-          const dRaces = safeNumber(r.racesPlayed) - safeNumber(p.racesPlayed);
-          const dAvg   = safeNumber(r.avgSpeed)    - safeNumber(p.avgSpeed);
-          const dTop   = safeNumber(r.highestSpeed)- safeNumber(p.highestSpeed);
-          const dViews = safeNumber(r.profileViews)- safeNumber(p.profileViews);
-          const dCars  = safeNumber(r.garageCars)  - safeNumber(p.garageCars);
-          const dNitro = safeNumber(r.nitrosUsed)  - safeNumber(p.nitrosUsed);
-          const dSess  = safeNumber(r.longestSession) - safeNumber(p.longestSession);
-          const dTier  = safeNumber(r.leagueTier)  - safeNumber(p.leagueTier);
+            // Only track the included numeric fields
+            const dRaces = safeNumber(r.racesPlayed)   - safeNumber(p.racesPlayed);
+            const dTop   = safeNumber(r.highestSpeed)  - safeNumber(p.highestSpeed);
+            const dViews = safeNumber(r.profileViews)  - safeNumber(p.profileViews);
+            const dCars  = safeNumber(r.garageCars)    - safeNumber(p.garageCars);
+            const dNitro = safeNumber(r.nitrosUsed)    - safeNumber(p.nitrosUsed);
+            const dSess  = safeNumber(r.longestSession) - safeNumber(p.longestSession);
 
-          return {
-            username:   r.username || '',
-            profileURL: r.profileURL || '#',
-            dRaces,
-            dAvg,
-            dTop,
-            dViews,
-            dCars,
-            dNitro,
-            dSess,
-            dTier
-          };
-        })
-        // Filter: exclude Δ Total Races >= MAX_24H_RACES
-        .filter(d => d.dRaces < MAX_24H_RACES);
+            return {
+              username:   r.username || '',
+              profileURL: r.profileURL || '#',
+              dRaces,
+              dTop,
+              dViews,
+              dCars,
+              dNitro,
+              dSess
+            };
+          })
+          // Filter out anomalous Δ Total Races (>= threshold)
+          .filter(d => d.dRaces < MAX_24H_RACES);
 
-        // Sort by Δ Total Races desc as default
+        // Sort by Δ Total Races desc by default
         diffs.sort((a, b) => b.dRaces - a.dRaces);
 
         const tbody = document.querySelector('#changes24Table tbody');
@@ -716,13 +806,11 @@
               <a href="${escapeAttr(d.profileURL)}" target="_blank">${escapeHTML(d.username)}</a>
             </td>
             <td data-label="Δ Total Races">${formatDeltaInt(d.dRaces)}</td>
-            <td data-label="Δ Avg WPM">${formatDeltaFloat(d.dAvg, 2)}</td>
             <td data-label="Δ Top WPM">${formatDeltaInt(d.dTop)}</td>
             <td data-label="Δ Profile Views">${formatDeltaInt(d.dViews)}</td>
             <td data-label="Δ Garage Cars">${formatDeltaInt(d.dCars)}</td>
             <td data-label="Δ Nitros Used">${formatDeltaInt(d.dNitro)}</td>
             <td data-label="Δ Longest Session">${formatDeltaInt(d.dSess)}</td>
-            <td data-label="Δ League Tier">${formatDeltaInt(d.dTier)}</td>
           `.trim();
           fragment.appendChild(tr);
         });
@@ -731,34 +819,38 @@
       }
 
       // ===================================================
-      // Renders the Event leaderboard (diffs).
-      // - Excludes Δ Avg WPM and Δ League Tier.
+      // renderEventChanges(currentRacers, prevMap)
+      // - Computes diffs between event.json and prev_event.json
+      // - Excludes Avg WPM and League Tier from both display and tracking
+      // - Sorted by Δ Total Races descending
       // ===================================================
       function renderEventChanges(currentRacers, prevMap) {
-        const diffs = (currentRacers || []).map(r => {
-          const key = String(r.username || '').toLowerCase();
-          const p = prevMap.get(key) || {};
+        const diffs = (currentRacers || [])
+          .map(r => {
+            const key = String(r.username || '').toLowerCase();
+            const p = prevMap.get(key) || {};
 
-          const dRaces = safeNumber(r.racesPlayed) - safeNumber(p.racesPlayed);
-          const dTop   = safeNumber(r.highestSpeed)- safeNumber(p.highestSpeed);
-          const dViews = safeNumber(r.profileViews)- safeNumber(p.profileViews);
-          const dCars  = safeNumber(r.garageCars)  - safeNumber(p.garageCars);
-          const dNitro = safeNumber(r.nitrosUsed)  - safeNumber(p.nitrosUsed);
-          const dSess  = safeNumber(r.longestSession) - safeNumber(p.longestSession);
+            // Track included numeric fields (no Avg WPM, no League Tier)
+            const dRaces = safeNumber(r.racesPlayed)   - safeNumber(p.racesPlayed);
+            const dTop   = safeNumber(r.highestSpeed)  - safeNumber(p.highestSpeed);
+            const dViews = safeNumber(r.profileViews)  - safeNumber(p.profileViews);
+            const dCars  = safeNumber(r.garageCars)    - safeNumber(p.garageCars);
+            const dNitro = safeNumber(r.nitrosUsed)    - safeNumber(p.nitrosUsed);
+            const dSess  = safeNumber(r.longestSession) - safeNumber(p.longestSession);
 
-          return {
-            username:   r.username || '',
-            profileURL: r.profileURL || '#',
-            dRaces,
-            dTop,
-            dViews,
-            dCars,
-            dNitro,
-            dSess
-          };
-        });
+            return {
+              username:   r.username || '',
+              profileURL: r.profileURL || '#',
+              dRaces,
+              dTop,
+              dViews,
+              dCars,
+              dNitro,
+              dSess
+            };
+          });
 
-        // Default sort by Δ Total Races desc
+        // Sort by Δ Total Races desc by default
         diffs.sort((a, b) => b.dRaces - a.dRaces);
 
         const tbody = document.querySelector('#eventTable tbody');
@@ -786,45 +878,56 @@
       }
 
       // ===================================================
-      // Sorting: click headers to sort and renumber Rank.
+      // enableSorting(tableId)
+      // - Attaches handlers to each header cell
+      // - Toggles asc/desc classes
+      // - Re-sorts rows and renumbers the Rank column
       // ===================================================
       function enableSorting(tableId) {
-        const table   = document.getElementById(tableId);
+        const table = document.getElementById(tableId);
         if (!table) return;
+
         const headers = table.querySelectorAll('th');
 
         headers.forEach((th, idx) => {
           th.addEventListener('click', () => {
             const tbody = table.querySelector('tbody');
-            const rows  = Array.from(tbody.querySelectorAll('tr'));
-            const asc   = !th.classList.contains('asc');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
 
+            // Determine new direction based on current class
+            const asc = !th.classList.contains('asc');
+
+            // Sort rows based on the column's text or numeric value
             rows.sort((a, b) => {
               const aText = a.children[idx]?.textContent?.trim() ?? '';
               const bText = b.children[idx]?.textContent?.trim() ?? '';
-              const aNum  = parseFloat(aText.replace(/,/g, '').replace(/[^0-9.\-]/g, ''));
-              const bNum  = parseFloat(bText.replace(/,/g, '').replace(/[^0-9.\-]/g, ''));
+
+              // Extract numbers (handles commas and signs)
+              const aNum = parseFloat(aText.replace(/,/g, '').replace(/[^0-9.\-]/g, ''));
+              const bNum = parseFloat(bText.replace(/,/g, '').replace(/[^0-9.\-]/g, ''));
 
               if (!isNaN(aNum) && !isNaN(bNum)) {
                 return asc ? aNum - bNum : bNum - aNum;
               }
-              return asc
-                ? aText.localeCompare(bText)
-                : bText.localeCompare(aText);
+
+              // Fallback to string comparison
+              return asc ? aText.localeCompare(bText) : bText.localeCompare(aText);
             });
 
-            // Reset and set sort indicators
-            headers.forEach(h => h.classList.remove('asc','desc'));
+            // Reset all header sort indicators
+            headers.forEach(h => h.classList.remove('asc', 'desc'));
+
+            // Set the current header's indicator
             th.classList.add(asc ? 'asc' : 'desc');
 
-            // Renumber the Rank column based on new order
+            // Renumber the Rank column based on the new order
             rows.forEach((row, newIndex) => {
               if (row.children[0]) {
                 row.children[0].textContent = newIndex + 1;
               }
             });
 
-            // Re-attach sorted rows
+            // Re-insert the sorted rows
             tbody.innerHTML = '';
             rows.forEach(r => tbody.appendChild(r));
           });
@@ -832,7 +935,12 @@
       }
 
       // ===================================================
-      // Helper Utilities (Safe formatting, escaping, dates)
+      // Helper Utilities
+      // - safeNumber: ensures finite numeric values
+      // - formatDeltaInt: prefixes positive values with +
+      // - formatDeltaFloat: signed formatting with fixed decimals (kept for reuse)
+      // - escapeHTML / escapeAttr: basic XSS-safe output
+      // - parseLocalDate: robust local parsing for YYYY-MM-DD and general dates
       // ===================================================
 
       function safeNumber(x) {
@@ -870,13 +978,19 @@
 
       function parseLocalDate(input) {
         const raw = String(input || '').trim();
+
+        // If it's in YYYY-MM-DD format, parse as a local date (midnight)
         if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
           const [y, m, d] = raw.split('-').map(n => parseInt(n, 10));
           const dt = new Date(y, (m - 1), d, 0, 0, 0, 0);
           if (!isNaN(dt.getTime())) return dt;
         }
+
+        // Fallback to general Date parsing
         const dt2 = new Date(raw);
         if (!isNaN(dt2.getTime())) return dt2;
+
+        // Last-resort fallback to "now"
         return new Date();
       }
 
