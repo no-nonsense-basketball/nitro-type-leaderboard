@@ -3,27 +3,28 @@
 <head>
   <!--
     Nitro Type Top 1000 Racers
-    Full, unstreamlined index.html that preserves your original structure and styling,
-    adds a true "Last updated" timestamp sourced from JSON, introduces a 24-Hour Changes
-    tab that computes deltas for all metrics (except "Member Since" and non-numeric fields),
-    makes usernames clickable, and keeps the "Profile URL" link.
+    - Adds 24-hour Δ filter (exclude Δ Total Races >= 2600)
+    - Adds Event leaderboard (diffs between event.json and prev_event.json)
+      excluding Avg WPM and League Tier from tracking.
+    - Shows "Coming Soon" in Event tab if prev_event.json is empty/missing.
 
     Notes for GitHub Pages:
-    - Host this file in the repo root or docs/ (configured as Pages).
-    - Place sample_data.json and sample_data_prev.json adjacent to this file.
-    - The updater (external workflow/script) should write sample_data.json as:
-        {
-          "updatedAt": "2025-08-10T20:00:00-05:00",
-          "racers": [ ... ]
-        }
-      and roll the prior snapshot to sample_data_prev.json with the same shape.
+    - Host this file in the repo root or docs/.
+    - Place:
+        sample_data.json
+        sample_data_prev.json
+        event.json
+        prev_event.json
+      alongside this file.
 
-    - This front-end remains robust if sample_data.json is an array (legacy mode).
-      In that case, it will still render and fallback lastUpdated to the client time.
-
-    You asked for the full script, not streamlined, and over 500 lines.
-    This file keeps your original CSS and JS structure, expands with clear comments,
-    and adds the 24-hour delta view without removing your existing logic.
+    Data Shapes:
+    - Preferred:
+      {
+        "updatedAt": "2025-08-10T20:00:00-05:00",
+        "racers": [ { ... } ]
+      }
+    - Legacy:
+      [ { ... } ]
   -->
 
   <meta charset="UTF-8" />
@@ -107,7 +108,7 @@
     }
 
     /* ===================================================
-       Tab Navigation Styles (Preserved; + 24-hour tab added in HTML)
+       Tab Navigation Styles (Preserved; + 24-hour + Event)
        =================================================== */
     .tabs {
       display: flex;
@@ -186,6 +187,7 @@
       padding: 10px 8px;
       text-align: center;
       border-bottom: 1px solid #444;
+      vertical-align: middle;
     }
 
     tbody tr:nth-child(odd) {
@@ -287,12 +289,13 @@
   </header>
 
   <!-- ===================================================
-       Tab Navigation (Preserved + Added "24-Hour Changes")
+       Tab Navigation (Added Event; set 24-Hour Changes active by default)
        =================================================== -->
   <div class="tabs">
-    <div class="tab active" data-target="leaderboardSection">Leaderboard</div>
+    <div class="tab" data-target="leaderboardSection">Leaderboard</div>
     <div class="tab" data-target="racesPerDaySection">Races Per Day</div>
-    <div class="tab" data-target="changes24Section">24-Hour Changes</div>
+    <div class="tab active" data-target="changes24Section">24-Hour Changes</div>
+    <div class="tab" data-target="eventSection">Event</div>
   </div>
 
   <!-- Optional note explaining data cadence (non-blocking UI text) -->
@@ -303,7 +306,7 @@
   <!-- ===================================================
        Leaderboard Section (Preserved Columns)
        =================================================== -->
-  <section id="leaderboardSection" class="table-container active">
+  <section id="leaderboardSection" class="table-container">
     <table id="leaderboardTable">
       <thead>
         <tr>
@@ -351,18 +354,17 @@
   </section>
 
   <!-- ===================================================
-       24-Hour Changes Section (New; aligns with "other things" on LB)
-       - Deltas for numeric stats: races, speeds, views, cars, nitros,
-         longest session, and league tier.
-       - Excludes non-numeric fields like title, membership, and date.
+       24-Hour Changes Section
+       - Deltas for numeric stats excluding non-numeric fields.
+       - Filters out Δ Total Races >= 2600.
        =================================================== -->
-  <section id="changes24Section" class="table-container">
+  <section id="changes24Section" class="table-container active">
     <table id="changes24Table">
       <thead>
         <tr>
           <th>Rank</th>
           <th>Username</th>
-          <th>Δ Total Races</th>
+          <th class="desc">Δ Total Races</th>
           <th>Δ Avg WPM</th>
           <th>Δ Top WPM</th>
           <th>Δ Profile Views</th>
@@ -379,27 +381,45 @@
   </section>
 
   <!-- ===================================================
+       Event Section
+       - Deltas for event.json vs prev_event.json.
+       - Excludes Δ Avg WPM and Δ League Tier from tracking.
+       - Shows "Coming Soon" if prev_event.json is empty/missing.
+       =================================================== -->
+  <section id="eventSection" class="table-container">
+    <div id="eventComingSoon" class="note hidden">Coming Soon</div>
+    <table id="eventTable">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Username</th>
+          <th class="desc">Δ Total Races</th>
+          <th>Δ Top WPM</th>
+          <th>Δ Profile Views</th>
+          <th>Δ Garage Cars</th>
+          <th>Δ Nitros Used</th>
+          <th>Δ Longest Session</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Rows injected by JavaScript -->
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ===================================================
        JavaScript
-         - PRESERVED: Tab switching logic
-         - EXTENDED: Robust data fetch for current & previous snapshots
-         - EXTENDED: Real "Last updated" from JSON updatedAt (fallback to now)
-         - PRESERVED: Render Leaderboard (with comma formatting)
-         - PRESERVED: Render Races Per Day (with comma + 2-decimal formatting)
-         - PRESERVED: Enable click-to-sort on every column (with rank renumber)
-         - NEW: Render 24-Hour Changes (deltas per stat)
-         - PRESERVED STYLE: Keep function structures and comments consistent
      =================================================== -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       // ===================================================
+      // Constants
+      // ===================================================
+      const MAX_24H_RACES = 2600; // exclude >= this value
+
+      // ===================================================
       // Populate last-updated timestamp (now a real value from JSON if present)
       // ===================================================
-      /**
-       * We will set Last Updated in two phases:
-       * 1) Optimistic: show a placeholder while fetching.
-       * 2) Actual: after data loads, prefer "updatedAt" from sample_data.json.
-       *    If missing or malformed, fall back to Date.now().
-       */
       const lastUpdatedSpan = document.querySelector('#lastUpdated span');
       if (lastUpdatedSpan) {
         lastUpdatedSpan.textContent = 'Loading...';
@@ -421,33 +441,20 @@
 
       // ===================================================
       // Data Fetch & Render Tables
-      //   - Now fetches both current and previous snapshots.
+      //   - Fetches current/previous snapshots for main & event.
       //   - Accepts both legacy array and new object payloads.
       // ===================================================
-      /**
-       * Expected new shape (preferred):
-       * {
-       *   "updatedAt": "2025-08-10T20:00:00-05:00",
-       *   "racers": [ { ... }, ... ]
-       * }
-       *
-       * Legacy shape (still supported):
-       * [ { ... }, ... ]
-       */
       Promise.all([
-        fetch('sample_data.json').then(r => {
-          if (!r.ok) throw new Error(`HTTP ${r.status} - ${r.statusText}`);
-          return r.json();
-        }),
-        fetch('sample_data_prev.json')
-          .then(r => r.ok ? r.json() : { racers: [] })
-          .catch(() => ({ racers: [] }))
+        fetchJSON('sample_data.json'),
+        fetchJSON('sample_data_prev.json', { allow404Empty: true }),
+        fetchJSON('event.json', { allow404Empty: true }),
+        fetchJSON('prev_event.json', { allow404Empty: true })
       ])
-      .then(([curData, prevData]) => {
-        // Normalize current data
-        const cur = normalizeData(curData);
-        // Normalize previous data
+      .then(([curData, prevData, curEventData, prevEventData]) => {
+        const cur  = normalizeData(curData);
         const prev = normalizeData(prevData);
+        const curEvent  = normalizeData(curEventData);
+        const prevEvent = normalizeData(prevEventData);
 
         // Update Last Updated from JSON updatedAt if present, else fallback
         if (lastUpdatedSpan) {
@@ -457,22 +464,39 @@
           lastUpdatedSpan.textContent = dateToShow.toLocaleString();
         }
 
-        // Build a quick lookup map for previous snapshot (case-insensitive by username)
+        // Build previous maps by username (case-insensitive)
         const prevMap = new Map(
           (prev.racers || []).map(r => [String(r.username || '').toLowerCase(), r])
         );
+        const prevEventMap = new Map(
+          (prevEvent.racers || []).map(r => [String(r.username || '').toLowerCase(), r])
+        );
 
-        // Render main tables (Preserved functions + slight enhancement: clickable usernames)
+        // Render main tables
         renderLeaderboard(cur.racers);
         renderRacesPerDay(cur.racers);
 
-        // Render 24-hour changes (new)
+        // Render 24-hour changes with filtering
         renderChanges24(cur.racers, prevMap);
 
-        // Enable sorting on all tables (Preserved behavior)
+        // Render Event leaderboard or show "Coming Soon"
+        const eventComingSoon = document.getElementById('eventComingSoon');
+        const eventTable = document.getElementById('eventTable');
+        if (!prevEvent.racers || prevEvent.racers.length === 0) {
+          // Show "Coming Soon"
+          if (eventComingSoon) eventComingSoon.classList.remove('hidden');
+          if (eventTable) eventTable.classList.add('hidden');
+        } else {
+          if (eventComingSoon) eventComingSoon.classList.add('hidden');
+          if (eventTable) eventTable.classList.remove('hidden');
+          renderEventChanges(curEvent.racers || [], prevEventMap);
+        }
+
+        // Enable sorting on all tables
         enableSorting('leaderboardTable');
         enableSorting('racesPerDayTable');
         enableSorting('changes24Table');
+        enableSorting('eventTable');
       })
       .catch(err => {
         console.error('Failed to load data:', err);
@@ -480,11 +504,32 @@
           lastUpdatedSpan.textContent = new Date().toLocaleString();
         }
         const msg = document.createElement('p');
-        msg.textContent = 'Error loading sample_data.json – check console.';
+        msg.textContent = 'Error loading data files – check console.';
         msg.style.color = '#ff5252';
         msg.style.textAlign = 'center';
         document.body.appendChild(msg);
       });
+
+      // ===================================================
+      // JSON Fetch helper with optional empty fallback
+      // ===================================================
+      function fetchJSON(url, opts = {}) {
+        const { allow404Empty = false } = opts;
+        return fetch(url)
+          .then(r => {
+            if (!r.ok) {
+              if (allow404Empty && (r.status === 404 || r.status === 204)) {
+                return { racers: [] };
+              }
+              throw new Error(`${url}: HTTP ${r.status} - ${r.statusText}`);
+            }
+            return r.json();
+          })
+          .catch(err => {
+            if (allow404Empty) return { racers: [] };
+            throw err;
+          });
+      }
 
       /**
        * Normalize data payloads so downstream logic can rely on a consistent shape.
@@ -514,13 +559,8 @@
 
       // ===================================================
       // Renders the main leaderboard table. (Preserved)
-      // - Sorts by total races descending initially.
-      // - Formats all numeric cells with commas.
-      // - Enhancements:
-      //   - Username is now clickable to profileURL, as requested.
       // ===================================================
       function renderLeaderboard(data) {
-        // Defensive copy so sorting doesn't mutate the original array unexpectedly
         const sorted = [...data].sort((a, b) => b.racesPlayed - a.racesPlayed);
         const tbody = document.querySelector('#leaderboardTable tbody');
         tbody.innerHTML = '';
@@ -529,8 +569,6 @@
         sorted.forEach((r, idx) => {
           const tr = document.createElement('tr');
 
-          // Format numbers with commas via toLocaleString()
-          // (Preserved from your original approach)
           const totalRaces   = safeNumber(r.racesPlayed).toLocaleString();
           const avgWPM       = safeNumber(r.avgSpeed).toLocaleString();
           const topWPM       = safeNumber(r.highestSpeed).toLocaleString();
@@ -579,14 +617,9 @@
 
       // ===================================================
       // Renders the Races Per Day table. (Preserved)
-      // - Calculates daysActive & racesPerDay, sorts descending initially.
-      // - Formats integers with commas and per-day with commas + 2 decimals.
-      // - Enhancements:
-      //   - Username is clickable to profileURL.
       // ===================================================
       function renderRacesPerDay(data) {
         const list = data.map(r => {
-          // Use date only for consistency across timezones
           const joinDate = parseLocalDate(r.joinDate);
           const now = new Date();
           let diffMs = now - joinDate;
@@ -611,7 +644,6 @@
           };
         });
 
-        // Sort by raw racesPerDay descending
         list.sort((a, b) => b.racesPerDay - a.racesPerDay);
 
         const tbody = document.querySelector('#racesPerDayTable tbody');
@@ -636,18 +668,14 @@
       }
 
       // ===================================================
-      // Renders the 24-Hour Changes table. (New)
-      // - Computes diffs vs. previous snapshot for key numeric stats.
-      // - Sorts by Δ Total Races descending initially.
-      // - Username is clickable to profile URL.
+      // Renders the 24-Hour Changes table. (Filtered)
+      // - Filters out any Δ Total Races >= MAX_24H_RACES.
       // ===================================================
       function renderChanges24(currentRacers, prevMap) {
-        // Prepare diffs list with robust defaulting
         const diffs = currentRacers.map(r => {
           const key = String(r.username || '').toLowerCase();
           const p = prevMap.get(key) || {};
 
-          // Each delta is current - previous, fallback previous to 0 if missing
           const dRaces = safeNumber(r.racesPlayed) - safeNumber(p.racesPlayed);
           const dAvg   = safeNumber(r.avgSpeed)    - safeNumber(p.avgSpeed);
           const dTop   = safeNumber(r.highestSpeed)- safeNumber(p.highestSpeed);
@@ -669,12 +697,13 @@
             dSess,
             dTier
           };
-        });
+        })
+        // Filter: exclude Δ Total Races >= MAX_24H_RACES
+        .filter(d => d.dRaces < MAX_24H_RACES);
 
-        // Sort by Δ Total Races desc as a useful default
+        // Sort by Δ Total Races desc as default
         diffs.sort((a, b) => b.dRaces - a.dRaces);
 
-        // Render
         const tbody = document.querySelector('#changes24Table tbody');
         tbody.innerHTML = '';
         const fragment = document.createDocumentFragment();
@@ -702,9 +731,62 @@
       }
 
       // ===================================================
-      // Sorting: Attaches click handlers to each <th> in a given table,
-      // toggles asc/desc classes, re-sorts rows, AND renumbers Rank.
-      // (Preserved from your original approach with numeric parsing)
+      // Renders the Event leaderboard (diffs).
+      // - Excludes Δ Avg WPM and Δ League Tier.
+      // ===================================================
+      function renderEventChanges(currentRacers, prevMap) {
+        const diffs = (currentRacers || []).map(r => {
+          const key = String(r.username || '').toLowerCase();
+          const p = prevMap.get(key) || {};
+
+          const dRaces = safeNumber(r.racesPlayed) - safeNumber(p.racesPlayed);
+          const dTop   = safeNumber(r.highestSpeed)- safeNumber(p.highestSpeed);
+          const dViews = safeNumber(r.profileViews)- safeNumber(p.profileViews);
+          const dCars  = safeNumber(r.garageCars)  - safeNumber(p.garageCars);
+          const dNitro = safeNumber(r.nitrosUsed)  - safeNumber(p.nitrosUsed);
+          const dSess  = safeNumber(r.longestSession) - safeNumber(p.longestSession);
+
+          return {
+            username:   r.username || '',
+            profileURL: r.profileURL || '#',
+            dRaces,
+            dTop,
+            dViews,
+            dCars,
+            dNitro,
+            dSess
+          };
+        });
+
+        // Default sort by Δ Total Races desc
+        diffs.sort((a, b) => b.dRaces - a.dRaces);
+
+        const tbody = document.querySelector('#eventTable tbody');
+        tbody.innerHTML = '';
+        const fragment = document.createDocumentFragment();
+
+        diffs.forEach((d, idx) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td data-label="Rank">${idx + 1}</td>
+            <td data-label="Username">
+              <a href="${escapeAttr(d.profileURL)}" target="_blank">${escapeHTML(d.username)}</a>
+            </td>
+            <td data-label="Δ Total Races">${formatDeltaInt(d.dRaces)}</td>
+            <td data-label="Δ Top WPM">${formatDeltaInt(d.dTop)}</td>
+            <td data-label="Δ Profile Views">${formatDeltaInt(d.dViews)}</td>
+            <td data-label="Δ Garage Cars">${formatDeltaInt(d.dCars)}</td>
+            <td data-label="Δ Nitros Used">${formatDeltaInt(d.dNitro)}</td>
+            <td data-label="Δ Longest Session">${formatDeltaInt(d.dSess)}</td>
+          `.trim();
+          fragment.appendChild(tr);
+        });
+
+        tbody.appendChild(fragment);
+      }
+
+      // ===================================================
+      // Sorting: click headers to sort and renumber Rank.
       // ===================================================
       function enableSorting(tableId) {
         const table   = document.getElementById(tableId);
@@ -717,7 +799,6 @@
             const rows  = Array.from(tbody.querySelectorAll('tr'));
             const asc   = !th.classList.contains('asc');
 
-            // Perform sort; strip commas and non-numeric chars for numeric compare
             rows.sort((a, b) => {
               const aText = a.children[idx]?.textContent?.trim() ?? '';
               const bText = b.children[idx]?.textContent?.trim() ?? '';
@@ -754,28 +835,17 @@
       // Helper Utilities (Safe formatting, escaping, dates)
       // ===================================================
 
-      /**
-       * Returns a finite number. If input is null/undefined/NaN, returns 0.
-       */
       function safeNumber(x) {
         const n = Number(x);
         return Number.isFinite(n) ? n : 0;
-        }
+      }
 
-      /**
-       * Format integer deltas with sign and commas
-       * e.g., +1,234 or -56 or 0
-       */
       function formatDeltaInt(n) {
         const v = safeNumber(n);
         const sign = v > 0 ? '+' : v < 0 ? '' : '';
         return `${sign}${v.toLocaleString()}`;
       }
 
-      /**
-       * Format float deltas with sign and fixed decimals.
-       * e.g., +1.23 or -0.50 or 0.00
-       */
       function formatDeltaFloat(n, digits = 2) {
         const v = Number.isFinite(n) ? n : 0;
         const sign = v > 0 ? '+' : v < 0 ? '' : '';
@@ -785,9 +855,6 @@
         })}`;
       }
 
-      /**
-       * Escape text for safe HTML text insertion.
-       */
       function escapeHTML(s) {
         return String(s ?? '')
           .replace(/&/g, '&amp;')
@@ -797,40 +864,25 @@
           .replace(/'/g, '&#39;');
       }
 
-      /**
-       * Escape attribute values.
-       */
       function escapeAttr(s) {
         return escapeHTML(s).replace(/"/g, '&quot;');
       }
 
-      /**
-       * Parse a date string as local date (YYYY-MM-DD or other),
-       * falling back to today if invalid. We append T00:00:00 to
-       * avoid timezone midnight drift issues when converting.
-       */
       function parseLocalDate(input) {
         const raw = String(input || '').trim();
-        // Attempt to keep original semantics; if joinDate looks like YYYY-MM-DD, coerce as local date
         if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
           const [y, m, d] = raw.split('-').map(n => parseInt(n, 10));
-          // Months are 0-indexed in Date
           const dt = new Date(y, (m - 1), d, 0, 0, 0, 0);
           if (!isNaN(dt.getTime())) return dt;
         }
-        // Fallback generic Date parse
         const dt2 = new Date(raw);
         if (!isNaN(dt2.getTime())) return dt2;
-        // Fallback to "today"
         return new Date();
       }
 
-    // End of DOMContentLoaded
-  });
-</script>
+      // End of DOMContentLoaded
+    });
+  </script>
 
 </body>
 </html>
-
-
-
