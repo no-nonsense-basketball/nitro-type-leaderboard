@@ -2,22 +2,55 @@
 <html lang="en">
 <head>
   <!--
-    Nitro Type Top 1000 Racers
-    - Full, unstreamlined index.html
-    - Preserves the original structure and styling
-    - Adds a theme-colored dropdown with a single option: "Back 2 School 2025"
-    - Removes cadence note; header shows "Last updated: 8PM Daily"
-    - 24-Hour Changes:
-        • Excludes Avg WPM and League Tier from columns and tracking
-        • Filters out any racer with Δ Total Races >= 2600
-    - Event Leaderboard:
-        • Compares event.json vs prev_event.json
-        • Excludes Avg WPM and League Tier from columns and tracking
-        • Shows "Coming Soon" if prev_event.json is empty/missing
-    - Robust:
-        • Works with preferred object payloads and legacy array payloads
-        • Safe number handling, HTML escaping, and responsive layout
-        • Click-to-sort with rank renumbering
+    Nitro Type Top 1000 Racers (Full, unstreamlined)
+    ==================================================
+    This file merges all requested behaviors into one cohesive, auditable HTML+JS:
+
+    1) Theme & Structure:
+       - Dark theme preserved using CSS variables.
+       - Three core tabs: Leaderboard, Races Per Day, 24-Hour Changes.
+       - Event tab with a dropdown INSIDE the Event tab (functional).
+       - Mobile responsive (cards style on narrow screens).
+       - Click-to-sort per table with asc/desc indicators and rank renumbering.
+
+    2) Headers & Notes:
+       - Header shows "Last updated: 8PM Daily" (static, per request).
+       - Original cadence note removed.
+
+    3) 24-Hour Changes:
+       - Excludes Avg WPM and League Tier from tracking and display.
+       - Filters out racers with Δ Total Races >= 2600 (anomaly filter).
+       - Still computes other deltas (Top WPM, Profile Views, Garage Cars, Nitros Used, Longest Session).
+
+    4) Event Tab (Dropdown inside tab, functional, expandable):
+       - Dropdown styled in theme colors.
+       - Uses data-before and data-after attributes on <option> to define files to load.
+       - For "Back 2 School 2025":
+           data-before="Back2SchoolEvent2025_before.json"
+           data-after="Back2SchoolEvent2025_after.json"
+       - If BEFORE file is empty or missing: show "Coming Soon" and hide table.
+       - Excludes Avg WPM and League Tier from tracking and display (same as your request for 24-hour).
+       - Sorted by Δ Total Races descending by default.
+
+    5) Main Leaderboard & Races Per Day:
+       - Compatible with preferred JSON object { updatedAt, racers } and legacy array payloads.
+       - Safe numeric formatting with commas; 2-decimal for per-day metric.
+       - Username links to profile URL; "Profile URL" column preserved.
+
+    6) Files expected alongside this HTML:
+       - sample_data.json
+       - sample_data_prev.json
+       - Back2SchoolEvent2025_before.json
+       - Back2SchoolEvent2025_after.json
+       You can add more events by adding <option> entries in the Event tab and pointing to their before/after files.
+
+    7) Security & Robustness:
+       - safeNumber, escapeHTML, and escapeAttr prevent common type and injection issues.
+       - normalizeData supports both shapes for backward compatibility.
+       - fetchJSON has allow404Empty to degrade gracefully without breaking UI.
+       - Sorting parses numeric content robustly and falls back to localeCompare.
+
+    Keep everything explicit and auditable, no hidden magic.
   -->
 
   <meta charset="UTF-8" />
@@ -26,7 +59,6 @@
   <style>
     /* ===================================================
        Root Color & Typography Variables
-       - Defines theme colors, typography, and transitions
        =================================================== */
     :root {
       --bg-color:        #2a2a2a;  /* dark background */
@@ -46,7 +78,6 @@
 
     /* ===================================================
        Global Reset & Base Styles
-       - Normalize box model, margins, and base text
        =================================================== */
     *, *::before, *::after {
       box-sizing: border-box;
@@ -70,14 +101,12 @@
       text-decoration: none;
       transition: color var(--transition);
     }
-
     a:hover {
       color: var(--accent-light);
     }
 
     /* ===================================================
        Header / Branding Styles
-       - Centered branding, subtle shadow, theme background
        =================================================== */
     header {
       text-align: center;
@@ -87,74 +116,22 @@
       border-radius: 4px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.5);
     }
-
     header h1 {
       font-size: var(--font-size-lg);
       margin-bottom: 8px;
       color: var(--accent);
     }
-
     header p {
       font-size: var(--font-size-md);
       color: var(--text-dim);
       margin: 4px 0;
     }
-
     header p a {
       font-weight: bold;
     }
 
     /* ===================================================
-       Dropdown Styles (Theme Colors)
-       - Matches header/tab aesthetic
-       =================================================== */
-    .dropdown-wrap {
-      display: flex;
-      justify-content: center;
-      margin-top: 10px;
-    }
-
-    select#eventSelector {
-      background: var(--header-bg);
-      color: var(--text-light);
-      border: 1px solid var(--accent);
-      padding: 6px 12px;
-      border-radius: 4px;
-      font-size: var(--font-size-md);
-      outline: none;
-      transition: border-color var(--transition), box-shadow var(--transition);
-      box-shadow: 0 0 0 rgba(0,0,0,0);
-      appearance: none;          /* Hide native arrow in some browsers */
-      -webkit-appearance: none;  /* Safari */
-      -moz-appearance: none;     /* Firefox */
-      background-image:
-        linear-gradient(45deg, transparent 50%, var(--text-light) 50%),
-        linear-gradient(135deg, var(--text-light) 50%, transparent 50%),
-        linear-gradient(to right, var(--header-bg), var(--header-bg));
-      background-position:
-        calc(100% - 20px) calc(50% - 5px),
-        calc(100% - 15px) calc(50% - 5px),
-        calc(100% - 2.5em) 0.5em;
-      background-size:
-        5px 5px,
-        5px 5px,
-        1px 1.8em;
-      background-repeat: no-repeat;
-      cursor: pointer;
-    }
-
-    select#eventSelector:hover {
-      border-color: var(--accent-light);
-    }
-
-    select#eventSelector:focus {
-      box-shadow: 0 0 0 2px rgba(211,47,47,0.3);
-      border-color: var(--accent-light);
-    }
-
-    /* ===================================================
-       Tab Navigation Styles
-       - Horizontal tabs with active/hover states
+       Tabs
        =================================================== */
     .tabs {
       display: flex;
@@ -165,7 +142,6 @@
       overflow: hidden;
       box-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
-
     .tabs .tab {
       flex: 1;
       padding: 12px 20px;
@@ -175,19 +151,16 @@
       color: var(--text-light);
       transition: background var(--transition);
     }
-
     .tabs .tab:hover {
       background: var(--panel-bg);
     }
-
     .tabs .tab.active {
       background: var(--accent);
       color: #ffffff;
     }
 
     /* ===================================================
-       Table Container and Table Styles
-       - Panelized sections for each tab view
+       Table Containers & Tables
        =================================================== */
     .table-container {
       display: none;
@@ -197,7 +170,6 @@
       margin-bottom: 40px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.5);
     }
-
     .table-container.active {
       display: block;
     }
@@ -222,14 +194,8 @@
       cursor: pointer;
       user-select: none;
     }
-
-    thead th.asc::after {
-      content: ' ▲';
-    }
-
-    thead th.desc::after {
-      content: ' ▼';
-    }
+    thead th.asc::after { content: ' ▲'; }
+    thead th.desc::after { content: ' ▼'; }
 
     th, td {
       padding: 10px 8px;
@@ -238,48 +204,29 @@
       vertical-align: middle;
     }
 
-    tbody tr:nth-child(odd) {
-      background: #3a3a3a;
-    }
-
-    tbody tr:nth-child(even) {
-      background: #343434;
-    }
+    tbody tr:nth-child(odd) { background: #3a3a3a; }
+    tbody tr:nth-child(even) { background: #343434; }
 
     td a.profile-link {
       color: var(--accent);
       word-break: break-all;
       font-size: var(--font-size-sm);
     }
-
-    td a.profile-link:hover {
-      color: var(--accent-light);
-    }
+    td a.profile-link:hover { color: var(--accent-light); }
 
     /* ===================================================
-       Responsive Styles for Narrow Viewports
-       - Converts tables to stacked cards
+       Responsive (Stacked Cards)
        =================================================== */
     @media (max-width: 900px) {
-      table, thead, tbody, th, td, tr {
-        display: block;
-      }
-
-      thead {
-        display: none;
-      }
-
-      tr {
-        margin-bottom: 15px;
-      }
-
+      table, thead, tbody, th, td, tr { display: block; }
+      thead { display: none; }
+      tr { margin-bottom: 15px; }
       td {
         display: flex;
         justify-content: space-between;
         align-items: center;
         padding: 8px 12px;
       }
-
       td::before {
         content: attr(data-label);
         flex: 1 1 40%;
@@ -287,7 +234,6 @@
         font-weight: bold;
         text-transform: uppercase;
       }
-
       td span, td a, td div {
         flex: 1 1 60%;
         text-align: right;
@@ -295,17 +241,10 @@
     }
 
     /* ===================================================
-       Utility & Helper Classes
-       - Small helpers for visibility and alignment
-       =================================================== */
-    .hidden {
-      display: none !important;
-    }
-
-    .center {
-      text-align: center;
-    }
-
+      Utilities
+      =================================================== */
+    .hidden { display: none !important; }
+    .center { text-align: center; }
     .note {
       color: #e8e8e8;
       font-size: 0.9rem;
@@ -313,50 +252,72 @@
       margin-bottom: 10px;
     }
 
-    .pill {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 999px;
-      background: #444;
-      color: #ddd;
-      font-size: 0.75rem;
+    /* ===================================================
+       Event Controls (dropdown inside Event tab)
+       =================================================== */
+    .event-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
     }
-
-    /* End of CSS */
+    .event-controls label {
+      color: var(--text-dim);
+      font-size: var(--font-size-md);
+    }
+    .event-controls select {
+      background: var(--header-bg);
+      color: var(--text-light);
+      border: 1px solid var(--accent);
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: var(--font-size-md);
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      box-shadow: 0 0 0 rgba(0,0,0,0);
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image:
+        linear-gradient(45deg, transparent 50%, var(--text-light) 50%),
+        linear-gradient(135deg, var(--text-light) 50%, transparent 50%),
+        linear-gradient(to right, var(--header-bg), var(--header-bg));
+      background-position:
+        calc(100% - 20px) calc(50% - 5px),
+        calc(100% - 15px) calc(50% - 5px),
+        calc(100% - 2.5em) 0.5em;
+      background-size: 5px 5px, 5px 5px, 1px 1.8em;
+      background-repeat: no-repeat;
+      cursor: pointer;
+    }
+    .event-controls select:hover { border-color: var(--accent-light); }
+    .event-controls select:focus {
+      box-shadow: 0 0 0 2px rgba(211,47,47,0.3);
+      border-color: var(--accent-light);
+    }
   </style>
 </head>
 
 <body>
   <!-- ===================================================
-       Header (Last updated text is static: 8PM Daily)
-       - Includes maker credit, contact, and dropdown
+       Header (static cadence per request)
        =================================================== -->
   <header>
     <h1>Nitro Type Top 1000 Racers</h1>
-
     <p>
       made by
       <a href="https://www.youtube.com/@InternetTyper" target="_blank">
         @InternetTyper on YouTube
       </a>
     </p>
-
-    <!-- Static update cadence text per request -->
     <p id="lastUpdated">Last updated: 8PM Daily</p>
-
     <p>Contact: azrael.for.god on Discord</p>
-
-    <!-- Theme-colored dropdown with single option -->
-    <div class="dropdown-wrap">
-      <select id="eventSelector" aria-label="Event Selector">
-        <option value="b2s2025">Back 2 School 2025</option>
-      </select>
-    </div>
   </header>
 
   <!-- ===================================================
-       Tab Navigation
-       - Leaderboard, Races Per Day, 24-Hour Changes, Event
+       Tabs
        =================================================== -->
   <div class="tabs">
     <div class="tab" data-target="leaderboardSection">Leaderboard</div>
@@ -367,7 +328,6 @@
 
   <!-- ===================================================
        Leaderboard Section
-       - Full stat view
        =================================================== -->
   <section id="leaderboardSection" class="table-container">
     <table id="leaderboardTable">
@@ -398,7 +358,6 @@
 
   <!-- ===================================================
        Races Per Day Section
-       - Derived metrics: days active and races per day
        =================================================== -->
   <section id="racesPerDaySection" class="table-container">
     <table id="racesPerDayTable">
@@ -418,9 +377,7 @@
   </section>
 
   <!-- ===================================================
-       24-Hour Changes Section
-       - Excludes Avg WPM and League Tier per request
-       - Filters out Δ Total Races >= 2600
+       24-Hour Changes Section (filters & excludes as requested)
        =================================================== -->
   <section id="changes24Section" class="table-container active">
     <table id="changes24Table">
@@ -443,12 +400,26 @@
   </section>
 
   <!-- ===================================================
-       Event Section
-       - Excludes Avg WPM and League Tier
-       - Shows "Coming Soon" if prev_event.json is empty/missing
+       Event Section (dropdown inside this tab)
        =================================================== -->
   <section id="eventSection" class="table-container">
+    <div class="event-controls">
+      <label for="eventSelector">Event:</label>
+      <select id="eventSelector" aria-label="Select event to display">
+        <!-- Expandable: add more <option> entries with data-before/data-after -->
+        <option
+          value="back2school2025"
+          data-before="Back2SchoolEvent2025_before.json"
+          data-after="Back2SchoolEvent2025_after.json"
+        >
+          Back 2 School 2025
+        </option>
+      </select>
+      <span id="eventStatus" class="note hidden"></span>
+    </div>
+
     <div id="eventComingSoon" class="note hidden">Coming Soon</div>
+
     <table id="eventTable">
       <thead>
         <tr>
@@ -470,23 +441,16 @@
 
   <!-- ===================================================
        JavaScript
-       - Tab switching
-       - Fetch and normalization
-       - Rendering and sorting
-       - Utilities
        =================================================== -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       // ===================================================
-      // Constants & Settings
-      // - MAX_24H_RACES sets the exclusion threshold for Δ Total Races
+      // Constants
       // ===================================================
-      const MAX_24H_RACES = 2600; // exclude rows where delta >= this value
+      const MAX_24H_RACES = 2600; // exclude entries with Δ Total Races >= 2600
 
       // ===================================================
-      // Tab switching setup
-      // - Clicking a tab shows its associated table section
-      // - Uses data-target to find the section by ID
+      // Tabs: Switch visible section by data-target
       // ===================================================
       const tabs = document.querySelectorAll('.tabs .tab');
       const sections = document.querySelectorAll('.table-container');
@@ -502,90 +466,164 @@
         });
       });
 
-      // Optional: placeholder handler if we later expand the dropdown
-      const eventSelector = document.getElementById('eventSelector');
-      if (eventSelector) {
-        eventSelector.addEventListener('change', (e) => {
-          // For now: no switching behavior since only one option exists
-          // Future-ready: could trigger re-fetching different event files
-          // console.log('Selected event:', e.target.value);
-        });
-      }
-
       // ===================================================
-      // Data Fetch & Render Tables
-      // - Fetches current/previous snapshots for main & event
-      // - Accepts both legacy array and new object payloads
-      // - Renders all tables and enables sorting
+      // Fetch main snapshots and render core tables
+      //   - Supports both legacy array and { updatedAt, racers } shapes
       // ===================================================
       Promise.all([
         fetchJSON('sample_data.json'),
-        fetchJSON('sample_data_prev.json', { allow404Empty: true }),
-        fetchJSON('event.json', { allow404Empty: true }),
-        fetchJSON('prev_event.json', { allow404Empty: true })
+        fetchJSON('sample_data_prev.json', { allow404Empty: true })
       ])
-      .then(([curData, prevData, curEventData, prevEventData]) => {
-        // Normalize payloads to consistent { updatedAt, racers } shape
+      .then(([curData, prevData]) => {
         const cur = normalizeData(curData);
         const prev = normalizeData(prevData);
-        const curEvent = normalizeData(curEventData);
-        const prevEvent = normalizeData(prevEventData);
 
-        // Build quick lookup maps keyed by lowercase username
+        // Build prev map keyed by lowercase username for quick lookup
         const prevMap = new Map(
           (prev.racers || []).map(r => [String(r.username || '').toLowerCase(), r])
         );
 
-        const prevEventMap = new Map(
-          (prevEvent.racers || []).map(r => [String(r.username || '').toLowerCase(), r])
-        );
-
-        // Render main tables
+        // Render main sections
         renderLeaderboard(cur.racers);
         renderRacesPerDay(cur.racers);
-
-        // Render 24-hour changes (with filtering and excluded fields)
         renderChanges24(cur.racers, prevMap);
 
-        // Render Event or show "Coming Soon"
-        const eventComingSoon = document.getElementById('eventComingSoon');
-        const eventTable = document.getElementById('eventTable');
-
-        const prevHasData = Array.isArray(prevEvent.racers) && prevEvent.racers.length > 0;
-
-        if (!prevHasData) {
-          if (eventComingSoon) eventComingSoon.classList.remove('hidden');
-          if (eventTable) eventTable.classList.add('hidden');
-        } else {
-          if (eventComingSoon) eventComingSoon.classList.add('hidden');
-          if (eventTable) eventTable.classList.remove('hidden');
-          renderEventChanges(curEvent.racers || [], prevEventMap);
-        }
-
-        // Enable sorting on all tables
+        // Enable sorting behaviors on those tables
         enableSorting('leaderboardTable');
         enableSorting('racesPerDayTable');
         enableSorting('changes24Table');
-        enableSorting('eventTable');
+
+        // After main renders, initialize Event tab (dropdown-driven)
+        initEventTab();
       })
       .catch(err => {
-        // Generic error message appended to the body
-        console.error('Failed to load data files:', err);
+        console.error('Failed loading main snapshots:', err);
         const msg = document.createElement('p');
-        msg.textContent = 'Error loading data files – check console.';
+        msg.textContent = 'Error loading main snapshots – check console.';
         msg.style.color = '#ff5252';
         msg.style.textAlign = 'center';
         document.body.appendChild(msg);
+
+        // Even if main fails, still init Event tab to avoid dead UI
+        initEventTab();
       });
 
       // ===================================================
-      // JSON Fetch Helper
-      // - allow404Empty: returns an empty { racers: [] } for 404/204
-      // - Robust against transient fetch errors
+      // Init Event tab: bind dropdown and render default selection
+      // ===================================================
+      function initEventTab() {
+        const selector = document.getElementById('eventSelector');
+        if (!selector) return;
+
+        // Initial render on load
+        renderEventForSelection(selector);
+
+        // Re-render when selection changes (expandable)
+        selector.addEventListener('change', () => renderEventForSelection(selector));
+
+        // Enable sorting for event table (header click)
+        enableSorting('eventTable');
+      }
+
+      // ===================================================
+      // Render selected event by fetching before/after JSONs
+      // Excludes Avg WPM and League Tier (not used in deltas here).
+      // Shows "Coming Soon" when BEFORE is empty or missing.
+      // ===================================================
+      function renderEventForSelection(selector) {
+        const selOption = selector.options[selector.selectedIndex];
+        const beforeFile = selOption.getAttribute('data-before') || '';
+        const afterFile  = selOption.getAttribute('data-after')  || '';
+
+        const eventStatus = document.getElementById('eventStatus');
+        if (eventStatus) {
+          eventStatus.textContent = '';
+          eventStatus.classList.add('hidden');
+        }
+
+        // Guard: if files missing on option
+        if (!beforeFile || !afterFile) {
+          showEventComingSoon(true);
+          return;
+        }
+
+        // Fetch both files with allow404Empty so UI doesn’t crash on missing files
+        Promise.all([
+          fetchJSON(beforeFile, { allow404Empty: true }),
+          fetchJSON(afterFile,  { allow404Empty: true })
+        ])
+        .then(([prevEventData, curEventData]) => {
+          const prevEvent = normalizeData(prevEventData);
+          const curEvent  = normalizeData(curEventData);
+
+          const prevHasData = Array.isArray(prevEvent.racers) && prevEvent.racers.length > 0;
+          const curHasArray = Array.isArray(curEvent.racers);
+
+          // If BEFORE has no data, we consider the event "Coming Soon"
+          if (!prevHasData) {
+            showEventComingSoon(true);
+            clearEventTable();
+            return;
+          }
+
+          showEventComingSoon(false);
+
+          // Build prev map
+          const prevEventMap = new Map(
+            (prevEvent.racers || []).map(r => [String(r.username || '').toLowerCase(), r])
+          );
+
+          // Use current (after) racers array, or empty fallback
+          const currentRacers = curHasArray ? (curEvent.racers || []) : [];
+
+          // Render diffs (excludes Avg WPM and League Tier)
+          renderEventChanges(currentRacers, prevEventMap);
+
+          // Optional: emit small status text with counts
+          if (eventStatus) {
+            const beforeCount = (prevEvent.racers || []).length;
+            const afterCount  = currentRacers.length;
+            eventStatus.textContent = `Loaded ${beforeCount.toLocaleString()} (before) vs ${afterCount.toLocaleString()} (after).`;
+            eventStatus.classList.remove('hidden');
+          }
+        })
+        .catch(err => {
+          console.error('Event fetch error:', err);
+          showEventComingSoon(true);
+          clearEventTable();
+
+          if (eventStatus) {
+            eventStatus.textContent = 'Error loading event data.';
+            eventStatus.classList.remove('hidden');
+          }
+        });
+      }
+
+      // ===================================================
+      // Helpers for Event UI visibility
+      // ===================================================
+      function showEventComingSoon(show) {
+        const note = document.getElementById('eventComingSoon');
+        const table = document.getElementById('eventTable');
+        if (!note || !table) return;
+        if (show) {
+          note.classList.remove('hidden');
+          table.classList.add('hidden');
+        } else {
+          note.classList.add('hidden');
+          table.classList.remove('hidden');
+        }
+      }
+      function clearEventTable() {
+        const tbody = document.querySelector('#eventTable tbody');
+        if (tbody) tbody.innerHTML = '';
+      }
+
+      // ===================================================
+      // JSON fetch helper with optional empty fallback
       // ===================================================
       function fetchJSON(url, opts = {}) {
         const { allow404Empty = false } = opts;
-
         return fetch(url)
           .then(r => {
             if (!r.ok) {
@@ -603,45 +641,25 @@
       }
 
       // ===================================================
-      // normalizeData(payload)
-      // - Accepts array (legacy) or object { updatedAt, racers } (preferred)
-      // - Returns a consistent shape for downstream logic
+      // Normalize payloads:
+      // - Preferred: { updatedAt, racers: [...] }
+      // - Legacy:    [ ... ]
       // ===================================================
       function normalizeData(payload) {
         if (Array.isArray(payload)) {
-          // Legacy mode: array of racers, no updatedAt
-          return {
-            updatedAt: null,
-            racers: payload
-          };
+          return { updatedAt: null, racers: payload };
         }
-
         if (payload && Array.isArray(payload.racers)) {
-          return {
-            updatedAt: payload.updatedAt || null,
-            racers: payload.racers
-          };
+          return { updatedAt: payload.updatedAt || null, racers: payload.racers };
         }
-
-        // Fallback to empty
-        return {
-          updatedAt: null,
-          racers: []
-        };
+        return { updatedAt: null, racers: [] };
       }
 
       // ===================================================
-      // renderLeaderboard(data)
-      // - Renders the main leaderboard table
-      // - Sorted by total races descending initially
-      // - Formats numbers with commas
+      // Render: Leaderboard
       // ===================================================
       function renderLeaderboard(data) {
-        // Defensive copy to avoid mutating the original
-        const sorted = [...data].sort((a, b) => {
-          return safeNumber(b.racesPlayed) - safeNumber(a.racesPlayed);
-        });
-
+        const sorted = [...data].sort((a, b) => safeNumber(b.racesPlayed) - safeNumber(a.racesPlayed));
         const tbody = document.querySelector('#leaderboardTable tbody');
         tbody.innerHTML = '';
         const fragment = document.createDocumentFragment();
@@ -679,9 +697,7 @@
             <td data-label="Member Since">${escapeHTML(joinDate)}</td>
             <td data-label="Garage Cars">${garageCars}</td>
             <td data-label="Profile URL">
-              <a class="profile-link" href="${escapeAttr(profileURL)}" target="_blank">
-                View Profile
-              </a>
+              <a class="profile-link" href="${escapeAttr(profileURL)}" target="_blank">View Profile</a>
             </td>
             <td data-label="Membership">${escapeHTML(membership)}</td>
             <td data-label="Nitros Used">${nitrosUsed}</td>
@@ -696,22 +712,16 @@
       }
 
       // ===================================================
-      // renderRacesPerDay(data)
-      // - Calculates days active and races per day
-      // - Sorted descending by races/day
-      // - Formats numbers appropriately
+      // Render: Races Per Day
       // ===================================================
       function renderRacesPerDay(data) {
         const now = new Date();
 
         const list = data.map(r => {
-          // Parse the join date and calculate days active
           const joinDate = parseLocalDate(r.joinDate);
           const diffMs = now - joinDate;
           let daysActive = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-          if (!Number.isFinite(daysActive) || daysActive < 1) {
-            daysActive = 1; // avoid divide-by-zero and negatives
-          }
+          if (!Number.isFinite(daysActive) || daysActive < 1) daysActive = 1;
 
           const totalRaces = safeNumber(r.racesPlayed);
           const perDayRaw = totalRaces / daysActive;
@@ -721,18 +731,17 @@
           });
 
           return {
-            username:                r.username || '',
-            profileURL:              r.profileURL || '#',
-            racesPlayed:             totalRaces,
-            daysActive:              daysActive,
-            racesPerDay:             perDayRaw,
-            formattedRacesPlayed:    totalRaces.toLocaleString(),
-            formattedDaysActive:     daysActive.toLocaleString(),
-            formattedPerDay:         perDayFmt
+            username: r.username || '',
+            profileURL: r.profileURL || '#',
+            racesPlayed: totalRaces,
+            daysActive: daysActive,
+            racesPerDay: perDayRaw,
+            formattedRacesPlayed: totalRaces.toLocaleString(),
+            formattedDaysActive: daysActive.toLocaleString(),
+            formattedPerDay: perDayFmt
           };
         });
 
-        // Sort by raw racesPerDay descending
         list.sort((a, b) => b.racesPerDay - a.racesPerDay);
 
         const tbody = document.querySelector('#racesPerDayTable tbody');
@@ -757,11 +766,9 @@
       }
 
       // ===================================================
-      // renderChanges24(currentRacers, prevMap)
-      // - Computes diffs vs previous snapshot
-      // - Excludes Avg WPM and League Tier from both display and tracking
-      // - Filters out entries where Δ Total Races >= MAX_24H_RACES
-      // - Sorted by Δ Total Races descending
+      // Render: 24-Hour Changes
+      // - Excludes Avg WPM & League Tier
+      // - Filters Δ Total Races >= MAX_24H_RACES
       // ===================================================
       function renderChanges24(currentRacers, prevMap) {
         const diffs = (currentRacers || [])
@@ -769,29 +776,21 @@
             const key = String(r.username || '').toLowerCase();
             const p = prevMap.get(key) || {};
 
-            // Only track the included numeric fields
-            const dRaces = safeNumber(r.racesPlayed)   - safeNumber(p.racesPlayed);
-            const dTop   = safeNumber(r.highestSpeed)  - safeNumber(p.highestSpeed);
-            const dViews = safeNumber(r.profileViews)  - safeNumber(p.profileViews);
-            const dCars  = safeNumber(r.garageCars)    - safeNumber(p.garageCars);
-            const dNitro = safeNumber(r.nitrosUsed)    - safeNumber(p.nitrosUsed);
+            const dRaces = safeNumber(r.racesPlayed)    - safeNumber(p.racesPlayed);
+            const dTop   = safeNumber(r.highestSpeed)   - safeNumber(p.highestSpeed);
+            const dViews = safeNumber(r.profileViews)   - safeNumber(p.profileViews);
+            const dCars  = safeNumber(r.garageCars)     - safeNumber(p.garageCars);
+            const dNitro = safeNumber(r.nitrosUsed)     - safeNumber(p.nitrosUsed);
             const dSess  = safeNumber(r.longestSession) - safeNumber(p.longestSession);
 
             return {
               username:   r.username || '',
               profileURL: r.profileURL || '#',
-              dRaces,
-              dTop,
-              dViews,
-              dCars,
-              dNitro,
-              dSess
+              dRaces, dTop, dViews, dCars, dNitro, dSess
             };
           })
-          // Filter out anomalous Δ Total Races (>= threshold)
           .filter(d => d.dRaces < MAX_24H_RACES);
 
-        // Sort by Δ Total Races desc by default
         diffs.sort((a, b) => b.dRaces - a.dRaces);
 
         const tbody = document.querySelector('#changes24Table tbody');
@@ -802,9 +801,7 @@
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td data-label="Rank">${idx + 1}</td>
-            <td data-label="Username">
-              <a href="${escapeAttr(d.profileURL)}" target="_blank">${escapeHTML(d.username)}</a>
-            </td>
+            <td data-label="Username"><a href="${escapeAttr(d.profileURL)}" target="_blank">${escapeHTML(d.username)}</a></td>
             <td data-label="Δ Total Races">${formatDeltaInt(d.dRaces)}</td>
             <td data-label="Δ Top WPM">${formatDeltaInt(d.dTop)}</td>
             <td data-label="Δ Profile Views">${formatDeltaInt(d.dViews)}</td>
@@ -819,38 +816,29 @@
       }
 
       // ===================================================
-      // renderEventChanges(currentRacers, prevMap)
-      // - Computes diffs between event.json and prev_event.json
-      // - Excludes Avg WPM and League Tier from both display and tracking
-      // - Sorted by Δ Total Races descending
+      // Render: Event Changes (Dropdown-driven)
+      // - Excludes Avg WPM & League Tier
+      // - Sorted by Δ Total Races desc
       // ===================================================
       function renderEventChanges(currentRacers, prevMap) {
-        const diffs = (currentRacers || [])
-          .map(r => {
-            const key = String(r.username || '').toLowerCase();
-            const p = prevMap.get(key) || {};
+        const diffs = (currentRacers || []).map(r => {
+          const key = String(r.username || '').toLowerCase();
+          const p = prevMap.get(key) || {};
 
-            // Track included numeric fields (no Avg WPM, no League Tier)
-            const dRaces = safeNumber(r.racesPlayed)   - safeNumber(p.racesPlayed);
-            const dTop   = safeNumber(r.highestSpeed)  - safeNumber(p.highestSpeed);
-            const dViews = safeNumber(r.profileViews)  - safeNumber(p.profileViews);
-            const dCars  = safeNumber(r.garageCars)    - safeNumber(p.garageCars);
-            const dNitro = safeNumber(r.nitrosUsed)    - safeNumber(p.nitrosUsed);
-            const dSess  = safeNumber(r.longestSession) - safeNumber(p.longestSession);
+          const dRaces = safeNumber(r.racesPlayed)    - safeNumber(p.racesPlayed);
+          const dTop   = safeNumber(r.highestSpeed)   - safeNumber(p.highestSpeed);
+          const dViews = safeNumber(r.profileViews)   - safeNumber(p.profileViews);
+          const dCars  = safeNumber(r.garageCars)     - safeNumber(p.garageCars);
+          const dNitro = safeNumber(r.nitrosUsed)     - safeNumber(p.nitrosUsed);
+          const dSess  = safeNumber(r.longestSession) - safeNumber(p.longestSession);
 
-            return {
-              username:   r.username || '',
-              profileURL: r.profileURL || '#',
-              dRaces,
-              dTop,
-              dViews,
-              dCars,
-              dNitro,
-              dSess
-            };
-          });
+          return {
+            username:   r.username || '',
+            profileURL: r.profileURL || '#',
+            dRaces, dTop, dViews, dCars, dNitro, dSess
+          };
+        });
 
-        // Sort by Δ Total Races desc by default
         diffs.sort((a, b) => b.dRaces - a.dRaces);
 
         const tbody = document.querySelector('#eventTable tbody');
@@ -861,9 +849,7 @@
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td data-label="Rank">${idx + 1}</td>
-            <td data-label="Username">
-              <a href="${escapeAttr(d.profileURL)}" target="_blank">${escapeHTML(d.username)}</a>
-            </td>
+            <td data-label="Username"><a href="${escapeAttr(d.profileURL)}" target="_blank">${escapeHTML(d.username)}</a></td>
             <td data-label="Δ Total Races">${formatDeltaInt(d.dRaces)}</td>
             <td data-label="Δ Top WPM">${formatDeltaInt(d.dTop)}</td>
             <td data-label="Δ Profile Views">${formatDeltaInt(d.dViews)}</td>
@@ -878,10 +864,10 @@
       }
 
       // ===================================================
-      // enableSorting(tableId)
-      // - Attaches handlers to each header cell
-      // - Toggles asc/desc classes
-      // - Re-sorts rows and renumbers the Rank column
+      // Sorting: enableSorting(tableId)
+      // - Click table headers to sort
+      // - Numeric-aware; toggles asc/desc classes
+      // - Renumbers Rank column
       // ===================================================
       function enableSorting(tableId) {
         const table = document.getElementById(tableId);
@@ -892,42 +878,29 @@
         headers.forEach((th, idx) => {
           th.addEventListener('click', () => {
             const tbody = table.querySelector('tbody');
-            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const rows  = Array.from(tbody.querySelectorAll('tr'));
 
-            // Determine new direction based on current class
             const asc = !th.classList.contains('asc');
 
-            // Sort rows based on the column's text or numeric value
             rows.sort((a, b) => {
               const aText = a.children[idx]?.textContent?.trim() ?? '';
               const bText = b.children[idx]?.textContent?.trim() ?? '';
-
-              // Extract numbers (handles commas and signs)
-              const aNum = parseFloat(aText.replace(/,/g, '').replace(/[^0-9.\-]/g, ''));
-              const bNum = parseFloat(bText.replace(/,/g, '').replace(/[^0-9.\-]/g, ''));
+              const aNum  = parseFloat(aText.replace(/,/g, '').replace(/[^0-9.\-]/g, ''));
+              const bNum  = parseFloat(bText.replace(/,/g, '').replace(/[^0-9.\-]/g, ''));
 
               if (!isNaN(aNum) && !isNaN(bNum)) {
                 return asc ? aNum - bNum : bNum - aNum;
               }
-
-              // Fallback to string comparison
               return asc ? aText.localeCompare(bText) : bText.localeCompare(aText);
             });
 
-            // Reset all header sort indicators
             headers.forEach(h => h.classList.remove('asc', 'desc'));
-
-            // Set the current header's indicator
             th.classList.add(asc ? 'asc' : 'desc');
 
-            // Renumber the Rank column based on the new order
             rows.forEach((row, newIndex) => {
-              if (row.children[0]) {
-                row.children[0].textContent = newIndex + 1;
-              }
+              if (row.children[0]) row.children[0].textContent = newIndex + 1;
             });
 
-            // Re-insert the sorted rows
             tbody.innerHTML = '';
             rows.forEach(r => tbody.appendChild(r));
           });
@@ -935,14 +908,8 @@
       }
 
       // ===================================================
-      // Helper Utilities
-      // - safeNumber: ensures finite numeric values
-      // - formatDeltaInt: prefixes positive values with +
-      // - formatDeltaFloat: signed formatting with fixed decimals (kept for reuse)
-      // - escapeHTML / escapeAttr: basic XSS-safe output
-      // - parseLocalDate: robust local parsing for YYYY-MM-DD and general dates
+      // Utilities
       // ===================================================
-
       function safeNumber(x) {
         const n = Number(x);
         return Number.isFinite(n) ? n : 0;
@@ -952,15 +919,6 @@
         const v = safeNumber(n);
         const sign = v > 0 ? '+' : v < 0 ? '' : '';
         return `${sign}${v.toLocaleString()}`;
-      }
-
-      function formatDeltaFloat(n, digits = 2) {
-        const v = Number.isFinite(n) ? n : 0;
-        const sign = v > 0 ? '+' : v < 0 ? '' : '';
-        return `${sign}${v.toLocaleString(undefined, {
-          minimumFractionDigits: digits,
-          maximumFractionDigits: digits
-        })}`;
       }
 
       function escapeHTML(s) {
@@ -978,19 +936,13 @@
 
       function parseLocalDate(input) {
         const raw = String(input || '').trim();
-
-        // If it's in YYYY-MM-DD format, parse as a local date (midnight)
         if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
           const [y, m, d] = raw.split('-').map(n => parseInt(n, 10));
           const dt = new Date(y, (m - 1), d, 0, 0, 0, 0);
           if (!isNaN(dt.getTime())) return dt;
         }
-
-        // Fallback to general Date parsing
         const dt2 = new Date(raw);
         if (!isNaN(dt2.getTime())) return dt2;
-
-        // Last-resort fallback to "now"
         return new Date();
       }
 
