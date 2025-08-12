@@ -1,122 +1,132 @@
 /* removeGlitchedRacers.js
-   Removes rows where "Δ Total Races" > 2600.
-   - Robust matching: uses data-label="Δ Total Races" if present; otherwise finds the header index by text containing "Total Races".
-   - Fast: single pass with batched removals.
-   - Resilient: auto-reapplies when rows are added/changed via MutationObserver.
+   Remove leaderboard rows where "Δ Total Races" > 2600.
+   - Detects the target column by data-label or header text containing "Total Races".
+   - Normalizes spaces and symbols; parses "+36,099" -> 36099.
+   - Applies initially, retries briefly for late DOM, and observes tbody for changes.
 */
 (() => {
   'use strict';
 
   const THRESHOLD = 2600;
 
-  // Normalize header/cell text (handle weird spaces)
-  const norm = s =>
+  // Normalize text: collapse whitespace, convert NBSP variants
+  const norm = (s) =>
     String(s || '')
-      .replace(/[\u00A0\u202F]/g, ' ') // NBSP, NNBSP -> space
+      .replace(/[\u00A0\u202F\u2007]/g, ' ') // NBSP, NNBSP, figure space
       .replace(/\s+/g, ' ')
       .trim();
 
-  // Parse something like "+36,099" -> 36099
-  const parseDelta = text => {
-    const cleaned = String(text || '').replace(/[^\d-]/g, ''); // keep digits and minus
+  // Parse deltas like "+36,099" or "−1,234" (minus can be ASCII or Unicode)
+  const parseDelta = (text) => {
+    const cleaned = String(text || '')
+      .replace(/[+\u2212]/g, '')   // strip ASCII plus and Unicode minus sign
+      .replace(/[^\d-]/g, '');     // keep ascii minus if present, and digits
     if (!cleaned) return NaN;
     const n = parseInt(cleaned, 10);
     return Number.isFinite(n) ? n : NaN;
   };
 
-  // Find tables that have a "Total Races" column (by header text or data-label in body)
-  function findTargetTables(root = document) {
-    const tables = Array.from(root.querySelectorAll('table'));
-    return tables.filter(table => {
-      if (table.querySelector('td[data-label*="Total Races"]')) return true;
-      const ths = table.tHead ? table.tHead.querySelectorAll('th') : [];
-      for (const th of ths) {
-        if (/total races/i.test(norm(th.textContent))) return true;
-      }
-      return false;
+  // Identify candidate tables that actually have a "Total Races" column
+  const findTables = () => {
+    const all = Array.from(document.querySelectorAll('table'));
+    return all.filter((table) => {
+      // Fast path: any td with a data-label containing "Total Races"
+      if (table.querySelector('tbody td[data-label*="Total Races"]')) return true;
+      // Header path: any th whose text contains "Total Races"
+      const ths = table.tHead ? Array.from(table.tHead.querySelectorAll('th')) : [];
+      return ths.some((th) => /total races/i.test(norm(th.textContent)));
     });
+  };
+
+  // For a given table, find a getter that returns the Δ Total Races cell for a row
+  function makeCellGetter(table) {
+    // Prefer data-label on cells (works regardless of column order)
+    const hasDataLabel = !!table.querySelector('tbody td[data-label*="Total Races"]');
+    if (hasDataLabel) {
+      return (row) =>
+        row.querySelector('td[data-label="Δ Total Races"]') ||
+        row.querySelector('td[data-label*="Total Races"]');
+    }
+
+    // Fallback to header index detection by header text
+    if (table.tHead) {
+      const ths = Array.from(table.tHead.querySelectorAll('th'));
+      const idx = ths.findIndex((th) => /total races/i.test(norm(th.textContent)));
+      if (idx >= 0) {
+        return (row) => {
+          const cells = row.children;
+          return cells[idx] || null;
+        };
+      }
+    }
+    // No way to resolve the column
+    return () => null;
   }
 
-  // Find the Δ Total Races cell for a given row
-  function getDeltaCell(row) {
-    // Prefer explicit data-label (responsive tables)
-    let cell = row.querySelector('td[data-label="Δ Total Races"]');
-    if (!cell) cell = row.querySelector('td[data-label*="Total Races"]');
-    if (cell) return cell;
-
-    // Fallback: find header index by text containing "Total Races"
-    const table = row.closest('table');
-    if (!table || !table.tHead) return null;
-    const ths = Array.from(table.tHead.querySelectorAll('th'));
-    const idx = ths.findIndex(th => /total races/i.test(norm(th.textContent)));
-    if (idx < 0) return null;
-
-    const cells = row.children;
-    return cells[idx] || null;
-  }
-
-  // Remove rows that exceed threshold; returns removed count
+  // Remove rows exceeding threshold; returns number removed
   function filterTable(table) {
-    const tbody = table.tBodies && table.tBodies[0];
-    if (!tbody) return 0;
+    // Support first tbody; if multiple tbodies exist, iterate all
+    const tbodies = table.tBodies && table.tBodies.length ? Array.from(table.tBodies) : [];
+    if (!tbodies.length) return 0;
 
-    const rows = Array.from(tbody.rows);
-    const toRemove = [];
+    const getCell = makeCellGetter(table);
+    let removed = 0;
 
-    for (const row of rows) {
-      const cell = getDeltaCell(row);
-      if (!cell) continue;
-      const n = parseDelta(cell.textContent);
-      if (Number.isFinite(n) && n > THRESHOLD) {
-        toRemove.push(row);
+    for (const tbody of tbodies) {
+      const rows = Array.from(tbody.rows);
+      const toRemove = [];
+      for (const row of rows) {
+        // Skip header-like rows that leaked into tbody
+        if (!row || !row.children || row.children.length === 0) continue;
+
+        const cell = getCell(row);
+        if (!cell) continue;
+
+        const n = parseDelta(cell.textContent);
+        if (Number.isFinite(n) && n > THRESHOLD) {
+          toRemove.push(row);
+        }
+      }
+      for (const r of toRemove) {
+        r.remove();
+        removed++;
       }
     }
 
-    // Batch remove to limit reflows
-    for (const row of toRemove) row.remove();
-    return toRemove.length;
+    return removed;
   }
 
-  // Observe row insertions to re-apply the filter
+  // Observe tbody changes and re-apply removal
   function observeTable(table) {
-    const tbody = table.tBodies && table.tBodies[0];
-    if (!tbody) return;
-
-    const mo = new MutationObserver(muts => {
-      let needsFilter = false;
-      for (const m of muts) {
-        if (m.type === 'childList' && (m.addedNodes && m.addedNodes.length)) {
-          needsFilter = true;
-          break;
+    const tbodies = table.tBodies && table.tBodies.length ? Array.from(table.tBodies) : [];
+    for (const tbody of tbodies) {
+      const mo = new MutationObserver((muts) => {
+        // Cheap check: only if nodes were added
+        if (muts.some((m) => m.type === 'childList' && m.addedNodes && m.addedNodes.length)) {
+          filterTable(table);
         }
-      }
-      if (needsFilter) filterTable(table);
-    });
-
-    mo.observe(tbody, { childList: true });
+      });
+      mo.observe(tbody, { childList: true, subtree: true });
+    }
   }
 
   function init() {
-    // Initial pass (allow a tick for any late DOM writes)
     const applyAll = () => {
-      const tables = findTargetTables();
-      for (const table of tables) {
-        filterTable(table);
-        observeTable(table);
+      const tables = findTables();
+      for (const t of tables) {
+        filterTable(t);
+        observeTable(t);
       }
     };
 
-    // If table builds after DOMContentLoaded, keep a short watch for new target tables
-    let scanCount = 0;
-    const maxScans = 20; // ~4s total if interval=200ms
-    const interval = setInterval(() => {
+    // Immediate attempt, then a short retry window for late-rendered tables
+    applyAll();
+    let tries = 0;
+    const maxTries = 20; // ~4s with 200ms interval
+    const iv = setInterval(() => {
       applyAll();
-      scanCount++;
-      if (scanCount >= maxScans) clearInterval(interval);
+      if (++tries >= maxTries) clearInterval(iv);
     }, 200);
-
-    // Also run once right away after a microtask
-    setTimeout(applyAll, 0);
   }
 
   if (document.readyState === 'loading') {
