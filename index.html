@@ -1,13 +1,131 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!--
+    Nitro Type Top 1000 Racers (Full, explicit, and auditable; >1000 lines)
+    =========================================================================
+    PURPOSE
+    -------
+    A complete, unstreamlined, and highly commented leaderboard app for Nitro Type:
+    - Views: Leaderboard, Races Per Day, 24-Hour Leaderboard (daily diffs), Event (seasonal diffs)
+    - Robust JSON normalization for both legacy arrays and { updatedAt, racers } objects
+    - Click-to-sort tables with visual sort states and automatic rank renumbering
+    - Defensive parsing, safe numeric handling, and HTML escaping for security and reliability
+    - UI consistent with your theme and layout preferences
+
+    WHAT’S NEW (per your request)
+    ------------------------------
+    - “24-Hour Changes” tab label changed to: “24-Hour Leaderboard”
+    - 24-Hour Leaderboard:
+      • Excludes any racer whose current total races equals 0
+      • Filters out anomalies where Δ Total Races ≥ 2600
+      • NEW: Removes every row where Δ Total Races equals 0 (no-ops hidden)
+      • Excludes Avg WPM and League Tier from tracking and display
+    - Event tab:
+      • Dropdown inside the Event tab, styled in theme colors
+      • Reads Back2SchoolEvent2025_before.json and Back2SchoolEvent2025_after.json
+      • Shows “Coming Soon” if the BEFORE file is empty/missing
+      • Excludes any racer whose current total races equals 0
+      • NEW: Removes every row where Δ Total Races equals 0 (no-ops hidden)
+      • Excludes Avg WPM and League Tier from tracking and display
+
+    PRESERVED / EXISTING BEHAVIOR
+    -----------------------------
+    - Main Leaderboard and Races Per Day remain as before
+    - Header shows static “Last updated: 8PM Daily”
+    - Sorting works across all tables with rank renumbering
+    - Event dropdown is extensible using data-before/data-after attributes per option
+
+    FILES TO HOST BESIDE THIS HTML
+    ------------------------------
+    - sample_data.json
+    - sample_data_prev.json
+    - Back2SchoolEvent2025_before.json
+    - Back2SchoolEvent2025_after.json
+
+    DATA MODEL EXPECTATIONS
+    -----------------------
+    Each racer object can include:
+      username        (string)
+      tag             (string)
+      title           (string)
+      racesPlayed     (number)
+      avgSpeed        (number)
+      highestSpeed    (number)
+      profileViews    (number)
+      joinDate        (string; YYYY-MM-DD preferred but flexible)
+      garageCars      (number)
+      profileURL      (string; absolute URL)
+      membership      (string)
+      nitrosUsed      (number)
+      longestSession  (number)
+      leagueTier      (number)
+
+    JSON PAYLOAD SHAPES SUPPORTED
+    -----------------------------
+    1) Preferred object shape:
+       {
+         "updatedAt": "2025-08-11T20:00:00Z",
+         "racers": [ ... ]
+       }
+    2) Legacy shape:
+       [ ... ]  // treated as "racers" with no updatedAt
+
+    KEY LOGIC HIGHLIGHTS
+    --------------------
+    - Daily (24-Hour Leaderboard):
+      • Hard filter: current total races > 0
+      • Compute diffs vs previous snapshot keyed by lowercase username
+      • Filter anomalies: Δ Total Races >= 2600
+      • NEW: Filter no-op rows: Δ Total Races == 0
+      • Sort by Δ Total Races descending, renumber rank
+    - Event:
+      • Hard filter: current total races > 0
+      • Compute diffs vs BEFORE snapshot keyed by lowercase username
+      • NEW: Filter no-op rows: Δ Total Races == 0
+      • Sort by Δ Total Races descending, renumber rank
+      • Show "Coming Soon" if BEFORE snapshot is missing/empty
+
+    USER EXPERIENCE / ACCESSIBILITY
+    -------------------------------
+    - Sticky table headers for readability
+    - Responsive stacked layout for mobile screens (<900px)
+    - Clear sorting indicators (▲/▼)
+    - Links use target="_blank" to keep the leaderboard open
+
+    IMPLEMENTATION NOTES
+    --------------------
+    - All numeric parsing uses safeNumber() to guard against NaN
+    - All user-facing text coming from data is escaped via escapeHTML/escapeAttr
+    - Sorting function attempts numeric sort first, falls back to string
+    - Rank column is updated post-sort to reflect current ordering
+
+    EXTENSIBILITY
+    -------------
+    - Add more event options:
+        <option
+          value="myEvent"
+          data-before="MyEvent_before.json"
+          data-after="MyEvent_after.json"
+        >My Event Name</option>
+      The renderer will fetch and recompute on selection change.
+
+    AUDITABILITY
+    ------------
+    - The code is intentionally explicit and verbose to ensure full traceability.
+    - No hidden behaviors: all filters and transforms are named and clearly documented.
+
+    ========================================================================
+    Below begins CSS and HTML structure, followed by JavaScript logic.
+    ========================================================================
+  -->
 
   <meta charset="UTF-8" />
   <title>Nitro Type Top 1000 Racers</title>
 
   <style>
     /* ===================================================
-       Root Color & Typography Variables
+       Root Theme Variables
        =================================================== */
     :root {
       --bg-color:        #2a2a2a;  /* dark background */
@@ -26,7 +144,7 @@
     }
 
     /* ===================================================
-       Global Reset & Base Styles
+       Reset / Base
        =================================================== */
     *, *::before, *::after {
       box-sizing: border-box;
@@ -55,7 +173,7 @@
     }
 
     /* ===================================================
-       Header / Branding Styles
+       Header
        =================================================== */
     header {
       text-align: center;
@@ -271,7 +389,7 @@
   <div class="tabs">
     <div class="tab" data-target="leaderboardSection">Leaderboard</div>
     <div class="tab" data-target="racesPerDaySection">Races Per Day</div>
-    <div class="tab active" data-target="changes24Section">24-Hour Changes</div>
+    <div class="tab active" data-target="changes24Section">24-Hour Leaderboard</div>
     <div class="tab" data-target="eventSection">Event</div>
   </div>
 
@@ -326,10 +444,11 @@
   </section>
 
   <!-- ===================================================
-       24-Hour Changes Section
-       - Excludes Avg WPM & League Tier
-       - Filters Δ Total Races >= 2600
-       - Also excludes any racer whose current total races == 0
+       24-Hour Leaderboard (formerly "24-Hour Changes")
+       - Excludes Avg WPM & League Tier from display/tracking
+       - Excludes current racers with total races == 0
+       - Filters Δ Total Races >= 2600 (anomaly)
+       - Removes rows where Δ Total Races == 0 (no-ops)
        =================================================== -->
   <section id="changes24Section" class="table-container active">
     <table id="changes24Table">
@@ -353,15 +472,15 @@
 
   <!-- ===================================================
        Event Section (dropdown inside this tab)
-       - Excludes Avg WPM & League Tier from tracking/display
-       - Excludes racers whose current total races == 0
-       - Shows "Coming Soon" if BEFORE file is empty or missing
+       - Excludes Avg WPM & League Tier
+       - Excludes current racers with total races == 0
+       - Removes rows where Δ Total Races == 0
+       - Shows "Coming Soon" if BEFORE file is empty/missing
        =================================================== -->
   <section id="eventSection" class="table-container">
     <div class="event-controls">
       <label for="eventSelector">Event:</label>
       <select id="eventSelector" aria-label="Select event to display">
-        <!-- Expandable: add more <option> entries with data-before/data-after -->
         <option
           value="back2school2025"
           data-before="Back2SchoolEvent2025_before.json"
@@ -402,7 +521,7 @@
       // ===================================================
       // Constants
       // ===================================================
-      const MAX_24H_RACES = 2600; // exclude entries with Δ Total Races >= 2600
+      const MAX_24H_RACES = 2600; // exclude entries with Δ Total Races >= 2600 (daily anomalies)
 
       // ===================================================
       // Tabs: Switch visible section by data-target
@@ -484,6 +603,7 @@
       // Render selected event by fetching before/after JSONs
       // - Excludes Avg WPM and League Tier
       // - Excludes racers whose current total races == 0
+      // - Removes rows where Δ Total Races == 0
       // - Shows "Coming Soon" when BEFORE is empty/missing
       // ===================================================
       function renderEventForSelection(selector) {
@@ -536,7 +656,7 @@
           // Hard filter: exclude racers whose current total races is 0
           const currentRacers = currentRacersRaw.filter(r => safeNumber(r.racesPlayed) > 0);
 
-          // Render diffs (excludes Avg WPM and League Tier)
+          // Render diffs (excludes Avg WPM and League Tier) and drop Δ==0 rows
           renderEventChanges(currentRacers, prevEventMap);
 
           // Optional: emit status with counts
@@ -726,10 +846,11 @@
       }
 
       // ===================================================
-      // Render: 24-Hour Changes
+      // Render: 24-Hour Leaderboard (daily diffs)
       // - Excludes Avg WPM & League Tier
-      // - Filters Δ Total Races >= MAX_24H_RACES
       // - Excludes any racer with current total races == 0
+      // - Filters anomalies where Δ Total Races >= MAX_24H_RACES
+      // - NEW: Removes rows where Δ Total Races == 0
       // ===================================================
       function renderChanges24(currentRacers, prevMap) {
         // First hard filter: exclude current racers with total races == 0
@@ -753,7 +874,8 @@
               dRaces, dTop, dViews, dCars, dNitro, dSess
             };
           })
-          .filter(d => d.dRaces < MAX_24H_RACES); // anomaly filter
+          // Apply daily anomaly cap and remove zero-delta rows
+          .filter(d => d.dRaces < MAX_24H_RACES && d.dRaces !== 0);
 
         diffs.sort((a, b) => b.dRaces - a.dRaces);
 
@@ -783,26 +905,30 @@
       // Render: Event Changes (Dropdown-driven)
       // - Excludes Avg WPM & League Tier
       // - Excludes current racers with total races == 0
+      // - NEW: Removes rows where Δ Total Races == 0
       // - Sorted by Δ Total Races desc
       // ===================================================
       function renderEventChanges(currentRacers, prevMap) {
-        const diffs = (currentRacers || []).map(r => {
-          const key = String(r.username || '').toLowerCase();
-          const p = prevMap.get(key) || {};
+        const diffs = (currentRacers || [])
+          .map(r => {
+            const key = String(r.username || '').toLowerCase();
+            const p = prevMap.get(key) || {};
 
-          const dRaces = safeNumber(r.racesPlayed)    - safeNumber(p.racesPlayed);
-          const dTop   = safeNumber(r.highestSpeed)   - safeNumber(p.highestSpeed);
-          const dViews = safeNumber(r.profileViews)   - safeNumber(p.profileViews);
-          const dCars  = safeNumber(r.garageCars)     - safeNumber(p.garageCars);
-          const dNitro = safeNumber(r.nitrosUsed)     - safeNumber(p.nitrosUsed);
-          const dSess  = safeNumber(r.longestSession) - safeNumber(p.longestSession);
+            const dRaces = safeNumber(r.racesPlayed)    - safeNumber(p.racesPlayed);
+            const dTop   = safeNumber(r.highestSpeed)   - safeNumber(p.highestSpeed);
+            const dViews = safeNumber(r.profileViews)   - safeNumber(p.profileViews);
+            const dCars  = safeNumber(r.garageCars)     - safeNumber(p.garageCars);
+            const dNitro = safeNumber(r.nitrosUsed)     - safeNumber(p.nitrosUsed);
+            const dSess  = safeNumber(r.longestSession) - safeNumber(p.longestSession);
 
-          return {
-            username:   r.username || '',
-            profileURL: r.profileURL || '#',
-            dRaces, dTop, dViews, dCars, dNitro, dSess
-          };
-        });
+            return {
+              username:   r.username || '',
+              profileURL: r.profileURL || '#',
+              dRaces, dTop, dViews, dCars, dNitro, dSess
+            };
+          })
+          // Remove rows where Δ Total Races equals 0 (explicit per request)
+          .filter(d => d.dRaces !== 0);
 
         diffs.sort((a, b) => b.dRaces - a.dRaces);
 
@@ -917,4 +1043,3 @@
 
 </body>
 </html>
-
