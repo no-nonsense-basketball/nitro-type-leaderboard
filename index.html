@@ -2,25 +2,27 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Nitro Type Top 1000 Racers</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nitro Type Top 1000 — Everything Leaderboard</title>
 
   <style>
-    /* Nitro Type Leaderboard — Dark, fast, responsive */
-
+    /* =========================================================================================
+       THEME
+       ========================================================================================= */
     :root {
-      --bg: #111317;
-      --surface: #151922;
-      --surface-2: #1b2130;
-      --surface-3: #212838;
-      --text: #e8ecf1;
-      --text-dim: #b5c0cf;
-      --muted: #8b9ab3;
+      --bg: #0f1217;
+      --surface: #151925;
+      --surface-2: #1a2131;
+      --surface-3: #202a3f;
+      --text: #e9eef6;
+      --text-dim: #b8c3d6;
+      --muted: #8da0be;
       --accent: #6ea8fe;
       --accent-2: #8fdaff;
       --good: #37d67a;
       --warn: #ffb020;
       --bad: #ff5c5c;
-      --border: #2a3244;
+      --border: #2a3246;
       --shadow: rgba(0,0,0,0.35);
       --focus: #82b1ff;
 
@@ -36,7 +38,6 @@
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
 
-    /* Base */
     *,
     *::before,
     *::after { box-sizing: border-box; }
@@ -44,62 +45,67 @@
     body {
       margin: 0;
       font-family: var(--font);
-      background: radial-gradient(1000px 600px at 20% -10%, #162037 0%, var(--bg) 60%) no-repeat fixed;
+      background: radial-gradient(1100px 700px at 15% -10%, #172241 0%, var(--bg) 65%) no-repeat fixed;
       color: var(--text);
-      line-height: 1.35;
+      line-height: 1.4;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       padding: var(--pad-3);
     }
 
-    /* Header */
+    /* =========================================================================================
+       HEADER
+       ========================================================================================= */
     header {
       text-align: center;
       padding: 16px 12px;
       margin: 0 auto var(--pad-3);
-      max-width: 1200px;
-      background: linear-gradient(180deg, rgba(33,40,56,0.75), rgba(27,33,48,0.75));
+      max-width: 1300px;
+      background: linear-gradient(180deg, rgba(32,42,63,0.78), rgba(26,33,49,0.78));
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
       box-shadow: 0 10px 24px rgba(0,0,0,0.25);
     }
     header h1 {
       margin: 0 0 6px;
-      font-weight: 800;
-      letter-spacing: 0.2px;
-      color: #f0f5ff;
-      text-shadow: 0 6px 18px rgba(110,168,254,0.18);
+      font-weight: 900;
+      letter-spacing: 0.3px;
+      color: #f6f9ff;
+      text-shadow: 0 6px 18px rgba(110,168,254,0.2);
     }
-    header p { margin: 2px 0; color: var(--text-dim); }
+    header p { margin: 4px 0; color: var(--text-dim); }
     header a { color: var(--accent); text-decoration: none; }
     header a:hover { color: var(--accent-2); }
 
-    /* Tabs */
+    /* =========================================================================================
+       TABS
+       ========================================================================================= */
     .tabs {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: var(--pad-2);
       align-items: stretch;
       margin: 0 auto var(--pad-3);
-      max-width: 1200px;
+      max-width: 1300px;
     }
     .tabs .tab {
       background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
       color: var(--text);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      padding: 0.6rem 0.8rem;
+      padding: 0.66rem 0.8rem;
       text-align: center;
-      font-weight: 700;
-      letter-spacing: 0.15px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
       cursor: pointer;
       user-select: none;
-      transition: transform .04s ease, box-shadow .15s ease, border-color .15s ease;
+      transition: transform .05s ease, box-shadow .18s ease, border-color .18s ease;
       box-shadow: 0 2px 0 var(--shadow) inset, 0 0 0 rgba(0,0,0,0);
+      text-transform: uppercase;
     }
     .tabs .tab:hover {
       transform: translateY(-1px);
-      box-shadow: 0 6px 16px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.03) inset;
+      box-shadow: 0 7px 18px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.03) inset;
     }
     .tabs .tab.active {
       color: #ffffff;
@@ -107,7 +113,9 @@
       text-shadow: 0 0 10px rgba(110,168,254,0.6);
     }
 
-    /* Sections */
+    /* =========================================================================================
+       SECTIONS
+       ========================================================================================= */
     .table-container {
       display: none;
       background: var(--surface);
@@ -115,13 +123,22 @@
       border-radius: var(--radius-lg);
       padding: 10px;
       margin: 0 auto 40px;
-      max-width: 1200px;
+      max-width: 1300px;
       overflow: hidden;
       box-shadow: 0 18px 40px rgba(0,0,0,0.35);
     }
     .table-container.active { display: block; }
+    .note {
+      color: #e8ecf1;
+      font-size: 0.95rem;
+      text-align: center;
+      margin: 8px 0 12px;
+    }
+    .hidden { display: none !important; }
 
-    /* Tables */
+    /* =========================================================================================
+       TABLES
+       ========================================================================================= */
     table {
       width: 100%;
       border-collapse: collapse;
@@ -134,7 +151,7 @@
       z-index: 2;
       background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
       color: var(--text);
-      font-weight: 700;
+      font-weight: 800;
       letter-spacing: 0.15px;
       padding: 0.6rem 0.66rem;
       border-bottom: 1px solid var(--border);
@@ -161,6 +178,7 @@
     }
     thead th.asc::after { border-bottom: 7px solid var(--accent); }
     thead th.desc::after { border-top: 7px solid var(--accent); }
+
     thead th:first-child,
     thead th:nth-child(2),
     thead th:nth-child(3) { text-align: left; }
@@ -176,11 +194,11 @@
     }
     tbody tr:nth-child(even) { background: rgba(255,255,255,0.025); }
     tbody tr:hover { background: linear-gradient(90deg, rgba(110,168,254,0.08), rgba(110,168,254,0)); }
+
     tbody td:first-child,
     tbody td:nth-child(2),
     tbody td:nth-child(3) { text-align: left; }
 
-    /* Link utilities (white underline) */
     a.link-quiet, a.link-quiet:visited {
       color: #fff;
       text-decoration: underline;
@@ -188,6 +206,7 @@
       text-underline-offset: 2px;
     }
     a.link-quiet:hover { text-decoration-color: #fff; }
+
     a.tag-link, a.tag-link:visited {
       color: #fff;
       text-decoration: underline;
@@ -195,17 +214,10 @@
     }
     a.tag-link:hover { text-decoration-color: #fff; }
 
-    /* Notes */
-    .note {
-      color: #e8ecf1;
-      font-size: 0.95rem;
-      text-align: center;
-      margin: 6px 0 10px;
-    }
-    .hidden { display: none !important; }
-
-    /* Responsive stacked cards */
-    @media (max-width: 900px) {
+    /* =========================================================================================
+       RESPONSIVE (stacked cards under 950px)
+       ========================================================================================= */
+    @media (max-width: 950px) {
       table, thead, tbody, th, td, tr { display: block; }
       thead { display: none; }
       tr { margin-bottom: 15px; }
@@ -213,22 +225,21 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 8px 12px;
+        padding: 10px 12px;
       }
       td::before {
         content: attr(data-label);
-        flex: 1 1 40%;
+        flex: 1 1 42%;
         color: var(--text-dim);
-        font-weight: 700;
+        font-weight: 800;
         text-transform: uppercase;
       }
-      td span, td a, td div {
-        flex: 1 1 60%;
-        text-align: right;
-      }
+      td span, td a, td div { flex: 1 1 58%; text-align: right; }
     }
 
-    /* A11y */
+    /* =========================================================================================
+       A11Y and chrome
+       ========================================================================================= */
     :focus-visible {
       outline: 3px solid rgba(130,177,255,0.35);
       outline-offset: 2px;
@@ -236,7 +247,6 @@
     }
     @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
-    /* Scrollbar (WebKit) */
     ::-webkit-scrollbar { height: 12px; width: 12px; }
     ::-webkit-scrollbar-track { background: var(--surface); }
     ::-webkit-scrollbar-thumb {
@@ -247,22 +257,44 @@
     ::-webkit-scrollbar-thumb:hover {
       background: linear-gradient(180deg, #4b5a7c, #37415a);
     }
+
+    /* =========================================================================================
+       PRINT
+       ========================================================================================= */
+    @media print {
+      body { background: #fff; color: #000; }
+      .tabs, .note { display: none !important; }
+      .table-container {
+        box-shadow: none;
+        border: 1px solid #000;
+      }
+      thead th {
+        position: static;
+        background: #f2f2f2;
+        color: #000;
+      }
+    }
   </style>
 </head>
-
 <body>
+  <!-- =======================================================================================
+       HEADER
+       ======================================================================================= -->
   <header>
-    <h1>Nitro Type Top 1000 Racers</h1>
+    <h1>Nitro Type Top 1000 — Everything Leaderboard</h1>
     <p>
       made by
-      <a href="https://www.youtube.com/@InternetTyper" target="_blank">
+      <a href="https://www.youtube.com/@InternetTyper" target="_blank" rel="noopener noreferrer">
         @InternetTyper on YouTube
       </a>
     </p>
-    <p id="lastUpdated">Last updated: 8PM Daily</p>
+    <p id="lastUpdated">Last updated: <span>—</span></p>
     <p>Contact: https://discord.gg/3XVdxvKgAt on Discord</p>
   </header>
 
+  <!-- =======================================================================================
+       TABS
+       ======================================================================================= -->
   <div class="tabs">
     <div class="tab active" data-target="leaderboardSection">Leaderboard</div>
     <div class="tab" data-target="racesPerDaySection">Races Per Day</div>
@@ -270,13 +302,16 @@
     <div class="tab" data-target="eventSection">Event</div>
   </div>
 
-  <!-- Leaderboard -->
+  <!-- =======================================================================================
+       MAIN LEADERBOARD (Everything)
+       ======================================================================================= -->
   <section id="leaderboardSection" class="table-container active">
     <table id="leaderboardTable">
       <thead>
         <tr>
-          <th>Rank</th>
+          <th class="desc">Rank</th>
           <th>Display Name</th>
+          <th>Username</th>
           <th>Team Tag</th>
           <th>Title</th>
           <th>Total Races</th>
@@ -285,156 +320,204 @@
           <th>Profile Views</th>
           <th>Member Since</th>
           <th>Garage Cars</th>
+          <th>Membership</th>
+          <th>Profile URL</th>
           <th>Nitros Used</th>
           <th>Longest Session</th>
           <th>League Tier</th>
         </tr>
       </thead>
-      <tbody></tbody>
+      <tbody>
+        <!-- rows injected by JS -->
+      </tbody>
     </table>
     <p class="note" id="leaderboardNote"></p>
   </section>
 
-  <!-- Races Per Day -->
+  <!-- =======================================================================================
+       RACES PER DAY (Add Join Date)
+       ======================================================================================= -->
   <section id="racesPerDaySection" class="table-container">
     <table id="racesPerDayTable">
       <thead>
         <tr>
-          <th>Rank</th>
+          <th class="desc">Rank</th>
           <th>Display Name</th>
           <th>Total Races</th>
           <th>Days Active</th>
           <th>Races / Day</th>
+          <th>Member Since</th>
         </tr>
       </thead>
-      <tbody></tbody>
+      <tbody>
+        <!-- rows injected by JS -->
+      </tbody>
     </table>
+    <p class="note" id="rpdNote"></p>
   </section>
 
-  <!-- 24-Hour Leaderboard -->
+  <!-- =======================================================================================
+       24-HOUR LEADERBOARD (Only 4 metrics)
+       ======================================================================================= -->
   <section id="changes24Section" class="table-container">
     <table id="changes24Table">
       <thead>
         <tr>
-          <th>Rank</th>
+          <th class="desc">Rank</th>
           <th>Display Name</th>
-          <th class="desc">Δ Total Races</th>
+          <th>Δ Total Races</th>
           <th>Δ Top WPM</th>
           <th>Δ Profile Views</th>
           <th>Δ Nitros Used</th>
         </tr>
       </thead>
-      <tbody></tbody>
+      <tbody>
+        <!-- rows injected by JS -->
+      </tbody>
     </table>
     <p class="note" id="dailyNote"></p>
   </section>
 
-  <!-- Event -->
+  <!-- =======================================================================================
+       EVENT (Four-file engine, custom columns)
+       ======================================================================================= -->
   <section id="eventSection" class="table-container">
-    <div class="note" id="eventInfo">Event metrics combine API_before/now and Before/After profile snapshots. Typed/errs are used for accuracy and points but not displayed.</div>
-    <div class="note hidden" id="eventComingSoon">Coming Soon</div>
+    <div class="note" id="eventInfo">
+      Event combines API_before/now and Before/After Data. Totals shown here are period deltas (Δ).
+    </div>
+    <div id="eventComingSoon" class="note hidden">Coming Soon</div>
     <table id="eventTable">
       <thead>
         <tr>
-          <th>Rank</th>
+          <th class="desc">Rank</th>
           <th>Display Name</th>
-          <th>Team Tag</th>
-          <th class="desc">Δ Total Races</th>
+          <th>Total Races</th>
           <th>Avg WPM</th>
           <th>Avg Accuracy</th>
-          <th>Avg Points</th>
-          <th>Δ Nitros Used</th>
+          <th>Profile Views</th>
+          <th>Nitros Used</th>
         </tr>
       </thead>
-      <tbody></tbody>
+      <tbody>
+        <!-- rows injected by JS -->
+      </tbody>
     </table>
     <p class="note" id="eventStatus"></p>
   </section>
 
+  <!-- =======================================================================================
+       JAVASCRIPT
+       ======================================================================================= -->
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // Constants
-      const MAX_24H_RACES = 2600; // anomaly cutoff
+    (function () {
+      'use strict';
+
+      // =====================================================================================
+      // CONFIG
+      // =====================================================================================
+      const MAX_24H_RACES = 2600; // cut anomalies in daily diffs
+
+      const DATA_FILES = {
+        current: 'sample_data.json',
+        previous: 'sample_data_prev.json'
+      };
+
       const EVENT_FILES = {
         apiBefore: 'API_before.json',
         apiNow: 'API_now.json',
         dataBefore: 'BeforeEventData.json',
         dataNow: 'AfterEventData.json'
       };
-      const WPM_METHOD = 'weighted'; // 'weighted' | 'current'
 
-      // Tabs
+      const ENRICH_FROM_API_NOW = true; // prefer API displayName and teamTag when present
+      const WPM_METHOD = 'weighted';    // 'weighted' or 'current'
+
+      // =====================================================================================
+      // DOM
+      // =====================================================================================
       const tabs = document.querySelectorAll('.tabs .tab');
       const sections = document.querySelectorAll('.table-container');
+      const lastUpdatedSpan = document.querySelector('#lastUpdated span');
+      const lastUpdatedEl = lastUpdatedSpan || document.getElementById('lastUpdated');
+
+      // -------------------------------------------------------------------------------------
+      // Tabs switching
+      // -------------------------------------------------------------------------------------
       tabs.forEach(tab => {
         tab.addEventListener('click', () => {
           tabs.forEach(t => t.classList.remove('active'));
           sections.forEach(s => s.classList.remove('active'));
           tab.classList.add('active');
-          const targetId = tab.dataset.target;
-          const section = document.getElementById(targetId);
-          if (section) section.classList.add('active');
+          const target = document.getElementById(tab.dataset.target);
+          if (target) target.classList.add('active');
         });
       });
 
-      // Fetch main snapshots (Data current/previous)
+      // =====================================================================================
+      // BOOTSTRAP: load current/prev Data and optional API_now enrichment; render all but Event,
+      // then init Event (four-file compute).
+      // =====================================================================================
       Promise.all([
-        fetchJSONFlexible('sample_data.json'),               // current data
-        fetchJSONFlexible('sample_data_prev.json', true)     // previous data (optional)
+        fetchJSONFlexible(DATA_FILES.current),
+        fetchJSONFlexible(DATA_FILES.previous, true),
+        ENRICH_FROM_API_NOW ? fetchJSONFlexible(EVENT_FILES.apiNow, true) : { racers: [] }
       ])
-      .then(([curData, prevData]) => {
-        const cur = normalizeData(curData);
-        const prev = normalizeData(prevData);
+      .then(([curRaw, prevRaw, apiNowMaybe]) => {
+        const current = normalizeData(curRaw);
+        const previous = normalizeData(prevRaw);
+        const apiNowArr = toArray(apiNowMaybe);
 
-        // Leaderboard + RacesPerDay
-        renderLeaderboard(cur.racers);
+        // Set "Last updated"
+        if (lastUpdatedEl) {
+          const ts = current.updatedAt ? new Date(current.updatedAt) : new Date();
+          if (lastUpdatedSpan) {
+            lastUpdatedSpan.textContent = ts.toLocaleString();
+          } else {
+            lastUpdatedEl.textContent = `Last updated: ${ts.toLocaleString()}`;
+          }
+        }
+
+        // Build enrichment maps
+        const displayNameMap = buildDisplayNameMap(apiNowArr); // username(lower) => displayName
+        const teamTagMap = buildTeamTagMap(apiNowArr);         // username(lower) => teamTag
+
+        // Map for previous diffs
+        const prevMap = new Map((previous.racers || [])
+          .map(r => [String(r.username || '').toLowerCase(), r]));
+
+        // Render the 3 data-driven sections
+        renderLeaderboard(current.racers, displayNameMap, teamTagMap);
         enableSorting('leaderboardTable');
 
-        renderRacesPerDay(cur.racers);
+        renderRacesPerDay(current.racers, displayNameMap);
         enableSorting('racesPerDayTable');
 
-        // 24-hour diffs (from Data)
-        const prevMap = new Map((prev.racers || []).map(r => [String(r.username || '').toLowerCase(), r]));
-        renderChanges24(cur.racers, prevMap);
+        renderChanges24(current.racers, prevMap, displayNameMap);
         enableSorting('changes24Table');
 
-        // Event (four files)
+        // Initialize the Event tab
         initEventTab();
       })
       .catch(err => {
-        console.error('Failed loading main snapshots:', err);
+        console.error('Error loading data:', err);
+        if (lastUpdatedEl) {
+          const ts = new Date().toLocaleString();
+          if (lastUpdatedSpan) lastUpdatedSpan.textContent = ts;
+          else lastUpdatedEl.textContent = `Last updated: ${ts}`;
+        }
         const msg = document.createElement('p');
-        msg.textContent = 'Error loading main snapshots – check console.';
-        msg.style.color = '#ff5c5c';
+        msg.textContent = 'Error loading data – check console.';
+        msg.style.color = '#ff5252';
         msg.style.textAlign = 'center';
         document.body.appendChild(msg);
-        initEventTab(); // still attempt event
+
+        // Attempt Event initialization anyway so UI isn't stuck
+        initEventTab();
       });
 
-      // Event initialization
-      function initEventTab() {
-        loadEventFourFiles(EVENT_FILES)
-          .then(result => {
-            if (!result || result.beforeCount === 0) {
-              showEventComingSoon(true);
-              clearEventTable();
-              setEventStatus('Event BEFORE data missing or empty.');
-              return;
-            }
-            showEventComingSoon(false);
-            renderEventComputed(result.rows);
-            enableSorting('eventTable');
-            setEventStatus(`Loaded ${result.beforeCount.toLocaleString()} (before API) and ${result.nowCount.toLocaleString()} (now API); ${result.rows.length.toLocaleString()} racers with Δ races > 0.`);
-          })
-          .catch(err => {
-            console.error('Event computation error:', err);
-            showEventComingSoon(true);
-            clearEventTable();
-            setEventStatus('Error loading event data.');
-          });
-      }
-
-      // Files: flexible JSON (supports JSON array, object with racers, or NDJSON lines)
+      // =====================================================================================
+      // FETCH HELPERS (supports JSON, object with racers, arrays, NDJSON)
+      // =====================================================================================
       async function fetchJSONFlexible(url, allowEmpty = false) {
         try {
           const res = await fetch(url, { cache: 'no-store' });
@@ -445,319 +528,143 @@
           const text = await res.text();
           const trimmed = text.trim();
           if (!trimmed) return allowEmpty ? { racers: [] } : JSON.parse(''); // force catch
-          const firstChar = trimmed[0];
 
-          if (firstChar === '{' || firstChar === '[') {
-            // Regular JSON
-            return JSON.parse(trimmed);
-          }
+          const first = trimmed[0];
+          if (first === '{' || first === '[') return JSON.parse(trimmed);
 
           // NDJSON fallback
-          const lines = trimmed.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-          const arr = [];
-          for (const line of lines) {
-            try {
-              arr.push(JSON.parse(line));
-            } catch (e) {
-              // skip bad lines
-            }
-          }
-          return arr;
+          const out = [];
+          trimmed.split(/\r?\n/).forEach(line => {
+            const l = line.trim();
+            if (!l) return;
+            try { out.push(JSON.parse(l)); } catch { /* skip bad line */ }
+          });
+          return out;
         } catch (e) {
           if (allowEmpty) return { racers: [] };
           throw e;
         }
       }
 
-      // Normalize: { updatedAt, racers } | [ ... ] -> { updatedAt, racers: [] }
+      // =====================================================================================
+      // NORMALIZATION + MAPS
+      // =====================================================================================
       function normalizeData(payload) {
         if (Array.isArray(payload)) return { updatedAt: null, racers: payload };
         if (payload && Array.isArray(payload.racers)) return { updatedAt: payload.updatedAt || null, racers: payload.racers };
         return { updatedAt: null, racers: [] };
       }
 
-      // Leaderboard render (Data current)
-      function renderLeaderboard(data) {
-        const list = [...(data || [])].map(r => ({
-          slug: String(r.username || ''),
-          tag: String(r.tag || ''),
-          display: String(r.title || ''), // we’ll still show separate Title column
-          title: String(r.title || ''),
-          racesPlayed: safeNumber(r.racesPlayed),
-          avgSpeed: safeNumber(r.avgSpeed),
-          highestSpeed: safeNumber(r.highestSpeed),
-          profileViews: safeNumber(r.profileViews),
-          joinDate: String(r.joinDate || ''),
-          garageCars: safeNumber(r.garageCars),
-          nitrosUsed: safeNumber(r.nitrosUsed),
-          longestSession: safeNumber(r.longestSession),
-          leagueTier: safeNumber(r.leagueTier)
-        }));
-
-        list.sort((a, b) => b.racesPlayed - a.racesPlayed);
-
-        const tbody = document.querySelector('#leaderboardTable tbody');
-        tbody.innerHTML = '';
-        const frag = document.createDocumentFragment();
-
-        list.forEach((r, i) => {
-          const tr = document.createElement('tr');
-          const racerUrl = ntRacerURL(r.slug);
-          const teamUrl = r.tag ? ntTeamURL(r.tag) : '#';
-          tr.innerHTML = `
-            <td data-label="Rank">${i + 1}</td>
-            <td data-label="Display Name">
-              <a class="link-quiet" href="${escapeAttr(racerUrl)}" target="_blank">${escapeHTML(prettyNameFromSlug(r.slug))}</a>
-            </td>
-            <td data-label="Team Tag">
-              ${r.tag ? `<a class="tag-link" href="${escapeAttr(teamUrl)}" target="_blank">${escapeHTML(r.tag)}</a>` : '<span>-</span>'}
-            </td>
-            <td data-label="Title">${escapeHTML(r.title)}</td>
-            <td data-label="Total Races">${r.racesPlayed.toLocaleString()}</td>
-            <td data-label="Avg WPM">${r.avgSpeed.toLocaleString()}</td>
-            <td data-label="Top WPM">${r.highestSpeed.toLocaleString()}</td>
-            <td data-label="Profile Views">${r.profileViews.toLocaleString()}</td>
-            <td data-label="Member Since">${escapeHTML(r.joinDate)}</td>
-            <td data-label="Garage Cars">${r.garageCars.toLocaleString()}</td>
-            <td data-label="Nitros Used">${r.nitrosUsed.toLocaleString()}</td>
-            <td data-label="Longest Session">${r.longestSession.toLocaleString()}</td>
-            <td data-label="League Tier">${r.leagueTier.toLocaleString()}</td>
-          `.trim();
-          frag.appendChild(tr);
-        });
-
-        tbody.appendChild(frag);
-        setNote('leaderboardNote', `${list.length.toLocaleString()} racers loaded.`);
+      function toArray(payload) {
+        if (Array.isArray(payload)) return payload;
+        if (payload && Array.isArray(payload.racers)) return payload.racers;
+        return [];
       }
 
-      // Races Per Day (Data current)
-      function renderRacesPerDay(data) {
-        const now = Date.now();
-        const list = (data || []).map(r => {
-          const joined = parseLocalDate(r.joinDate).getTime();
-          const days = Math.max(1, Math.floor((now - joined) / 86400000));
-          const total = safeNumber(r.racesPlayed);
-          return {
-            slug: String(r.username || ''),
-            tag: String(r.tag || ''),
-            total,
-            days,
-            perDay: total / days
-          };
-        }).sort((a, b) => b.perDay - a.perDay);
-
-        const tbody = document.querySelector('#racesPerDayTable tbody');
-        tbody.innerHTML = '';
-        const frag = document.createDocumentFragment();
-
-        list.forEach((r, i) => {
-          const racerUrl = ntRacerURL(r.slug);
-          const name = prettyNameFromSlug(r.slug);
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td data-label="Rank">${i + 1}</td>
-            <td data-label="Display Name">
-              <a class="link-quiet" href="${escapeAttr(racerUrl)}" target="_blank">${escapeHTML(name)}</a>
-            </td>
-            <td data-label="Total Races">${r.total.toLocaleString()}</td>
-            <td data-label="Days Active">${r.days.toLocaleString()}</td>
-            <td data-label="Races / Day">${r.perDay.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-          `.trim();
-          frag.appendChild(tr);
-        });
-
-        tbody.appendChild(frag);
-      }
-
-      // 24-Hour diffs (Data current vs previous)
-      function renderChanges24(currentRacers, prevMap) {
-        const filtered = (currentRacers || []).filter(r => safeNumber(r.racesPlayed) > 0);
-
-        const diffs = filtered.map(r => {
-          const key = String(r.username || '').toLowerCase();
-          const p = prevMap.get(key) || {};
-          const dRaces = safeNumber(r.racesPlayed) - safeNumber(p.racesPlayed);
-          const dTop = safeNumber(r.highestSpeed) - safeNumber(p.highestSpeed);
-          const dViews = safeNumber(r.profileViews) - safeNumber(p.profileViews);
-          const dNitro = safeNumber(r.nitrosUsed) - safeNumber(p.nitrosUsed);
-          return {
-            slug: String(r.username || ''),
-            dRaces, dTop, dViews, dNitro
-          };
-        })
-        .filter(d => d.dRaces !== 0 && d.dRaces < MAX_24H_RACES)
-        .sort((a, b) => b.dRaces - a.dRaces);
-
-        const tbody = document.querySelector('#changes24Table tbody');
-        tbody.innerHTML = '';
-        const frag = document.createDocumentFragment();
-
-        diffs.forEach((d, i) => {
-          const tr = document.createElement('tr');
-          const racerUrl = ntRacerURL(d.slug);
-          const name = prettyNameFromSlug(d.slug);
-          tr.innerHTML = `
-            <td data-label="Rank">${i + 1}</td>
-            <td data-label="Display Name"><a class="link-quiet" href="${escapeAttr(racerUrl)}" target="_blank">${escapeHTML(name)}</a></td>
-            <td data-label="Δ Total Races">${formatDeltaInt(d.dRaces)}</td>
-            <td data-label="Δ Top WPM">${formatDeltaInt(d.dTop)}</td>
-            <td data-label="Δ Profile Views">${formatDeltaInt(d.dViews)}</td>
-            <td data-label="Δ Nitros Used">${formatDeltaInt(d.dNitro)}</td>
-          `.trim();
-          frag.appendChild(tr);
-        });
-
-        tbody.appendChild(frag);
-        setNote('dailyNote', `${diffs.length.toLocaleString()} racers with activity in the last snapshot window.`);
-      }
-
-      // Event: load four files and compute period metrics
-      async function loadEventFourFiles(files) {
-        const [apiBeforeRaw, apiNowRaw, dataBeforeRaw, dataNowRaw] = await Promise.all([
-          fetchJSONFlexible(files.apiBefore, true),
-          fetchJSONFlexible(files.apiNow, true),
-          fetchJSONFlexible(files.dataBefore, true),
-          fetchJSONFlexible(files.dataNow, true)
-        ]);
-
-        // Normalize API (flat arrays) and Data (object or array)
-        const apiBefore = toArray(apiBeforeRaw);
-        const apiNow = toArray(apiNowRaw);
-        const dataBefore = normalizeData(dataBeforeRaw).racers;
-        const dataNow = normalizeData(dataNowRaw).racers;
-
-        const beforeCount = apiBefore.length;
-        const nowCount = apiNow.length;
-
-        if (beforeCount === 0) {
-          return { beforeCount, nowCount, rows: [] };
+      function buildDisplayNameMap(apiNowArray) {
+        const map = new Map();
+        for (const r of apiNowArray || []) {
+          const u = String(r.username || '').toLowerCase();
+          const dn = String(r.displayName || '').trim();
+          if (u && dn) map.set(u, dn);
         }
-
-        // Indexes by lowercase username (slug)
-        const apiB = indexByKey(apiBefore, o => String(o.username || '').toLowerCase());
-        const apiN = indexByKey(apiNow, o => String(o.username || '').toLowerCase());
-        const dataB = indexByKey(dataBefore, o => String(o.username || '').toLowerCase());
-        const dataN = indexByKey(dataNow, o => String(o.username || '').toLowerCase());
-
-        // Union of all usernames seen across inputs
-        const keys = new Set([
-          ...Object.keys(apiB), ...Object.keys(apiN),
-          ...Object.keys(dataB), ...Object.keys(dataN)
-        ]);
-
-        const rows = [];
-        keys.forEach(k => {
-          const aB = apiB[k] || {};
-          const aN = apiN[k] || {};
-          const dB = dataB[k] || {};
-          const dN = dataN[k] || {};
-
-          const slug = pickFirstNonEmpty([dN.username, dB.username, aN.username, aB.username], '');
-          const tag = pickFirstNonEmpty([dN.tag, dB.tag, aN.teamTag, aB.teamTag], '');
-          const displayName = pickFirstNonEmpty([aN.displayName, aB.displayName, dN.username, dB.username, slug], '');
-
-          // Period races: prefer Data lifetime races delta; fallback to API lifetimeRaces delta
-          const racesDeltaData = safeNumber(dN.racesPlayed) - safeNumber(dB.racesPlayed);
-          const racesDeltaAPI = safeNumber(aN.lifetimeRaces) - safeNumber(aB.lifetimeRaces);
-          const dRaces = (Number.isFinite(racesDeltaData) && racesDeltaData !== 0) ? racesDeltaData : racesDeltaAPI;
-          if (dRaces <= 0) return; // no-op rows removed
-
-          // Typed/errs deltas (API)
-          const typedDelta = Math.max(0, safeNumber(aN.typed) - safeNumber(aB.typed));
-          const errsDelta  = Math.max(0, safeNumber(aN.errs)  - safeNumber(aB.errs));
-
-          // Accuracy (%)
-          const acc = clamp(0, 100 * (1 - (typedDelta > 0 ? errsDelta / typedDelta : 0)), 100);
-
-          // WPM (period): weighted by played deltas if available, else current avg
-          const playedDelta = safeNumber(aN.played) - safeNumber(aB.played);
-          let wpm;
-          if (WPM_METHOD === 'weighted' && playedDelta > 0) {
-            const num = safeNumber(aN.avgWpm) * safeNumber(aN.played) - safeNumber(aB.avgWpm) * safeNumber(aB.played);
-            wpm = num / playedDelta;
-          } else {
-            wpm = safeNumber(aN.avgWpm);
-          }
-          if (!Number.isFinite(wpm) || wpm < 0) wpm = 0;
-
-          // Points (per race average per formula)
-          const points = 100 + (wpm / 2) * (acc / 100);
-
-          // Mistakes per race
-          const mistakesPerRace = errsDelta / Math.max(1, dRaces);
-
-          // Nitros delta from Data snapshots
-          const nitrosDelta = Math.max(0, safeNumber(dN.nitrosUsed) - safeNumber(dB.nitrosUsed));
-
-          rows.push({
-            slug, tag, displayName,
-            dRaces, wpm, acc, points, nitrosDelta
-          });
-        });
-
-        // Default sort by Δ Total Races desc
-        rows.sort((a, b) => b.dRaces - a.dRaces);
-
-        return { beforeCount, nowCount, rows };
+        return map;
       }
 
-      function renderEventComputed(rows) {
-        const tbody = document.querySelector('#eventTable tbody');
-        tbody.innerHTML = '';
-        const frag = document.createDocumentFragment();
-        rows.forEach((r, i) => {
-          const racerUrl = ntRacerURL(r.slug);
-          const teamUrl = r.tag ? ntTeamURL(r.tag) : '#';
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td data-label="Rank">${i + 1}</td>
-            <td data-label="Display Name">
-              <a class="link-quiet" href="${escapeAttr(racerUrl)}" target="_blank">${escapeHTML(r.displayName)}</a>
-            </td>
-            <td data-label="Team Tag">
-              ${r.tag ? `<a class="tag-link" href="${escapeAttr(teamUrl)}" target="_blank">${escapeHTML(r.tag)}</a>` : '<span>-</span>'}
-            </td>
-            <td data-label="Δ Total Races">${formatDeltaInt(r.dRaces)}</td>
-            <td data-label="Avg WPM">${safeNumber(r.wpm).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-            <td data-label="Avg Accuracy">${safeNumber(r.acc).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%</td>
-            <td data-label="Avg Points">${safeNumber(r.points).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-            <td data-label="Δ Nitros Used">${formatDeltaInt(r.nitrosDelta)}</td>
-          `.trim();
-          frag.appendChild(tr);
-        });
-        tbody.appendChild(frag);
-      }
-
-      // UI helpers for Event
-      function showEventComingSoon(show) {
-        const note = document.getElementById('eventComingSoon');
-        const table = document.getElementById('eventTable');
-        if (!note || !table) return;
-        if (show) {
-          note.classList.remove('hidden');
-          table.classList.add('hidden');
-        } else {
-          note.classList.add('hidden');
-          table.classList.remove('hidden');
+      function buildTeamTagMap(apiNowArray) {
+        const map = new Map();
+        for (const r of apiNowArray || []) {
+          const u = String(r.username || '').toLowerCase();
+          const tg = String(r.teamTag || '').trim();
+          if (u && tg) map.set(u, tg);
         }
-      }
-      function clearEventTable() {
-        const tbody = document.querySelector('#eventTable tbody');
-        if (tbody) tbody.innerHTML = '';
-      }
-      function setEventStatus(text) {
-        const el = document.getElementById('eventStatus');
-        if (el) el.textContent = text || '';
-      }
-      function setNote(id, text) {
-        const el = document.getElementById(id);
-        if (el) el.textContent = text || '';
+        return map;
       }
 
-      // Sorting (numeric-aware + rank renumbering)
+      function indexByKey(arr, keyFn) {
+        const out = Object.create(null);
+        for (const item of arr || []) {
+          const k = String(keyFn(item) || '').toLowerCase();
+          if (k) out[k] = item;
+        }
+        return out;
+      }
+
+      function pickFirstNonEmpty(arr, fallback) {
+        for (const v of arr) {
+          if (v !== undefined && v !== null && String(v).trim() !== '') return String(v);
+        }
+        return fallback;
+      }
+
+      // =====================================================================================
+      // UTILS
+      // =====================================================================================
+      function safeNumber(x) {
+        const n = Number(x);
+        return Number.isFinite(n) ? n : 0;
+      }
+
+      function clamp(min, v, max) {
+        return Math.max(min, Math.min(max, v));
+      }
+
+      function parseLocalDate(input) {
+        const raw = String(input || '').trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+          const [y, m, d] = raw.split('-').map(n => parseInt(n, 10));
+          const dt = new Date(y, m - 1, d, 0, 0, 0, 0);
+          if (!isNaN(dt.getTime())) return dt;
+        }
+        const dt2 = new Date(raw);
+        if (!isNaN(dt2.getTime())) return dt2;
+        return new Date();
+      }
+
+      function escapeHTML(s) {
+        return String(s ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function escapeAttr(s) {
+        return escapeHTML(s).replace(/"/g, '&quot;');
+      }
+
+      function formatDeltaInt(n) {
+        const v = safeNumber(n);
+        const sign = v > 0 ? '+' : '';
+        return `${sign}${v.toLocaleString()}`;
+      }
+
+      function formatPercent(v, min = 2, max = 2) {
+        return `${safeNumber(v).toLocaleString(undefined, { minimumFractionDigits: min, maximumFractionDigits: max })}%`;
+      }
+
+      function formatFixed(v, min = 0, max = 2) {
+        return safeNumber(v).toLocaleString(undefined, { minimumFractionDigits: min, maximumFractionDigits: max });
+      }
+
+      function ntRacerURL(username) {
+        const slug = String(username || '').trim();
+        return slug ? `https://www.nitrotype.com/racer/${encodeURIComponent(slug)}` : '#';
+      }
+
+      function ntTeamURL(tag) {
+        const t = String(tag || '').trim();
+        return t ? `https://www.nitrotype.com/team/${encodeURIComponent(t)}` : '#';
+      }
+
+      // =====================================================================================
+      // SORTING (numeric-aware + rank renumbering)
+      // =====================================================================================
       function enableSorting(tableId) {
         const table = document.getElementById(tableId);
         if (!table) return;
+
         const headers = table.querySelectorAll('th');
         headers.forEach((th, idx) => {
           th.addEventListener('click', () => {
@@ -787,74 +694,408 @@
         });
       }
 
-      // Utilities
-      function ntRacerURL(username) {
-        const slug = String(username || '').trim();
-        return slug ? `https://www.nitrotype.com/racer/${encodeURIComponent(slug)}` : '#';
+      // =====================================================================================
+      // RENDER — MAIN LEADERBOARD (Everything)
+      // =====================================================================================
+      function renderLeaderboard(data, displayNameMap, teamTagMap) {
+        const list = [...(data || [])].map(r => {
+          const slug = String(r.username || '');
+          const key = slug.toLowerCase();
+
+          // Prefer API display name when available; fallback to username
+          const displayName = displayNameMap?.get(key) || String(r.displayName || slug);
+
+          // Prefer Data tag, fallback to API tag
+          const tagEnrich = teamTagMap?.get(key) || '';
+          const tag = String(r.tag || tagEnrich || '');
+
+          // Membership and profile URL fields are included if present in sample_data.json
+          return {
+            displayName,
+            username: slug,
+            tag,
+            title: String(r.title || ''),
+            racesPlayed: safeNumber(r.racesPlayed),
+            avgSpeed: safeNumber(r.avgSpeed),
+            highestSpeed: safeNumber(r.highestSpeed),
+            profileViews: safeNumber(r.profileViews),
+            joinDate: String(r.joinDate || ''),
+            garageCars: safeNumber(r.garageCars),
+            membership: String(r.membership || ''),
+            profileURL: String(r.profileURL || ntRacerURL(slug)),
+            nitrosUsed: safeNumber(r.nitrosUsed),
+            longestSession: safeNumber(r.longestSession),
+            leagueTier: safeNumber(r.leagueTier)
+          };
+        });
+
+        // Default sort by total races desc for main board
+        list.sort((a, b) => b.racesPlayed - a.racesPlayed);
+
+        const tbody = document.querySelector('#leaderboardTable tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        const frag = document.createDocumentFragment();
+        list.forEach((r, i) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td data-label="Rank">${i + 1}</td>
+            <td data-label="Display Name">
+              <a class="link-quiet" href="${escapeAttr(ntRacerURL(r.username))}" target="_blank" rel="noopener noreferrer">${escapeHTML(r.displayName)}</a>
+            </td>
+            <td data-label="Username">${escapeHTML(r.username)}</td>
+            <td data-label="Team Tag">
+              ${r.tag ? `<a class="tag-link" href="${escapeAttr(ntTeamURL(r.tag))}" target="_blank" rel="noopener noreferrer">${escapeHTML(r.tag)}</a>` : '<span>-</span>'}
+            </td>
+            <td data-label="Title">${escapeHTML(r.title)}</td>
+            <td data-label="Total Races">${r.racesPlayed.toLocaleString()}</td>
+            <td data-label="Avg WPM">${r.avgSpeed.toLocaleString()}</td>
+            <td data-label="Top WPM">${r.highestSpeed.toLocaleString()}</td>
+            <td data-label="Profile Views">${r.profileViews.toLocaleString()}</td>
+            <td data-label="Member Since">${escapeHTML(r.joinDate)}</td>
+            <td data-label="Garage Cars">${r.garageCars.toLocaleString()}</td>
+            <td data-label="Membership">${escapeHTML(r.membership)}</td>
+            <td data-label="Profile URL">
+              ${r.profileURL ? `<a class="link-quiet" href="${escapeAttr(r.profileURL)}" target="_blank" rel="noopener noreferrer">View Profile</a>` : '<span>-</span>'}
+            </td>
+            <td data-label="Nitros Used">${r.nitrosUsed.toLocaleString()}</td>
+            <td data-label="Longest Session">${r.longestSession.toLocaleString()}</td>
+            <td data-label="League Tier">${r.leagueTier.toLocaleString()}</td>
+          `.trim();
+          frag.appendChild(tr);
+        });
+        tbody.appendChild(frag);
+
+        const note = document.getElementById('leaderboardNote');
+        if (note) note.textContent = `${list.length.toLocaleString()} racers loaded.`;
       }
-      function ntTeamURL(tag) {
-        const t = String(tag || '').trim();
-        return t ? `https://www.nitrotype.com/team/${encodeURIComponent(t)}` : '#';
+
+      // =====================================================================================
+      // RENDER — RACES PER DAY (with Member Since)
+      // =====================================================================================
+      function renderRacesPerDay(data, displayNameMap) {
+        const now = Date.now();
+        const list = (data || []).map(r => {
+          const slug = String(r.username || '');
+          const key = slug.toLowerCase();
+          const displayName = displayNameMap?.get(key) || String(r.displayName || slug);
+
+          const joined = parseLocalDate(r.joinDate).getTime();
+          const days = Math.max(1, Math.floor((now - joined) / 86400000));
+          const total = safeNumber(r.racesPlayed);
+
+          return {
+            displayName,
+            username: slug,
+            total,
+            days,
+            perDay: total / days,
+            joinDate: String(r.joinDate || '')
+          };
+        }).sort((a, b) => b.perDay - a.perDay);
+
+        const tbody = document.querySelector('#racesPerDayTable tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        const frag = document.createDocumentFragment();
+        list.forEach((r, i) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td data-label="Rank">${i + 1}</td>
+            <td data-label="Display Name">
+              <a class="link-quiet" href="${escapeAttr(ntRacerURL(r.username))}" target="_blank" rel="noopener noreferrer">${escapeHTML(r.displayName)}</a>
+            </td>
+            <td data-label="Total Races">${r.total.toLocaleString()}</td>
+            <td data-label="Days Active">${r.days.toLocaleString()}</td>
+            <td data-label="Races / Day">${r.perDay.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td data-label="Member Since">${escapeHTML(r.joinDate)}</td>
+          `.trim();
+          frag.appendChild(tr);
+        });
+        tbody.appendChild(frag);
+
+        const note = document.getElementById('rpdNote');
+        if (note) note.textContent = `${list.length.toLocaleString()} racers computed for lifetime average.`;
       }
-      function prettyNameFromSlug(slug) {
-        // Best-effort prettifier if displayName not provided (Data doesn’t include displayName)
-        return String(slug || '');
+
+      // =====================================================================================
+      // RENDER — 24-HOUR LEADERBOARD (Only the four metrics)
+      // =====================================================================================
+      function renderChanges24(currentRacers, prevMap, displayNameMap) {
+        const filtered = (currentRacers || []).filter(r => safeNumber(r.racesPlayed) > 0);
+
+        const diffs = filtered.map(r => {
+          const key = String(r.username || '').toLowerCase();
+          const p = prevMap.get(key) || {};
+          return {
+            username: String(r.username || ''),
+            displayName: displayNameMap?.get(key) || String(r.displayName || r.username || ''),
+            dRaces: safeNumber(r.racesPlayed) - safeNumber(p.racesPlayed),
+            dTop: safeNumber(r.highestSpeed) - safeNumber(p.highestSpeed),
+            dViews: safeNumber(r.profileViews) - safeNumber(p.profileViews),
+            dNitros: safeNumber(r.nitrosUsed) - safeNumber(p.nitrosUsed)
+          };
+        })
+        .filter(d => d.dRaces !== 0 && d.dRaces < MAX_24H_RACES)
+        .sort((a, b) => b.dRaces - a.dRaces);
+
+        const tbody = document.querySelector('#changes24Table tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        const frag = document.createDocumentFragment();
+        diffs.forEach((d, i) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td data-label="Rank">${i + 1}</td>
+            <td data-label="Display Name">
+              <a class="link-quiet" href="${escapeAttr(ntRacerURL(d.username))}" target="_blank" rel="noopener noreferrer">${escapeHTML(d.displayName)}</a>
+            </td>
+            <td data-label="Δ Total Races">${formatDeltaInt(d.dRaces)}</td>
+            <td data-label="Δ Top WPM">${formatDeltaInt(d.dTop)}</td>
+            <td data-label="Δ Profile Views">${formatDeltaInt(d.dViews)}</td>
+            <td data-label="Δ Nitros Used">${formatDeltaInt(d.dNitros)}</td>
+          `.trim();
+          frag.appendChild(tr);
+        });
+        tbody.appendChild(frag);
+
+        const note = document.getElementById('dailyNote');
+        if (note) note.textContent = `${diffs.length.toLocaleString()} racers with activity in the last snapshot window.`;
       }
-      function safeNumber(x) {
-        const n = Number(x);
-        return Number.isFinite(n) ? n : 0;
+
+      // =====================================================================================
+      // EVENT — INIT (four-file engine)
+      // =====================================================================================
+      function initEventTab() {
+        loadEventFourFiles(EVENT_FILES)
+          .then(result => {
+            if (!result || result.beforeCount === 0) {
+              showEventComingSoon(true);
+              clearEventTable();
+              setEventStatus('Event BEFORE data missing or empty.');
+              return;
+            }
+            showEventComingSoon(false);
+            renderEventComputed(result.rows);
+            enableSorting('eventTable');
+            setEventStatus(
+              `Loaded API_before: ${result.beforeCount.toLocaleString()} | API_now: ${result.nowCount.toLocaleString()} | ` +
+              `Computed rows (Δ races > 0): ${result.rows.length.toLocaleString()}`
+            );
+          })
+          .catch(err => {
+            console.error('Event computation error:', err);
+            showEventComingSoon(true);
+            clearEventTable();
+            setEventStatus('Error loading event data.');
+          });
       }
-      function clamp(min, v, max) {
-        return Math.max(min, Math.min(max, v));
-      }
-      function parseLocalDate(input) {
-        const raw = String(input || '').trim();
-        if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-          const [y, m, d] = raw.split('-').map(n => parseInt(n, 10));
-          const dt = new Date(y, m - 1, d, 0, 0, 0, 0);
-          if (!isNaN(dt.getTime())) return dt;
+
+      // =====================================================================================
+      // EVENT — LOAD & COMPUTE (four-file engine)
+      // =====================================================================================
+      async function loadEventFourFiles(files) {
+        const [apiBeforeRaw, apiNowRaw, dataBeforeRaw, dataNowRaw] = await Promise.all([
+          fetchJSONFlexible(files.apiBefore, true),
+          fetchJSONFlexible(files.apiNow, true),
+          fetchJSONFlexible(files.dataBefore, true),
+          fetchJSONFlexible(files.dataNow, true)
+        ]);
+
+        const apiBefore = toArray(apiBeforeRaw);
+        const apiNow = toArray(apiNowRaw);
+        const dataBefore = normalizeData(dataBeforeRaw).racers;
+        const dataNow = normalizeData(dataNowRaw).racers;
+
+        const beforeCount = apiBefore.length;
+        const nowCount = apiNow.length;
+
+        if (beforeCount === 0) {
+          return { beforeCount, nowCount, rows: [] };
         }
-        const dt2 = new Date(raw);
-        if (!isNaN(dt2.getTime())) return dt2;
-        return new Date();
+
+        // Index by username(lower)
+        const apiB = indexByKey(apiBefore, o => o.username);
+        const apiN = indexByKey(apiNow, o => o.username);
+        const dataB = indexByKey(dataBefore, o => o.username);
+        const dataN = indexByKey(dataNow, o => o.username);
+
+        // Union of keys across sources
+        const keys = new Set([
+          ...Object.keys(apiB), ...Object.keys(apiN),
+          ...Object.keys(dataB), ...Object.keys(dataN)
+        ]);
+
+        const rows = [];
+        keys.forEach(k => {
+          const aB = apiB[k] || {};
+          const aN = apiN[k] || {};
+          const dB = dataB[k] || {};
+          const dN = dataN[k] || {};
+
+          const slug = pickFirstNonEmpty([dN.username, dB.username, aN.username, aB.username], '');
+          const displayName = pickFirstNonEmpty([aN.displayName, aB.displayName, dN.displayName, dB.displayName, slug], '');
+
+          // Δ Total Races: prefer Data lifetime delta, else API lifetimeRaces
+          const deltaRacesData = safeNumber(dN.racesPlayed) - safeNumber(dB.racesPlayed);
+          const deltaRacesAPI  = safeNumber(aN.lifetimeRaces) - safeNumber(aB.lifetimeRaces);
+          const dRaces = (Number.isFinite(deltaRacesData) && deltaRacesData !== 0) ? deltaRacesData : deltaRacesAPI;
+
+          if (dRaces <= 0) return; // skip no-ops and negatives
+
+          // Profile Views Δ (from Data)
+          const dViews = Math.max(0, safeNumber(dN.profileViews) - safeNumber(dB.profileViews));
+
+          // Nitros Used Δ (from Data)
+          const dNitros = Math.max(0, safeNumber(dN.nitrosUsed) - safeNumber(dB.nitrosUsed));
+
+          // Typed/errs deltas from API for accuracy
+          const typedDelta = Math.max(0, safeNumber(aN.typed) - safeNumber(aB.typed));
+          const errsDelta  = Math.max(0, safeNumber(aN.errs)  - safeNumber(aB.errs));
+          const acc = clamp(0, 100 * (1 - (typedDelta > 0 ? errsDelta / typedDelta : 0)), 100);
+
+          // WPM (period) — weighted by played if possible; else fallback to current avgWpm
+          const playedDelta = safeNumber(aN.played) - safeNumber(aB.played);
+          let wpm;
+          if (WPM_METHOD === 'weighted' && playedDelta > 0) {
+            const weightedNumerator = safeNumber(aN.avgWpm) * safeNumber(aN.played) - safeNumber(aB.avgWpm) * safeNumber(aB.played);
+            wpm = weightedNumerator / playedDelta;
+          } else {
+            wpm = safeNumber(aN.avgWpm);
+          }
+          if (!Number.isFinite(wpm) || wpm < 0) wpm = 0;
+
+          rows.push({
+            username: slug,
+            displayName,
+            dRaces,
+            wpm,
+            acc,
+            dViews,
+            dNitros
+          });
+        });
+
+        rows.sort((a, b) => b.dRaces - a.dRaces);
+        return { beforeCount, nowCount, rows };
       }
-      function escapeHTML(s) {
-        return String(s ?? '')
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#39;');
+
+      // =====================================================================================
+      // EVENT — RENDER (custom columns)
+      // =====================================================================================
+      function renderEventComputed(rows) {
+        const tbody = document.querySelector('#eventTable tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        const frag = document.createDocumentFragment();
+        rows.forEach((r, i) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td data-label="Rank">${i + 1}</td>
+            <td data-label="Display Name">
+              <a class="link-quiet" href="${escapeAttr(ntRacerURL(r.username))}" target="_blank" rel="noopener noreferrer">${escapeHTML(r.displayName)}</a>
+            </td>
+            <td data-label="Total Races">${formatDeltaInt(r.dRaces)}</td>
+            <td data-label="Avg WPM">${formatFixed(r.wpm, 0, 2)}</td>
+            <td data-label="Avg Accuracy">${formatPercent(r.acc, 2, 2)}</td>
+            <td data-label="Profile Views">${formatDeltaInt(r.dViews)}</td>
+            <td data-label="Nitros Used">${formatDeltaInt(r.dNitros)}</td>
+          `.trim();
+          frag.appendChild(tr);
+        });
+
+        tbody.appendChild(frag);
       }
-      function escapeAttr(s) {
-        return escapeHTML(s).replace(/"/g, '&quot;');
-      }
-      function formatDeltaInt(n) {
-        const v = safeNumber(n);
-        const sign = v > 0 ? '+' : '';
-        return `${sign}${v.toLocaleString()}`;
-      }
-      function toArray(maybeArray) {
-        if (Array.isArray(maybeArray)) return maybeArray;
-        if (maybeArray && typeof maybeArray === 'object' && Array.isArray(maybeArray.racers)) return maybeArray.racers;
-        return [];
-      }
-      function indexByKey(arr, keyFn) {
-        const out = Object.create(null);
-        for (const item of arr || []) {
-          const k = String(keyFn(item) || '').toLowerCase();
-          if (!k) continue;
-          out[k] = item;
+
+      // =====================================================================================
+      // EVENT — UI HELPERS
+      // =====================================================================================
+      function showEventComingSoon(show) {
+        const note = document.getElementById('eventComingSoon');
+        const table = document.getElementById('eventTable');
+        if (!note || !table) return;
+        if (show) {
+          note.classList.remove('hidden');
+          table.classList.add('hidden');
+        } else {
+          note.classList.add('hidden');
+          table.classList.remove('hidden');
         }
-        return out;
       }
-      function pickFirstNonEmpty(arr, fallback) {
-        for (const v of arr) {
-          if (v !== undefined && v !== null && String(v).trim() !== '') return String(v);
-        }
-        return fallback;
+
+      function clearEventTable() {
+        const tbody = document.querySelector('#eventTable tbody');
+        if (tbody) tbody.innerHTML = '';
       }
-    });
+
+      function setEventStatus(text) {
+        const el = document.getElementById('eventStatus');
+        if (el) el.textContent = text || '';
+      }
+
+      // =====================================================================================
+      // END
+      // =====================================================================================
+    })();
   </script>
+
+  <!--
+    ==========================================================================================
+    EXTRA DOCUMENTATION BLOCKS (kept in the file for clarity and auditability)
+    ==========================================================================================
+    DATA FIELD EXPECTATIONS (sample_data.json / sample_data_prev.json):
+    - username: string (e.g., "InternetTyper")
+    - displayName: string (optional; will be enriched via API_now if not present)
+    - tag: string (team tag, optional)
+    - title: string (optional)
+    - racesPlayed: number
+    - avgSpeed: number (Avg WPM)
+    - highestSpeed: number (Top WPM)
+    - profileViews: number
+    - joinDate: string (ISO or human-readable)
+    - garageCars: number
+    - membership: string (e.g., "Gold", "Standard")
+    - profileURL: string (optional; if absent we'll link to nitrotype.com/racer/{username})
+    - nitrosUsed: number
+    - longestSession: number
+    - leagueTier: number
+
+    24-HOUR DIFFS:
+    - The app calculates diffs from current (sample_data.json) minus previous (sample_data_prev.json).
+    - Only four metrics are shown in the 24-hour view:
+      Δ Total Races, Δ Top WPM, Δ Profile Views, Δ Nitros Used.
+    - We exclude anomalies where Δ Total Races ≥ 2600 and entries with Δ Total Races == 0.
+
+    EVENT ENGINE:
+    - API_before/now provides typed/errs/avgWpm/played enabling period Avg WPM and Accuracy.
+    - BeforeEventData/AfterEventData provides Δ Profile Views and Δ Nitros Used, plus
+      a reliable Δ Total Races from the Data snapshots (with a fallback to API lifetimeRaces).
+    - Columns are strictly:
+      Total Races (Δ), Avg WPM (period), Avg Accuracy (period), Profile Views (Δ), Nitros Used (Δ), and Display Name.
+
+    SORTING:
+    - Click any header to sort. The arrow indicator shows the direction.
+    - Rank re-numbers on each sort.
+
+    RESPONSIVE MODE:
+    - Under 950px width, tables convert to stacked cards where each cell labels itself via data-label.
+
+    ACCESSIBILITY:
+    - Strong focus ring using :focus-visible.
+    - Links are underlined and high contrast.
+
+    PRINT:
+    - Tabs/notes hidden; headers become static.
+
+    ==========================================================================================
+    VERSION NOTES
+    - This file intentionally contains extensive comments and clarifications for maintainability.
+    - Keep filenames consistent or adjust constants at the top of the script.
+    ==========================================================================================
+  -->
 </body>
 </html>
