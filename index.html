@@ -1,15 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Nitro Type Top 1000 — Everything Leaderboard</title>
-
-  <style>
-    /* =========================================================================================
-       THEME
-       ========================================================================================= */
     :root {
+      /* Dark palette */
       --bg: #0f1217;
       --surface: #151925;
       --surface-2: #1a2131;
@@ -26,6 +19,7 @@
       --shadow: rgba(0,0,0,0.35);
       --focus: #82b1ff;
 
+      /* Layout */
       --radius-sm: 6px;
       --radius-md: 10px;
       --radius-lg: 14px;
@@ -34,37 +28,74 @@
       --pad-2: 0.66rem;
       --pad-3: 1rem;
 
+      /* Expanded frame + wide tables */
+      --page-max: 1900px;   /* widen the “frame” to show more columns */
+      --table-min: 1650px;  /* minimum table width before horizontal scrolling */
+
+      /* Fonts */
       --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+      /* Scroll hint */
+      --scroll-hint-width: 42px;
+      --scroll-hint-fade: linear-gradient(90deg, rgba(21,25,37,0), rgba(21,25,37,0.9) 65%, rgba(21,25,37,1));
     }
 
-    *,
-    *::before,
-    *::after { box-sizing: border-box; }
+    /* Optional light-mode palette via prefers-color-scheme */
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f4f7fb;
+        --surface: #ffffff;
+        --surface-2: #f4f6fb;
+        --surface-3: #e9eef7;
+        --text: #0d1625;
+        --text-dim: #38465f;
+        --muted: #5b6b86;
+        --accent: #3b82f6;
+        --accent-2: #0ea5e9;
+        --good: #16a34a;
+        --warn: #d97706;
+        --bad: #dc2626;
+        --border: #d9e1ee;
+        --shadow: rgba(0,0,0,0.12);
+        --focus: #3b82f6;
+      }
+    }
+
+    /* Base */
+    *, *::before, *::after { box-sizing: border-box; }
     html, body { height: 100%; }
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
     body {
       margin: 0;
       font-family: var(--font);
-      background: radial-gradient(1100px 700px at 15% -10%, #172241 0%, var(--bg) 65%) no-repeat fixed;
       color: var(--text);
+      background: radial-gradient(1100px 700px at 15% -10%, #172241 0%, var(--bg) 65%) no-repeat fixed;
       line-height: 1.4;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       padding: var(--pad-3);
     }
 
-    /* =========================================================================================
-       HEADER
-       ========================================================================================= */
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-2); }
+
+    /* Expanded frame */
+    header, .tabs, .table-container {
+      width: min(100%, var(--page-max));
+      margin-inline: auto;
+    }
+
+    /* Header */
     header {
       text-align: center;
       padding: 16px 12px;
       margin: 0 auto var(--pad-3);
-      max-width: 1300px;
       background: linear-gradient(180deg, rgba(32,42,63,0.78), rgba(26,33,49,0.78));
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
-      box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+      box-shadow: 0 10px 24px var(--shadow);
     }
     header h1 {
       margin: 0 0 6px;
@@ -74,19 +105,14 @@
       text-shadow: 0 6px 18px rgba(110,168,254,0.2);
     }
     header p { margin: 4px 0; color: var(--text-dim); }
-    header a { color: var(--accent); text-decoration: none; }
-    header a:hover { color: var(--accent-2); }
 
-    /* =========================================================================================
-       TABS
-       ========================================================================================= */
+    /* Tabs */
     .tabs {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: var(--pad-2);
       align-items: stretch;
       margin: 0 auto var(--pad-3);
-      max-width: 1300px;
     }
     .tabs .tab {
       background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
@@ -99,9 +125,9 @@
       letter-spacing: 0.2px;
       cursor: pointer;
       user-select: none;
-      transition: transform .05s ease, box-shadow .18s ease, border-color .18s ease;
-      box-shadow: 0 2px 0 var(--shadow) inset, 0 0 0 rgba(0,0,0,0);
       text-transform: uppercase;
+      transition: transform .05s ease, box-shadow .18s ease, border-color .18s ease, color .18s ease;
+      box-shadow: 0 2px 0 var(--shadow) inset, 0 0 0 rgba(0,0,0,0);
     }
     .tabs .tab:hover {
       transform: translateY(-1px);
@@ -113,38 +139,97 @@
       text-shadow: 0 0 10px rgba(110,168,254,0.6);
     }
 
-    /* =========================================================================================
-       SECTIONS
-       ========================================================================================= */
+    /* Sections / table container with horizontal scroll */
     .table-container {
-      display: none;
+      display: block;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
       padding: 10px;
       margin: 0 auto 40px;
-      max-width: 1300px;
-      overflow: hidden;
-      box-shadow: 0 18px 40px rgba(0,0,0,0.35);
+      overflow-x: auto; /* key: allow horizontal scroll to show all columns */
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      box-shadow: 0 18px 40px var(--shadow);
+      position: relative;
     }
     .table-container.active { display: block; }
+    .hidden { display: none !important; }
+
     .note {
       color: #e8ecf1;
       font-size: 0.95rem;
       text-align: center;
       margin: 8px 0 12px;
     }
-    .hidden { display: none !important; }
 
-    /* =========================================================================================
-       TABLES
-       ========================================================================================= */
+    /* Optional scroll hint overlay */
+    .table-container.has-scroll-hint::after {
+      content: '';
+      position: sticky;
+      right: 0;
+      top: 0;
+      width: var(--scroll-hint-width);
+      height: 100%;
+      pointer-events: none;
+      background: var(--scroll-hint-fade);
+      z-index: 3;
+    }
+    .table-container.has-scroll-hint.is-end::after { opacity: 0; transition: opacity .25s ease; }
+    .table-container.has-scroll-hint:not(.is-end)::after { opacity: 1; transition: opacity .25s ease; }
+
+    /* Tables */
     table {
       width: 100%;
+      min-width: var(--table-min); /* key: ensure columns have space; container scrolls if needed */
       border-collapse: collapse;
       border-spacing: 0;
       font-size: 0.92rem;
     }
+
+    /* Column sizing hints for Main Leaderboard (16 columns) */
+    #leaderboardTable th:nth-child(1),  #leaderboardTable td:nth-child(1)  { min-width: 70px; }   /* Rank */
+    #leaderboardTable th:nth-child(2),  #leaderboardTable td:nth-child(2)  { min-width: 220px; }  /* Display Name */
+    #leaderboardTable th:nth-child(3),  #leaderboardTable td:nth-child(3)  { min-width: 160px; }  /* Username */
+    #leaderboardTable th:nth-child(4),  #leaderboardTable td:nth-child(4)  { min-width: 120px; }  /* Team Tag */
+    #leaderboardTable th:nth-child(5),  #leaderboardTable td:nth-child(5)  { min-width: 220px; }  /* Title */
+    #leaderboardTable th:nth-child(6),  #leaderboardTable td:nth-child(6)  { min-width: 140px; }  /* Total Races */
+    #leaderboardTable th:nth-child(7),  #leaderboardTable td:nth-child(7)  { min-width: 120px; }  /* Avg WPM */
+    #leaderboardTable th:nth-child(8),  #leaderboardTable td:nth-child(8)  { min-width: 120px; }  /* Top WPM */
+    #leaderboardTable th:nth-child(9),  #leaderboardTable td:nth-child(9)  { min-width: 150px; }  /* Profile Views */
+    #leaderboardTable th:nth-child(10), #leaderboardTable td:nth-child(10) { min-width: 150px; }  /* Member Since */
+    #leaderboardTable th:nth-child(11), #leaderboardTable td:nth-child(11) { min-width: 130px; }  /* Garage Cars */
+    #leaderboardTable th:nth-child(12), #leaderboardTable td:nth-child(12) { min-width: 140px; }  /* Membership */
+    #leaderboardTable th:nth-child(13), #leaderboardTable td:nth-child(13) { min-width: 160px; }  /* Profile URL */
+    #leaderboardTable th:nth-child(14), #leaderboardTable td:nth-child(14) { min-width: 140px; }  /* Nitros Used */
+    #leaderboardTable th:nth-child(15), #leaderboardTable td:nth-child(15) { min-width: 160px; }  /* Longest Session */
+    #leaderboardTable th:nth-child(16), #leaderboardTable td:nth-child(16) { min-width: 130px; }  /* League Tier */
+
+    /* 24-Hour table (6 columns) */
+    #changes24Table th:nth-child(1), #changes24Table td:nth-child(1) { min-width: 70px; }    /* Rank */
+    #changes24Table th:nth-child(2), #changes24Table td:nth-child(2) { min-width: 240px; }   /* Display Name */
+    #changes24Table th:nth-child(3), #changes24Table td:nth-child(3) { min-width: 160px; }   /* Δ Total Races */
+    #changes24Table th:nth-child(4), #changes24Table td:nth-child(4) { min-width: 140px; }   /* Δ Top WPM */
+    #changes24Table th:nth-child(5), #changes24Table td:nth-child(5) { min-width: 170px; }   /* Δ Profile Views */
+    #changes24Table th:nth-child(6), #changes24Table td:nth-child(6) { min-width: 160px; }   /* Δ Nitros Used */
+
+    /* Races Per Day table (6 columns: Member Since added) */
+    #racesPerDayTable th:nth-child(1), #racesPerDayTable td:nth-child(1) { min-width: 70px; }   /* Rank */
+    #racesPerDayTable th:nth-child(2), #racesPerDayTable td:nth-child(2) { min-width: 240px; }  /* Display Name */
+    #racesPerDayTable th:nth-child(3), #racesPerDayTable td:nth-child(3) { min-width: 150px; }  /* Total Races */
+    #racesPerDayTable th:nth-child(4), #racesPerDayTable td:nth-child(4) { min-width: 140px; }  /* Days Active */
+    #racesPerDayTable th:nth-child(5), #racesPerDayTable td:nth-child(5) { min-width: 150px; }  /* Races / Day */
+    #racesPerDayTable th:nth-child(6), #racesPerDayTable td:nth-child(6) { min-width: 160px; }  /* Member Since */
+
+    /* Event table (7 columns) */
+    #eventTable th:nth-child(1), #eventTable td:nth-child(1) { min-width: 70px; }    /* Rank */
+    #eventTable th:nth-child(2), #eventTable td:nth-child(2) { min-width: 220px; }   /* Display Name */
+    #eventTable th:nth-child(3), #eventTable td:nth-child(3) { min-width: 150px; }   /* Total Races (Δ) */
+    #eventTable th:nth-child(4), #eventTable td:nth-child(4) { min-width: 130px; }   /* Avg WPM */
+    #eventTable th:nth-child(5), #eventTable td:nth-child(5) { min-width: 150px; }   /* Avg Accuracy */
+    #eventTable th:nth-child(6), #eventTable td:nth-child(6) { min-width: 160px; }   /* Profile Views (Δ) */
+    #eventTable th:nth-child(7), #eventTable td:nth-child(7) { min-width: 150px; }   /* Nitros Used (Δ) */
+
     thead th {
       position: sticky;
       top: 0;
@@ -160,6 +245,10 @@
       user-select: none;
       text-align: right;
     }
+    thead th:first-child,
+    thead th:nth-child(2),
+    thead th:nth-child(3) { text-align: left; }
+
     thead th.asc,
     thead th.desc {
       color: #ffffff;
@@ -179,10 +268,6 @@
     thead th.asc::after { border-bottom: 7px solid var(--accent); }
     thead th.desc::after { border-top: 7px solid var(--accent); }
 
-    thead th:first-child,
-    thead th:nth-child(2),
-    thead th:nth-child(3) { text-align: left; }
-
     tbody td {
       padding: 0.56rem 0.66rem;
       border-bottom: 1px solid rgba(255,255,255,0.04);
@@ -192,13 +277,14 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    tbody tr:nth-child(even) { background: rgba(255,255,255,0.025); }
-    tbody tr:hover { background: linear-gradient(90deg, rgba(110,168,254,0.08), rgba(110,168,254,0)); }
-
     tbody td:first-child,
     tbody td:nth-child(2),
     tbody td:nth-child(3) { text-align: left; }
 
+    tbody tr:nth-child(even) { background: rgba(255,255,255,0.025); }
+    tbody tr:hover { background: linear-gradient(90deg, rgba(110,168,254,0.08), rgba(110,168,254,0)); }
+
+    /* Link utility: white underline for key links */
     a.link-quiet, a.link-quiet:visited {
       color: #fff;
       text-decoration: underline;
@@ -214,74 +300,140 @@
     }
     a.tag-link:hover { text-decoration-color: #fff; }
 
-    /* =========================================================================================
-       RESPONSIVE (stacked cards under 950px)
-       ========================================================================================= */
+    /* Optional: sticky first column (add class "sticky-first-col" on a table) */
+    table.sticky-first-col th:first-child,
+    table.sticky-first-col td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 3;
+      background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
+      box-shadow: 3px 0 0 rgba(0,0,0,0.08);
+    }
+
+    /* Responsive tuning */
+    @media (min-width: 1500px) {
+      table { font-size: 0.95rem; }
+      thead th, tbody td { padding: 0.66rem 0.75rem; }
+    }
+    @media (max-width: 1200px) {
+      :root { --table-min: 1500px; } /* slight shrink */
+    }
+
+    /* Stacked-card mode (optional): add class "stack-on-mobile" to .table-container to enable */
     @media (max-width: 950px) {
-      table, thead, tbody, th, td, tr { display: block; }
-      thead { display: none; }
-      tr { margin-bottom: 15px; }
-      td {
+      .table-container.stack-on-mobile table,
+      .table-container.stack-on-mobile thead,
+      .table-container.stack-on-mobile tbody,
+      .table-container.stack-on-mobile th,
+      .table-container.stack-on-mobile td,
+      .table-container.stack-on-mobile tr { display: block; }
+
+      .table-container.stack-on-mobile thead { display: none; }
+      .table-container.stack-on-mobile tr { margin-bottom: 15px; }
+
+      .table-container.stack-on-mobile td {
         display: flex;
         justify-content: space-between;
         align-items: center;
         padding: 10px 12px;
       }
-      td::before {
+      .table-container.stack-on-mobile td::before {
         content: attr(data-label);
         flex: 1 1 42%;
         color: var(--text-dim);
         font-weight: 800;
         text-transform: uppercase;
+        padding-right: 12px;
       }
-      td span, td a, td div { flex: 1 1 58%; text-align: right; }
+      .table-container.stack-on-mobile td span,
+      .table-container.stack-on-mobile td a,
+      .table-container.stack-on-mobile td div {
+        flex: 1 1 58%;
+        text-align: right;
+      }
     }
 
-    /* =========================================================================================
-       A11Y and chrome
-       ========================================================================================= */
+    /* A11y + motion */
     :focus-visible {
       outline: 3px solid rgba(130,177,255,0.35);
       outline-offset: 2px;
       border-radius: 8px;
     }
-    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; animation: none !important; }
+    }
 
-    ::-webkit-scrollbar { height: 12px; width: 12px; }
-    ::-webkit-scrollbar-track { background: var(--surface); }
-    ::-webkit-scrollbar-thumb {
+    /* Scrollbar styling */
+    .table-container { scrollbar-width: thin; scrollbar-color: #3a4560 var(--surface); }
+    .table-container::-webkit-scrollbar { height: 12px; width: 12px; }
+    .table-container::-webkit-scrollbar-track { background: var(--surface); }
+    .table-container::-webkit-scrollbar-thumb {
       background: linear-gradient(180deg, #3a4560, #2b344a);
       border-radius: 10px;
       border: 2px solid var(--surface);
     }
-    ::-webkit-scrollbar-thumb:hover {
+    .table-container::-webkit-scrollbar-thumb:hover {
       background: linear-gradient(180deg, #4b5a7c, #37415a);
     }
 
-    /* =========================================================================================
-       PRINT
-       ========================================================================================= */
+    /* High-contrast mode */
+    @media (forced-colors: active) {
+      :root {
+        --bg: Canvas;
+        --surface: Canvas;
+        --surface-2: Canvas;
+        --surface-3: Canvas;
+        --text: CanvasText;
+        --text-dim: CanvasText;
+        --border: GrayText;
+        --accent: LinkText;
+        --accent-2: LinkText;
+      }
+      header, .tabs .tab, .table-container, thead th, tbody td {
+        forced-color-adjust: none;
+        border-color: var(--border);
+        color: var(--text);
+        background: var(--surface);
+      }
+      a, a:hover { color: var(--accent); }
+    }
+
+    /* Print */
     @media print {
-      body { background: #fff; color: #000; }
-      .tabs, .note { display: none !important; }
+      body { background: #fff; color: #000; padding: 0; }
+      header, .tabs, .note { display: none !important; }
       .table-container {
         box-shadow: none;
         border: 1px solid #000;
+        overflow: visible;
       }
       thead th {
         position: static;
         background: #f2f2f2;
         color: #000;
+        text-shadow: none;
       }
+      table {
+        min-width: auto;
+        font-size: 10pt;
+      }
+      a { color: #000; text-decoration: underline; }
     }
+
+    /* Utilities */
+    .nowrap { white-space: nowrap; }
+    .truncate { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .num { font-variant-numeric: tabular-nums; }
+    .center { text-align: center !important; }
+    .left { text-align: left !important; }
+    .right { text-align: right !important; }
+    .mono { font-family: var(--mono); }
   </style>
 </head>
 <body>
-  <!-- =======================================================================================
-       HEADER
-       ======================================================================================= -->
+  <!-- Header -->
   <header>
-    <h1>Nitro Type Top 1000 — Everything Leaderboard</h1>
+    <h1>Nitro Type Top 1000 & Event Leaderboard</h1>
     <p>
       made by
       <a href="https://www.youtube.com/@InternetTyper" target="_blank" rel="noopener noreferrer">
@@ -292,9 +444,7 @@
     <p>Contact: https://discord.gg/3XVdxvKgAt on Discord</p>
   </header>
 
-  <!-- =======================================================================================
-       TABS
-       ======================================================================================= -->
+  <!-- Tabs -->
   <div class="tabs">
     <div class="tab active" data-target="leaderboardSection">Leaderboard</div>
     <div class="tab" data-target="racesPerDaySection">Races Per Day</div>
@@ -302,11 +452,9 @@
     <div class="tab" data-target="eventSection">Event</div>
   </div>
 
-  <!-- =======================================================================================
-       MAIN LEADERBOARD (Everything)
-       ======================================================================================= -->
-  <section id="leaderboardSection" class="table-container active">
-    <table id="leaderboardTable">
+  <!-- Main Leaderboard (Everything) -->
+  <section id="leaderboardSection" class="table-container active has-scroll-hint">
+    <table id="leaderboardTable" class="sticky-first-col">
       <thead>
         <tr>
           <th class="desc">Rank</th>
@@ -328,16 +476,14 @@
         </tr>
       </thead>
       <tbody>
-        <!-- rows injected by JS -->
+        <!-- Rows injected by JavaScript -->
       </tbody>
     </table>
     <p class="note" id="leaderboardNote"></p>
   </section>
 
-  <!-- =======================================================================================
-       RACES PER DAY (Add Join Date)
-       ======================================================================================= -->
-  <section id="racesPerDaySection" class="table-container">
+  <!-- Races Per Day (with Join Date) -->
+  <section id="racesPerDaySection" class="table-container has-scroll-hint">
     <table id="racesPerDayTable">
       <thead>
         <tr>
@@ -350,16 +496,14 @@
         </tr>
       </thead>
       <tbody>
-        <!-- rows injected by JS -->
+        <!-- Rows injected by JavaScript -->
       </tbody>
     </table>
     <p class="note" id="rpdNote"></p>
   </section>
 
-  <!-- =======================================================================================
-       24-HOUR LEADERBOARD (Only 4 metrics)
-       ======================================================================================= -->
-  <section id="changes24Section" class="table-container">
+  <!-- 24-Hour Leaderboard (only four metrics) -->
+  <section id="changes24Section" class="table-container has-scroll-hint">
     <table id="changes24Table">
       <thead>
         <tr>
@@ -372,16 +516,14 @@
         </tr>
       </thead>
       <tbody>
-        <!-- rows injected by JS -->
+        <!-- Rows injected by JavaScript -->
       </tbody>
     </table>
     <p class="note" id="dailyNote"></p>
   </section>
 
-  <!-- =======================================================================================
-       EVENT (Four-file engine, custom columns)
-       ======================================================================================= -->
-  <section id="eventSection" class="table-container">
+  <!-- Event Leaderboard (period-based metrics) -->
+  <section id="eventSection" class="table-container has-scroll-hint">
     <div class="note" id="eventInfo">
       Event combines API_before/now and Before/After Data. Totals shown here are period deltas (Δ).
     </div>
@@ -399,27 +541,25 @@
         </tr>
       </thead>
       <tbody>
-        <!-- rows injected by JS -->
+        <!-- Rows injected by JavaScript -->
       </tbody>
     </table>
     <p class="note" id="eventStatus"></p>
   </section>
 
-  <!-- =======================================================================================
-       JAVASCRIPT
-       ======================================================================================= -->
+  <!-- Full JavaScript -->
   <script>
     (function () {
       'use strict';
 
       // =====================================================================================
-      // CONFIG
+      // CONFIGURATION
       // =====================================================================================
-      const MAX_24H_RACES = 2600; // cut anomalies in daily diffs
+      const MAX_24H_RACES = 2600; // Filter out anomalies in 24-hour diffs
 
       const DATA_FILES = {
-        current: 'sample_data.json',
-        previous: 'sample_data_prev.json'
+        current: 'sample_data.json',       // today's snapshot
+        previous: 'sample_data_prev.json'  // yesterday's snapshot
       };
 
       const EVENT_FILES = {
@@ -429,20 +569,35 @@
         dataNow: 'AfterEventData.json'
       };
 
-      const ENRICH_FROM_API_NOW = true; // prefer API displayName and teamTag when present
-      const WPM_METHOD = 'weighted';    // 'weighted' or 'current'
+      // Use API_now to enrich display names (actual displayName) and optionally team tag
+      const ENRICH_FROM_API_NOW = true;
+
+      // Event "Avg WPM" method:
+      //   'weighted' = (avgNow*playedNow - avgBefore*playedBefore) / Δplayed
+      //   'current'  = fallback to API_now avgWpm if weighted is not possible
+      const WPM_METHOD = 'weighted';
 
       // =====================================================================================
-      // DOM
+      // DOM REFERENCES
       // =====================================================================================
       const tabs = document.querySelectorAll('.tabs .tab');
       const sections = document.querySelectorAll('.table-container');
+
       const lastUpdatedSpan = document.querySelector('#lastUpdated span');
       const lastUpdatedEl = lastUpdatedSpan || document.getElementById('lastUpdated');
 
-      // -------------------------------------------------------------------------------------
-      // Tabs switching
-      // -------------------------------------------------------------------------------------
+      // Add scroll hint fading if scrolled to far-right
+      sections.forEach(container => {
+        container.addEventListener('scroll', () => {
+          const atEnd = Math.ceil(container.scrollLeft + container.clientWidth) >= container.scrollWidth;
+          if (atEnd) container.classList.add('is-end');
+          else container.classList.remove('is-end');
+        });
+      });
+
+      // =====================================================================================
+      // TABS
+      // =====================================================================================
       tabs.forEach(tab => {
         tab.addEventListener('click', () => {
           tabs.forEach(t => t.classList.remove('active'));
@@ -454,12 +609,11 @@
       });
 
       // =====================================================================================
-      // BOOTSTRAP: load current/prev Data and optional API_now enrichment; render all but Event,
-      // then init Event (four-file compute).
+      // BOOTSTRAP: Load current/previous Data, enrich with API_now, render main views, then event
       // =====================================================================================
       Promise.all([
         fetchJSONFlexible(DATA_FILES.current),
-        fetchJSONFlexible(DATA_FILES.previous, true),
+        fetchJSONFlexible(DATA_FILES.previous, true), // allow empty/missing
         ENRICH_FROM_API_NOW ? fetchJSONFlexible(EVENT_FILES.apiNow, true) : { racers: [] }
       ])
       .then(([curRaw, prevRaw, apiNowMaybe]) => {
@@ -467,7 +621,7 @@
         const previous = normalizeData(prevRaw);
         const apiNowArr = toArray(apiNowMaybe);
 
-        // Set "Last updated"
+        // Last updated display
         if (lastUpdatedEl) {
           const ts = current.updatedAt ? new Date(current.updatedAt) : new Date();
           if (lastUpdatedSpan) {
@@ -477,15 +631,15 @@
           }
         }
 
-        // Build enrichment maps
-        const displayNameMap = buildDisplayNameMap(apiNowArr); // username(lower) => displayName
-        const teamTagMap = buildTeamTagMap(apiNowArr);         // username(lower) => teamTag
+        // Build enrichment maps: username(lowercased) -> values
+        const displayNameMap = buildDisplayNameMap(apiNowArr); // true display names from API_now
+        const teamTagMap = buildTeamTagMap(apiNowArr);         // optional fallback team tag
 
-        // Map for previous diffs
+        // Build prev map for diffs
         const prevMap = new Map((previous.racers || [])
           .map(r => [String(r.username || '').toLowerCase(), r]));
 
-        // Render the 3 data-driven sections
+        // Render 3 primary views
         renderLeaderboard(current.racers, displayNameMap, teamTagMap);
         enableSorting('leaderboardTable');
 
@@ -495,7 +649,7 @@
         renderChanges24(current.racers, prevMap, displayNameMap);
         enableSorting('changes24Table');
 
-        // Initialize the Event tab
+        // Initialize event after core views load
         initEventTab();
       })
       .catch(err => {
@@ -511,12 +665,12 @@
         msg.style.textAlign = 'center';
         document.body.appendChild(msg);
 
-        // Attempt Event initialization anyway so UI isn't stuck
+        // Attempt Event initialization anyway
         initEventTab();
       });
 
       // =====================================================================================
-      // FETCH HELPERS (supports JSON, object with racers, arrays, NDJSON)
+      // FETCH HELPERS (JSON array/object or NDJSON)
       // =====================================================================================
       async function fetchJSONFlexible(url, allowEmpty = false) {
         try {
@@ -527,19 +681,21 @@
           }
           const text = await res.text();
           const trimmed = text.trim();
-          if (!trimmed) return allowEmpty ? { racers: [] } : JSON.parse(''); // force catch
+          if (!trimmed) return allowEmpty ? { racers: [] } : JSON.parse(''); // force catch path
 
-          const first = trimmed[0];
-          if (first === '{' || first === '[') return JSON.parse(trimmed);
+          const firstChar = trimmed[0];
+          if (firstChar === '{' || firstChar === '[') {
+            return JSON.parse(trimmed);
+          }
 
           // NDJSON fallback
-          const out = [];
+          const arr = [];
           trimmed.split(/\r?\n/).forEach(line => {
             const l = line.trim();
             if (!l) return;
-            try { out.push(JSON.parse(l)); } catch { /* skip bad line */ }
+            try { arr.push(JSON.parse(l)); } catch { /* skip malformed line */ }
           });
-          return out;
+          return arr;
         } catch (e) {
           if (allowEmpty) return { racers: [] };
           throw e;
@@ -702,14 +858,13 @@
           const slug = String(r.username || '');
           const key = slug.toLowerCase();
 
-          // Prefer API display name when available; fallback to username
+          // Prefer API display name when available; fallback to data.displayName or slug
           const displayName = displayNameMap?.get(key) || String(r.displayName || slug);
 
-          // Prefer Data tag, fallback to API tag
+          // Prefer data tag; fallback to API teamTag
           const tagEnrich = teamTagMap?.get(key) || '';
           const tag = String(r.tag || tagEnrich || '');
 
-          // Membership and profile URL fields are included if present in sample_data.json
           return {
             displayName,
             username: slug,
@@ -729,7 +884,7 @@
           };
         });
 
-        // Default sort by total races desc for main board
+        // Default sort: Total Races desc
         list.sort((a, b) => b.racesPlayed - a.racesPlayed);
 
         const tbody = document.querySelector('#leaderboardTable tbody');
@@ -749,19 +904,19 @@
               ${r.tag ? `<a class="tag-link" href="${escapeAttr(ntTeamURL(r.tag))}" target="_blank" rel="noopener noreferrer">${escapeHTML(r.tag)}</a>` : '<span>-</span>'}
             </td>
             <td data-label="Title">${escapeHTML(r.title)}</td>
-            <td data-label="Total Races">${r.racesPlayed.toLocaleString()}</td>
-            <td data-label="Avg WPM">${r.avgSpeed.toLocaleString()}</td>
-            <td data-label="Top WPM">${r.highestSpeed.toLocaleString()}</td>
-            <td data-label="Profile Views">${r.profileViews.toLocaleString()}</td>
+            <td data-label="Total Races" class="num">${r.racesPlayed.toLocaleString()}</td>
+            <td data-label="Avg WPM" class="num">${r.avgSpeed.toLocaleString()}</td>
+            <td data-label="Top WPM" class="num">${r.highestSpeed.toLocaleString()}</td>
+            <td data-label="Profile Views" class="num">${r.profileViews.toLocaleString()}</td>
             <td data-label="Member Since">${escapeHTML(r.joinDate)}</td>
-            <td data-label="Garage Cars">${r.garageCars.toLocaleString()}</td>
+            <td data-label="Garage Cars" class="num">${r.garageCars.toLocaleString()}</td>
             <td data-label="Membership">${escapeHTML(r.membership)}</td>
             <td data-label="Profile URL">
               ${r.profileURL ? `<a class="link-quiet" href="${escapeAttr(r.profileURL)}" target="_blank" rel="noopener noreferrer">View Profile</a>` : '<span>-</span>'}
             </td>
-            <td data-label="Nitros Used">${r.nitrosUsed.toLocaleString()}</td>
-            <td data-label="Longest Session">${r.longestSession.toLocaleString()}</td>
-            <td data-label="League Tier">${r.leagueTier.toLocaleString()}</td>
+            <td data-label="Nitros Used" class="num">${r.nitrosUsed.toLocaleString()}</td>
+            <td data-label="Longest Session" class="num">${r.longestSession.toLocaleString()}</td>
+            <td data-label="League Tier" class="num">${r.leagueTier.toLocaleString()}</td>
           `.trim();
           frag.appendChild(tr);
         });
@@ -772,7 +927,7 @@
       }
 
       // =====================================================================================
-      // RENDER — RACES PER DAY (with Member Since)
+      // RENDER — RACES PER DAY (with Join Date)
       // =====================================================================================
       function renderRacesPerDay(data, displayNameMap) {
         const now = Date.now();
@@ -803,299 +958,4 @@
         list.forEach((r, i) => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td data-label="Rank">${i + 1}</td>
-            <td data-label="Display Name">
-              <a class="link-quiet" href="${escapeAttr(ntRacerURL(r.username))}" target="_blank" rel="noopener noreferrer">${escapeHTML(r.displayName)}</a>
-            </td>
-            <td data-label="Total Races">${r.total.toLocaleString()}</td>
-            <td data-label="Days Active">${r.days.toLocaleString()}</td>
-            <td data-label="Races / Day">${r.perDay.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-            <td data-label="Member Since">${escapeHTML(r.joinDate)}</td>
-          `.trim();
-          frag.appendChild(tr);
-        });
-        tbody.appendChild(frag);
-
-        const note = document.getElementById('rpdNote');
-        if (note) note.textContent = `${list.length.toLocaleString()} racers computed for lifetime average.`;
-      }
-
-      // =====================================================================================
-      // RENDER — 24-HOUR LEADERBOARD (Only the four metrics)
-      // =====================================================================================
-      function renderChanges24(currentRacers, prevMap, displayNameMap) {
-        const filtered = (currentRacers || []).filter(r => safeNumber(r.racesPlayed) > 0);
-
-        const diffs = filtered.map(r => {
-          const key = String(r.username || '').toLowerCase();
-          const p = prevMap.get(key) || {};
-          return {
-            username: String(r.username || ''),
-            displayName: displayNameMap?.get(key) || String(r.displayName || r.username || ''),
-            dRaces: safeNumber(r.racesPlayed) - safeNumber(p.racesPlayed),
-            dTop: safeNumber(r.highestSpeed) - safeNumber(p.highestSpeed),
-            dViews: safeNumber(r.profileViews) - safeNumber(p.profileViews),
-            dNitros: safeNumber(r.nitrosUsed) - safeNumber(p.nitrosUsed)
-          };
-        })
-        .filter(d => d.dRaces !== 0 && d.dRaces < MAX_24H_RACES)
-        .sort((a, b) => b.dRaces - a.dRaces);
-
-        const tbody = document.querySelector('#changes24Table tbody');
-        if (!tbody) return;
-        tbody.innerHTML = '';
-
-        const frag = document.createDocumentFragment();
-        diffs.forEach((d, i) => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td data-label="Rank">${i + 1}</td>
-            <td data-label="Display Name">
-              <a class="link-quiet" href="${escapeAttr(ntRacerURL(d.username))}" target="_blank" rel="noopener noreferrer">${escapeHTML(d.displayName)}</a>
-            </td>
-            <td data-label="Δ Total Races">${formatDeltaInt(d.dRaces)}</td>
-            <td data-label="Δ Top WPM">${formatDeltaInt(d.dTop)}</td>
-            <td data-label="Δ Profile Views">${formatDeltaInt(d.dViews)}</td>
-            <td data-label="Δ Nitros Used">${formatDeltaInt(d.dNitros)}</td>
-          `.trim();
-          frag.appendChild(tr);
-        });
-        tbody.appendChild(frag);
-
-        const note = document.getElementById('dailyNote');
-        if (note) note.textContent = `${diffs.length.toLocaleString()} racers with activity in the last snapshot window.`;
-      }
-
-      // =====================================================================================
-      // EVENT — INIT (four-file engine)
-      // =====================================================================================
-      function initEventTab() {
-        loadEventFourFiles(EVENT_FILES)
-          .then(result => {
-            if (!result || result.beforeCount === 0) {
-              showEventComingSoon(true);
-              clearEventTable();
-              setEventStatus('Event BEFORE data missing or empty.');
-              return;
-            }
-            showEventComingSoon(false);
-            renderEventComputed(result.rows);
-            enableSorting('eventTable');
-            setEventStatus(
-              `Loaded API_before: ${result.beforeCount.toLocaleString()} | API_now: ${result.nowCount.toLocaleString()} | ` +
-              `Computed rows (Δ races > 0): ${result.rows.length.toLocaleString()}`
-            );
-          })
-          .catch(err => {
-            console.error('Event computation error:', err);
-            showEventComingSoon(true);
-            clearEventTable();
-            setEventStatus('Error loading event data.');
-          });
-      }
-
-      // =====================================================================================
-      // EVENT — LOAD & COMPUTE (four-file engine)
-      // =====================================================================================
-      async function loadEventFourFiles(files) {
-        const [apiBeforeRaw, apiNowRaw, dataBeforeRaw, dataNowRaw] = await Promise.all([
-          fetchJSONFlexible(files.apiBefore, true),
-          fetchJSONFlexible(files.apiNow, true),
-          fetchJSONFlexible(files.dataBefore, true),
-          fetchJSONFlexible(files.dataNow, true)
-        ]);
-
-        const apiBefore = toArray(apiBeforeRaw);
-        const apiNow = toArray(apiNowRaw);
-        const dataBefore = normalizeData(dataBeforeRaw).racers;
-        const dataNow = normalizeData(dataNowRaw).racers;
-
-        const beforeCount = apiBefore.length;
-        const nowCount = apiNow.length;
-
-        if (beforeCount === 0) {
-          return { beforeCount, nowCount, rows: [] };
-        }
-
-        // Index by username(lower)
-        const apiB = indexByKey(apiBefore, o => o.username);
-        const apiN = indexByKey(apiNow, o => o.username);
-        const dataB = indexByKey(dataBefore, o => o.username);
-        const dataN = indexByKey(dataNow, o => o.username);
-
-        // Union of keys across sources
-        const keys = new Set([
-          ...Object.keys(apiB), ...Object.keys(apiN),
-          ...Object.keys(dataB), ...Object.keys(dataN)
-        ]);
-
-        const rows = [];
-        keys.forEach(k => {
-          const aB = apiB[k] || {};
-          const aN = apiN[k] || {};
-          const dB = dataB[k] || {};
-          const dN = dataN[k] || {};
-
-          const slug = pickFirstNonEmpty([dN.username, dB.username, aN.username, aB.username], '');
-          const displayName = pickFirstNonEmpty([aN.displayName, aB.displayName, dN.displayName, dB.displayName, slug], '');
-
-          // Δ Total Races: prefer Data lifetime delta, else API lifetimeRaces
-          const deltaRacesData = safeNumber(dN.racesPlayed) - safeNumber(dB.racesPlayed);
-          const deltaRacesAPI  = safeNumber(aN.lifetimeRaces) - safeNumber(aB.lifetimeRaces);
-          const dRaces = (Number.isFinite(deltaRacesData) && deltaRacesData !== 0) ? deltaRacesData : deltaRacesAPI;
-
-          if (dRaces <= 0) return; // skip no-ops and negatives
-
-          // Profile Views Δ (from Data)
-          const dViews = Math.max(0, safeNumber(dN.profileViews) - safeNumber(dB.profileViews));
-
-          // Nitros Used Δ (from Data)
-          const dNitros = Math.max(0, safeNumber(dN.nitrosUsed) - safeNumber(dB.nitrosUsed));
-
-          // Typed/errs deltas from API for accuracy
-          const typedDelta = Math.max(0, safeNumber(aN.typed) - safeNumber(aB.typed));
-          const errsDelta  = Math.max(0, safeNumber(aN.errs)  - safeNumber(aB.errs));
-          const acc = clamp(0, 100 * (1 - (typedDelta > 0 ? errsDelta / typedDelta : 0)), 100);
-
-          // WPM (period) — weighted by played if possible; else fallback to current avgWpm
-          const playedDelta = safeNumber(aN.played) - safeNumber(aB.played);
-          let wpm;
-          if (WPM_METHOD === 'weighted' && playedDelta > 0) {
-            const weightedNumerator = safeNumber(aN.avgWpm) * safeNumber(aN.played) - safeNumber(aB.avgWpm) * safeNumber(aB.played);
-            wpm = weightedNumerator / playedDelta;
-          } else {
-            wpm = safeNumber(aN.avgWpm);
-          }
-          if (!Number.isFinite(wpm) || wpm < 0) wpm = 0;
-
-          rows.push({
-            username: slug,
-            displayName,
-            dRaces,
-            wpm,
-            acc,
-            dViews,
-            dNitros
-          });
-        });
-
-        rows.sort((a, b) => b.dRaces - a.dRaces);
-        return { beforeCount, nowCount, rows };
-      }
-
-      // =====================================================================================
-      // EVENT — RENDER (custom columns)
-      // =====================================================================================
-      function renderEventComputed(rows) {
-        const tbody = document.querySelector('#eventTable tbody');
-        if (!tbody) return;
-        tbody.innerHTML = '';
-
-        const frag = document.createDocumentFragment();
-        rows.forEach((r, i) => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td data-label="Rank">${i + 1}</td>
-            <td data-label="Display Name">
-              <a class="link-quiet" href="${escapeAttr(ntRacerURL(r.username))}" target="_blank" rel="noopener noreferrer">${escapeHTML(r.displayName)}</a>
-            </td>
-            <td data-label="Total Races">${formatDeltaInt(r.dRaces)}</td>
-            <td data-label="Avg WPM">${formatFixed(r.wpm, 0, 2)}</td>
-            <td data-label="Avg Accuracy">${formatPercent(r.acc, 2, 2)}</td>
-            <td data-label="Profile Views">${formatDeltaInt(r.dViews)}</td>
-            <td data-label="Nitros Used">${formatDeltaInt(r.dNitros)}</td>
-          `.trim();
-          frag.appendChild(tr);
-        });
-
-        tbody.appendChild(frag);
-      }
-
-      // =====================================================================================
-      // EVENT — UI HELPERS
-      // =====================================================================================
-      function showEventComingSoon(show) {
-        const note = document.getElementById('eventComingSoon');
-        const table = document.getElementById('eventTable');
-        if (!note || !table) return;
-        if (show) {
-          note.classList.remove('hidden');
-          table.classList.add('hidden');
-        } else {
-          note.classList.add('hidden');
-          table.classList.remove('hidden');
-        }
-      }
-
-      function clearEventTable() {
-        const tbody = document.querySelector('#eventTable tbody');
-        if (tbody) tbody.innerHTML = '';
-      }
-
-      function setEventStatus(text) {
-        const el = document.getElementById('eventStatus');
-        if (el) el.textContent = text || '';
-      }
-
-      // =====================================================================================
-      // END
-      // =====================================================================================
-    })();
-  </script>
-
-  <!--
-    ==========================================================================================
-    EXTRA DOCUMENTATION BLOCKS (kept in the file for clarity and auditability)
-    ==========================================================================================
-    DATA FIELD EXPECTATIONS (sample_data.json / sample_data_prev.json):
-    - username: string (e.g., "InternetTyper")
-    - displayName: string (optional; will be enriched via API_now if not present)
-    - tag: string (team tag, optional)
-    - title: string (optional)
-    - racesPlayed: number
-    - avgSpeed: number (Avg WPM)
-    - highestSpeed: number (Top WPM)
-    - profileViews: number
-    - joinDate: string (ISO or human-readable)
-    - garageCars: number
-    - membership: string (e.g., "Gold", "Standard")
-    - profileURL: string (optional; if absent we'll link to nitrotype.com/racer/{username})
-    - nitrosUsed: number
-    - longestSession: number
-    - leagueTier: number
-
-    24-HOUR DIFFS:
-    - The app calculates diffs from current (sample_data.json) minus previous (sample_data_prev.json).
-    - Only four metrics are shown in the 24-hour view:
-      Δ Total Races, Δ Top WPM, Δ Profile Views, Δ Nitros Used.
-    - We exclude anomalies where Δ Total Races ≥ 2600 and entries with Δ Total Races == 0.
-
-    EVENT ENGINE:
-    - API_before/now provides typed/errs/avgWpm/played enabling period Avg WPM and Accuracy.
-    - BeforeEventData/AfterEventData provides Δ Profile Views and Δ Nitros Used, plus
-      a reliable Δ Total Races from the Data snapshots (with a fallback to API lifetimeRaces).
-    - Columns are strictly:
-      Total Races (Δ), Avg WPM (period), Avg Accuracy (period), Profile Views (Δ), Nitros Used (Δ), and Display Name.
-
-    SORTING:
-    - Click any header to sort. The arrow indicator shows the direction.
-    - Rank re-numbers on each sort.
-
-    RESPONSIVE MODE:
-    - Under 950px width, tables convert to stacked cards where each cell labels itself via data-label.
-
-    ACCESSIBILITY:
-    - Strong focus ring using :focus-visible.
-    - Links are underlined and high contrast.
-
-    PRINT:
-    - Tabs/notes hidden; headers become static.
-
-    ==========================================================================================
-    VERSION NOTES
-    - This file intentionally contains extensive comments and clarifications for maintainability.
-    - Keep filenames consistent or adjust constants at the top of the script.
-    ==========================================================================================
-  -->
-</body>
-</html>
+           
