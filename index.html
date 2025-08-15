@@ -1,8 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!--
+    ============================================================================================
+    Nitro Type Top 1000 — Everything Leaderboard (Wide-frame, Auditable, Responsive)
+    ============================================================================================
+    PURPOSE
+    -------
+    A complete, self-contained leaderboard app with four views:
+      1) Main Leaderboard (Everything visible)
+      2) Races Per Day (with Join Date)
+      3) 24-Hour Leaderboard (only Δ Total Races, Δ Top WPM, Δ Profile Views, Δ Nitros Used)
+      4) Event Leaderboard (Δ Total Races, Avg WPM, Avg Accuracy, Δ Profile Views, Δ Nitros Used)
+
+    DATA INPUTS
+    -----------
+    - sample_data.json           (current snapshot; “today”)
+    - sample_data_prev.json      (previous snapshot; “yesterday”)
+      → Drive Main, Races Per Day, and 24-Hour Leaderboard.
+
+    - API_before.json, API_now.json
+      → Event: provide displayName, typed, errs, played, avgWpm; used for period WPM & Accuracy.
+
+    - BeforeEventData.json, AfterEventData.json
+      → Event: provide Δ Total Races (preferred), Δ Profile Views, Δ Nitros Used.
+
+    DISPLAY RULES
+    -------------
+    - Main Leaderboard: show EVERYTHING including Nitros Used and Longest Session.
+    - Races Per Day: same as before but include Join Date (Member Since).
+    - 24-Hour: ONLY four metrics — Δ Total Races, Δ Top WPM, Δ Profile Views, Δ Nitros Used.
+      Filters:
+        • Exclude current racers with total races == 0
+        • Exclude rows where Δ Total Races == 0
+        • Exclude anomalies where Δ Total Races ≥ 2600
+    - Event: Display Name (true displayName when available), Δ Total Races, Avg WPM (period),
+             Avg Accuracy (period), Δ Profile Views, Δ Nitros Used.
+
+    UX + STYLE
+    ----------
+    - Wide-frame layout with horizontal scroll on tables; sticky header; optional sticky first column.
+    - Click-to-sort with numeric-aware parsing; rank re-numbering on every sort.
+    - Defensive parsing; HTML escaping for all dynamic text; locale-aware formatting.
+
+    AUDITABILITY
+    ------------
+    - Clear, verbose comments and explicit transforms.
+    - No hidden behavior; all deltas and filters are named.
+
+    ============================================================================================
+  -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nitro Type Top 1000 — Everything Leaderboard (Wide)</title>
+
+  <style>
+    /* =========================================================================================
+       THEME: Dark, readable, high-contrast accents
+       ========================================================================================= */
     :root {
-      /* Dark palette */
       --bg: #0f1217;
       --surface: #151925;
       --surface-2: #1a2131;
@@ -19,7 +75,6 @@
       --shadow: rgba(0,0,0,0.35);
       --focus: #82b1ff;
 
-      /* Layout */
       --radius-sm: 6px;
       --radius-md: 10px;
       --radius-lg: 14px;
@@ -28,20 +83,17 @@
       --pad-2: 0.66rem;
       --pad-3: 1rem;
 
-      /* Expanded frame + wide tables */
-      --page-max: 1900px;   /* widen the “frame” to show more columns */
-      --table-min: 1650px;  /* minimum table width before horizontal scrolling */
+      /* Wider frame and minimum table widths */
+      --page-max: 1900px;   /* widen outer frame so more columns fit */
+      --table-min: 1650px;  /* ensure table never squishes; container scrolls horizontally */
 
-      /* Fonts */
       --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
-      /* Scroll hint */
       --scroll-hint-width: 42px;
       --scroll-hint-fade: linear-gradient(90deg, rgba(21,25,37,0), rgba(21,25,37,0.9) 65%, rgba(21,25,37,1));
     }
 
-    /* Optional light-mode palette via prefers-color-scheme */
     @media (prefers-color-scheme: light) {
       :root {
         --bg: #f4f7fb;
@@ -62,7 +114,9 @@
       }
     }
 
-    /* Base */
+    /* =========================================================================================
+       BASE
+       ========================================================================================= */
     *, *::before, *::after { box-sizing: border-box; }
     html, body { height: 100%; }
     html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
@@ -81,13 +135,14 @@
     a { color: var(--accent); text-decoration: none; }
     a:hover { color: var(--accent-2); }
 
-    /* Expanded frame */
     header, .tabs, .table-container {
       width: min(100%, var(--page-max));
       margin-inline: auto;
     }
 
-    /* Header */
+    /* =========================================================================================
+       HEADER
+       ========================================================================================= */
     header {
       text-align: center;
       padding: 16px 12px;
@@ -106,7 +161,9 @@
     }
     header p { margin: 4px 0; color: var(--text-dim); }
 
-    /* Tabs */
+    /* =========================================================================================
+       TABS
+       ========================================================================================= */
     .tabs {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -139,7 +196,9 @@
       text-shadow: 0 0 10px rgba(110,168,254,0.6);
     }
 
-    /* Sections / table container with horizontal scroll */
+    /* =========================================================================================
+       TABLE CONTAINERS (horizontal scroll + sticky header)
+       ========================================================================================= */
     .table-container {
       display: block;
       background: var(--surface);
@@ -147,7 +206,7 @@
       border-radius: var(--radius-lg);
       padding: 10px;
       margin: 0 auto 40px;
-      overflow-x: auto; /* key: allow horizontal scroll to show all columns */
+      overflow-x: auto;   /* key: horizontal scroll for many columns */
       overflow-y: hidden;
       -webkit-overflow-scrolling: touch;
       box-shadow: 0 18px 40px var(--shadow);
@@ -155,7 +214,6 @@
     }
     .table-container.active { display: block; }
     .hidden { display: none !important; }
-
     .note {
       color: #e8ecf1;
       font-size: 0.95rem;
@@ -163,7 +221,7 @@
       margin: 8px 0 12px;
     }
 
-    /* Optional scroll hint overlay */
+    /* Optional: scroll hint overlay on the right */
     .table-container.has-scroll-hint::after {
       content: '';
       position: sticky;
@@ -178,16 +236,18 @@
     .table-container.has-scroll-hint.is-end::after { opacity: 0; transition: opacity .25s ease; }
     .table-container.has-scroll-hint:not(.is-end)::after { opacity: 1; transition: opacity .25s ease; }
 
-    /* Tables */
+    /* =========================================================================================
+       TABLES
+       ========================================================================================= */
     table {
       width: 100%;
-      min-width: var(--table-min); /* key: ensure columns have space; container scrolls if needed */
+      min-width: var(--table-min); /* ensures columns remain readable; container scrolls */
       border-collapse: collapse;
       border-spacing: 0;
       font-size: 0.92rem;
     }
 
-    /* Column sizing hints for Main Leaderboard (16 columns) */
+    /* Column width hints: adjust as needed */
     #leaderboardTable th:nth-child(1),  #leaderboardTable td:nth-child(1)  { min-width: 70px; }   /* Rank */
     #leaderboardTable th:nth-child(2),  #leaderboardTable td:nth-child(2)  { min-width: 220px; }  /* Display Name */
     #leaderboardTable th:nth-child(3),  #leaderboardTable td:nth-child(3)  { min-width: 160px; }  /* Username */
@@ -205,7 +265,6 @@
     #leaderboardTable th:nth-child(15), #leaderboardTable td:nth-child(15) { min-width: 160px; }  /* Longest Session */
     #leaderboardTable th:nth-child(16), #leaderboardTable td:nth-child(16) { min-width: 130px; }  /* League Tier */
 
-    /* 24-Hour table (6 columns) */
     #changes24Table th:nth-child(1), #changes24Table td:nth-child(1) { min-width: 70px; }    /* Rank */
     #changes24Table th:nth-child(2), #changes24Table td:nth-child(2) { min-width: 240px; }   /* Display Name */
     #changes24Table th:nth-child(3), #changes24Table td:nth-child(3) { min-width: 160px; }   /* Δ Total Races */
@@ -213,7 +272,6 @@
     #changes24Table th:nth-child(5), #changes24Table td:nth-child(5) { min-width: 170px; }   /* Δ Profile Views */
     #changes24Table th:nth-child(6), #changes24Table td:nth-child(6) { min-width: 160px; }   /* Δ Nitros Used */
 
-    /* Races Per Day table (6 columns: Member Since added) */
     #racesPerDayTable th:nth-child(1), #racesPerDayTable td:nth-child(1) { min-width: 70px; }   /* Rank */
     #racesPerDayTable th:nth-child(2), #racesPerDayTable td:nth-child(2) { min-width: 240px; }  /* Display Name */
     #racesPerDayTable th:nth-child(3), #racesPerDayTable td:nth-child(3) { min-width: 150px; }  /* Total Races */
@@ -221,7 +279,6 @@
     #racesPerDayTable th:nth-child(5), #racesPerDayTable td:nth-child(5) { min-width: 150px; }  /* Races / Day */
     #racesPerDayTable th:nth-child(6), #racesPerDayTable td:nth-child(6) { min-width: 160px; }  /* Member Since */
 
-    /* Event table (7 columns) */
     #eventTable th:nth-child(1), #eventTable td:nth-child(1) { min-width: 70px; }    /* Rank */
     #eventTable th:nth-child(2), #eventTable td:nth-child(2) { min-width: 220px; }   /* Display Name */
     #eventTable th:nth-child(3), #eventTable td:nth-child(3) { min-width: 150px; }   /* Total Races (Δ) */
@@ -284,7 +341,7 @@
     tbody tr:nth-child(even) { background: rgba(255,255,255,0.025); }
     tbody tr:hover { background: linear-gradient(90deg, rgba(110,168,254,0.08), rgba(110,168,254,0)); }
 
-    /* Link utility: white underline for key links */
+    /* Links: white underline for key entities */
     a.link-quiet, a.link-quiet:visited {
       color: #fff;
       text-decoration: underline;
@@ -300,7 +357,7 @@
     }
     a.tag-link:hover { text-decoration-color: #fff; }
 
-    /* Optional: sticky first column (add class "sticky-first-col" on a table) */
+    /* Optional sticky first column: add class="sticky-first-col" on the table */
     table.sticky-first-col th:first-child,
     table.sticky-first-col td:first-child {
       position: sticky;
@@ -310,16 +367,16 @@
       box-shadow: 3px 0 0 rgba(0,0,0,0.08);
     }
 
-    /* Responsive tuning */
+    /* Responsive density tweak */
     @media (min-width: 1500px) {
       table { font-size: 0.95rem; }
       thead th, tbody td { padding: 0.66rem 0.75rem; }
     }
     @media (max-width: 1200px) {
-      :root { --table-min: 1500px; } /* slight shrink */
+      :root { --table-min: 1500px; }
     }
 
-    /* Stacked-card mode (optional): add class "stack-on-mobile" to .table-container to enable */
+    /* Optional stacked-card mode: add class "stack-on-mobile" to .table-container to enable */
     @media (max-width: 950px) {
       .table-container.stack-on-mobile table,
       .table-container.stack-on-mobile thead,
@@ -327,10 +384,8 @@
       .table-container.stack-on-mobile th,
       .table-container.stack-on-mobile td,
       .table-container.stack-on-mobile tr { display: block; }
-
       .table-container.stack-on-mobile thead { display: none; }
       .table-container.stack-on-mobile tr { margin-bottom: 15px; }
-
       .table-container.stack-on-mobile td {
         display: flex;
         justify-content: space-between;
@@ -353,7 +408,7 @@
       }
     }
 
-    /* A11y + motion */
+    /* A11y + motion preferences */
     :focus-visible {
       outline: 3px solid rgba(130,177,255,0.35);
       outline-offset: 2px;
@@ -363,7 +418,7 @@
       * { transition: none !important; animation: none !important; }
     }
 
-    /* Scrollbar styling */
+    /* Scrollbar styling (container only) */
     .table-container { scrollbar-width: thin; scrollbar-color: #3a4560 var(--surface); }
     .table-container::-webkit-scrollbar { height: 12px; width: 12px; }
     .table-container::-webkit-scrollbar-track { background: var(--surface); }
@@ -431,9 +486,11 @@
   </style>
 </head>
 <body>
-  <!-- Header -->
+  <!-- =======================================================================================
+       HEADER
+       ======================================================================================= -->
   <header>
-    <h1>Nitro Type Top 1000 & Event Leaderboard</h1>
+    <h1>Nitro Type Top 1000 — Everything Leaderboard</h1>
     <p>
       made by
       <a href="https://www.youtube.com/@InternetTyper" target="_blank" rel="noopener noreferrer">
@@ -444,7 +501,9 @@
     <p>Contact: https://discord.gg/3XVdxvKgAt on Discord</p>
   </header>
 
-  <!-- Tabs -->
+  <!-- =======================================================================================
+       TABS
+       ======================================================================================= -->
   <div class="tabs">
     <div class="tab active" data-target="leaderboardSection">Leaderboard</div>
     <div class="tab" data-target="racesPerDaySection">Races Per Day</div>
@@ -452,7 +511,9 @@
     <div class="tab" data-target="eventSection">Event</div>
   </div>
 
-  <!-- Main Leaderboard (Everything) -->
+  <!-- =======================================================================================
+       MAIN LEADERBOARD (Everything)
+       ======================================================================================= -->
   <section id="leaderboardSection" class="table-container active has-scroll-hint">
     <table id="leaderboardTable" class="sticky-first-col">
       <thead>
@@ -482,7 +543,9 @@
     <p class="note" id="leaderboardNote"></p>
   </section>
 
-  <!-- Races Per Day (with Join Date) -->
+  <!-- =======================================================================================
+       RACES PER DAY (with Join Date)
+       ======================================================================================= -->
   <section id="racesPerDaySection" class="table-container has-scroll-hint">
     <table id="racesPerDayTable">
       <thead>
@@ -502,7 +565,9 @@
     <p class="note" id="rpdNote"></p>
   </section>
 
-  <!-- 24-Hour Leaderboard (only four metrics) -->
+  <!-- =======================================================================================
+       24-HOUR LEADERBOARD (ONLY 4 METRICS)
+       ======================================================================================= -->
   <section id="changes24Section" class="table-container has-scroll-hint">
     <table id="changes24Table">
       <thead>
@@ -522,7 +587,9 @@
     <p class="note" id="dailyNote"></p>
   </section>
 
-  <!-- Event Leaderboard (period-based metrics) -->
+  <!-- =======================================================================================
+       EVENT LEADERBOARD (Δ Races, Avg WPM, Avg Accuracy, Δ Views, Δ Nitros)
+       ======================================================================================= -->
   <section id="eventSection" class="table-container has-scroll-hint">
     <div class="note" id="eventInfo">
       Event combines API_before/now and Before/After Data. Totals shown here are period deltas (Δ).
@@ -547,7 +614,9 @@
     <p class="note" id="eventStatus"></p>
   </section>
 
-  <!-- Full JavaScript -->
+  <!-- =======================================================================================
+       FULL JAVASCRIPT (Data loading, transforms, rendering, sorting)
+       ======================================================================================= -->
   <script>
     (function () {
       'use strict';
@@ -555,11 +624,11 @@
       // =====================================================================================
       // CONFIGURATION
       // =====================================================================================
-      const MAX_24H_RACES = 2600; // Filter out anomalies in 24-hour diffs
+      const MAX_24H_RACES = 2600; // filter anomalies in 24-hour diffs
 
       const DATA_FILES = {
-        current: 'sample_data.json',       // today's snapshot
-        previous: 'sample_data_prev.json'  // yesterday's snapshot
+        current: 'sample_data.json',
+        previous: 'sample_data_prev.json'
       };
 
       const EVENT_FILES = {
@@ -569,16 +638,11 @@
         dataNow: 'AfterEventData.json'
       };
 
-      // Use API_now to enrich display names (actual displayName) and optionally team tag
-      const ENRICH_FROM_API_NOW = true;
-
-      // Event "Avg WPM" method:
-      //   'weighted' = (avgNow*playedNow - avgBefore*playedBefore) / Δplayed
-      //   'current'  = fallback to API_now avgWpm if weighted is not possible
-      const WPM_METHOD = 'weighted';
+      const ENRICH_FROM_API_NOW = true; // use API_now to enrich display names/team tags
+      const WPM_METHOD = 'weighted';    // 'weighted' or 'current' for Event Avg WPM
 
       // =====================================================================================
-      // DOM REFERENCES
+      // DOM REFERENCES + TAB SWITCHING
       // =====================================================================================
       const tabs = document.querySelectorAll('.tabs .tab');
       const sections = document.querySelectorAll('.table-container');
@@ -586,7 +650,7 @@
       const lastUpdatedSpan = document.querySelector('#lastUpdated span');
       const lastUpdatedEl = lastUpdatedSpan || document.getElementById('lastUpdated');
 
-      // Add scroll hint fading if scrolled to far-right
+      // Horizontal scroll hint: fade when at end
       sections.forEach(container => {
         container.addEventListener('scroll', () => {
           const atEnd = Math.ceil(container.scrollLeft + container.clientWidth) >= container.scrollWidth;
@@ -595,9 +659,6 @@
         });
       });
 
-      // =====================================================================================
-      // TABS
-      // =====================================================================================
       tabs.forEach(tab => {
         tab.addEventListener('click', () => {
           tabs.forEach(t => t.classList.remove('active'));
@@ -609,11 +670,11 @@
       });
 
       // =====================================================================================
-      // BOOTSTRAP: Load current/previous Data, enrich with API_now, render main views, then event
+      // BOOTSTRAP: Load Data current/previous + API_now enrichment, render main + 24h + RPD, then init Event
       // =====================================================================================
       Promise.all([
         fetchJSONFlexible(DATA_FILES.current),
-        fetchJSONFlexible(DATA_FILES.previous, true), // allow empty/missing
+        fetchJSONFlexible(DATA_FILES.previous, true), // allow empty previous
         ENRICH_FROM_API_NOW ? fetchJSONFlexible(EVENT_FILES.apiNow, true) : { racers: [] }
       ])
       .then(([curRaw, prevRaw, apiNowMaybe]) => {
@@ -621,25 +682,22 @@
         const previous = normalizeData(prevRaw);
         const apiNowArr = toArray(apiNowMaybe);
 
-        // Last updated display
+        // Last updated
         if (lastUpdatedEl) {
           const ts = current.updatedAt ? new Date(current.updatedAt) : new Date();
-          if (lastUpdatedSpan) {
-            lastUpdatedSpan.textContent = ts.toLocaleString();
-          } else {
-            lastUpdatedEl.textContent = `Last updated: ${ts.toLocaleString()}`;
-          }
+          if (lastUpdatedSpan) lastUpdatedSpan.textContent = ts.toLocaleString();
+          else lastUpdatedEl.textContent = `Last updated: ${ts.toLocaleString()}`;
         }
 
-        // Build enrichment maps: username(lowercased) -> values
-        const displayNameMap = buildDisplayNameMap(apiNowArr); // true display names from API_now
-        const teamTagMap = buildTeamTagMap(apiNowArr);         // optional fallback team tag
+        // Enrichment maps (username lowercase ⇒ displayName/teamTag)
+        const displayNameMap = buildDisplayNameMap(apiNowArr);
+        const teamTagMap = buildTeamTagMap(apiNowArr);
 
-        // Build prev map for diffs
+        // Prev map for diffs
         const prevMap = new Map((previous.racers || [])
           .map(r => [String(r.username || '').toLowerCase(), r]));
 
-        // Render 3 primary views
+        // Render primary views
         renderLeaderboard(current.racers, displayNameMap, teamTagMap);
         enableSorting('leaderboardTable');
 
@@ -649,7 +707,7 @@
         renderChanges24(current.racers, prevMap, displayNameMap);
         enableSorting('changes24Table');
 
-        // Initialize event after core views load
+        // Initialize Event after primary renders
         initEventTab();
       })
       .catch(err => {
@@ -664,13 +722,12 @@
         msg.style.color = '#ff5252';
         msg.style.textAlign = 'center';
         document.body.appendChild(msg);
-
         // Attempt Event initialization anyway
         initEventTab();
       });
 
       // =====================================================================================
-      // FETCH HELPERS (JSON array/object or NDJSON)
+      // FETCH HELPERS (JSON, object with racers, or NDJSON)
       // =====================================================================================
       async function fetchJSONFlexible(url, allowEmpty = false) {
         try {
@@ -681,13 +738,12 @@
           }
           const text = await res.text();
           const trimmed = text.trim();
-          if (!trimmed) return allowEmpty ? { racers: [] } : JSON.parse(''); // force catch path
+          if (!trimmed) return allowEmpty ? { racers: [] } : JSON.parse(''); // force error path
 
-          const firstChar = trimmed[0];
-          if (firstChar === '{' || firstChar === '[') {
+          const first = trimmed[0];
+          if (first === '{' || first === '[') {
             return JSON.parse(trimmed);
           }
-
           // NDJSON fallback
           const arr = [];
           trimmed.split(/\r?\n/).forEach(line => {
@@ -703,7 +759,7 @@
       }
 
       // =====================================================================================
-      // NORMALIZATION + MAPS
+      // NORMALIZATION + MAP BUILDERS
       // =====================================================================================
       function normalizeData(payload) {
         if (Array.isArray(payload)) return { updatedAt: null, racers: payload };
@@ -815,7 +871,7 @@
       }
 
       // =====================================================================================
-      // SORTING (numeric-aware + rank renumbering)
+      // SORTING (numeric-aware + rank renumbering + header indicators)
       // =====================================================================================
       function enableSorting(tableId) {
         const table = document.getElementById(tableId);
@@ -858,10 +914,7 @@
           const slug = String(r.username || '');
           const key = slug.toLowerCase();
 
-          // Prefer API display name when available; fallback to data.displayName or slug
           const displayName = displayNameMap?.get(key) || String(r.displayName || slug);
-
-          // Prefer data tag; fallback to API teamTag
           const tagEnrich = teamTagMap?.get(key) || '';
           const tag = String(r.tag || tagEnrich || '');
 
@@ -884,7 +937,6 @@
           };
         });
 
-        // Default sort: Total Races desc
         list.sort((a, b) => b.racesPlayed - a.racesPlayed);
 
         const tbody = document.querySelector('#leaderboardTable tbody');
@@ -958,4 +1010,181 @@
         list.forEach((r, i) => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
-           
+            <td data-label="Rank">${i + 1}</td>
+            <td data-label="Display Name">
+              <a class="link-quiet" href="${escapeAttr(ntRacerURL(r.username))}" target="_blank" rel="noopener noreferrer">${escapeHTML(r.displayName)}</a>
+            </td>
+            <td data-label="Total Races" class="num">${r.total.toLocaleString()}</td>
+            <td data-label="Days Active" class="num">${r.days.toLocaleString()}</td>
+            <td data-label="Races / Day" class="num">${r.perDay.toFixed(2)}</td>
+            <td data-label="Member Since">${escapeHTML(r.joinDate)}</td>
+          `.trim();
+          frag.appendChild(tr);
+        });
+        tbody.appendChild(frag);
+
+        const note = document.getElementById('rpdNote');
+        if (note) note.textContent = `${list.length.toLocaleString()} racers calculated.`;
+      }
+
+      // =====================================================================================
+      // RENDER — 24-HOUR LEADERBOARD
+      // =====================================================================================
+      function renderChanges24(current, prevMap, displayNameMap) {
+        const diffs = [];
+
+        for (const r of current || []) {
+          const slug = String(r.username || '');
+          if (!slug) continue;
+
+          const prev = prevMap.get(slug.toLowerCase());
+          if (!prev) continue;
+
+          const deltaRaces = safeNumber(r.racesPlayed) - safeNumber(prev.racesPlayed);
+          const deltaTopWPM = safeNumber(r.highestSpeed) - safeNumber(prev.highestSpeed);
+          const deltaViews = safeNumber(r.profileViews) - safeNumber(prev.profileViews);
+          const deltaNitros = safeNumber(r.nitrosUsed) - safeNumber(prev.nitrosUsed);
+
+          if (safeNumber(r.racesPlayed) === 0) continue;
+          if (deltaRaces <= 0) continue;
+          if (deltaRaces >= MAX_24H_RACES) continue;
+
+          const displayName = displayNameMap?.get(slug.toLowerCase()) || String(r.displayName || slug);
+
+          diffs.push({
+            displayName,
+            username: slug,
+            deltaRaces,
+            deltaTopWPM,
+            deltaViews,
+            deltaNitros
+          });
+        }
+
+        diffs.sort((a, b) => b.deltaRaces - a.deltaRaces);
+
+        const tbody = document.querySelector('#changes24Table tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        const frag = document.createDocumentFragment();
+        diffs.forEach((d, i) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td data-label="Rank">${i + 1}</td>
+            <td data-label="Display Name">
+              <a class="link-quiet" href="${escapeAttr(ntRacerURL(d.username))}" target="_blank" rel="noopener noreferrer">${escapeHTML(d.displayName)}</a>
+            </td>
+            <td data-label="Δ Total Races" class="num">${formatDeltaInt(d.deltaRaces)}</td>
+            <td data-label="Δ Top WPM" class="num">${formatDeltaInt(d.deltaTopWPM)}</td>
+            <td data-label="Δ Profile Views" class="num">${formatDeltaInt(d.deltaViews)}</td>
+            <td data-label="Δ Nitros Used" class="num">${formatDeltaInt(d.deltaNitros)}</td>
+          `.trim();
+          frag.appendChild(tr);
+        });
+        tbody.appendChild(frag);
+
+        const note = document.getElementById('dailyNote');
+        if (note) note.textContent = `${diffs.length.toLocaleString()} racers with activity in the last 24h.`;
+      }
+
+      // =====================================================================================
+      // EVENT TAB INITIALIZER
+      // =====================================================================================
+      function initEventTab() {
+        Promise.all([
+          fetchJSONFlexible(EVENT_FILES.apiBefore, true),
+          fetchJSONFlexible(EVENT_FILES.apiNow, true),
+          fetchJSONFlexible(EVENT_FILES.dataBefore, true),
+          fetchJSONFlexible(EVENT_FILES.dataNow, true)
+        ]).then(([apiBeforeRaw, apiNowRaw, dataBeforeRaw, dataNowRaw]) => {
+          const apiBefore = toArray(apiBeforeRaw);
+          const apiNow = toArray(apiNowRaw);
+          const dataBefore = toArray(dataBeforeRaw);
+          const dataNow = toArray(dataNowRaw);
+
+          if (!apiNow.length && !dataNow.length) {
+            document.getElementById('eventComingSoon')?.classList.remove('hidden');
+            return;
+          }
+
+          const beforeMap = indexByKey(dataBefore, r => r.username);
+          const afterMap = indexByKey(dataNow, r => r.username);
+
+          const apiBeforeMap = indexByKey(apiBefore, r => r.username);
+          const apiNowMap = indexByKey(apiNow, r => r.username);
+
+          const eventRows = [];
+
+          for (const key in afterMap) {
+            const afterR = afterMap[key];
+            const beforeR = beforeMap[key] || {};
+            const deltaRaces = safeNumber(afterR.racesPlayed) - safeNumber(beforeR.racesPlayed);
+            const deltaViews = safeNumber(afterR.profileViews) - safeNumber(beforeR.profileViews);
+            const deltaNitros = safeNumber(afterR.nitrosUsed) - safeNumber(beforeR.nitrosUsed);
+
+            const apiB = apiBeforeMap[key] || {};
+            const apiA = apiNowMap[key] || {};
+
+            const typed = safeNumber(apiA.typed) - safeNumber(apiB.typed);
+            const errs = safeNumber(apiA.errs) - safeNumber(apiB.errs);
+            const played = safeNumber(apiA.played) - safeNumber(apiB.played);
+
+            const avgWPM = played > 0 && WPM_METHOD === 'weighted'
+              ? (typed / 5) / (played / 60)
+              : safeNumber(apiA.avgWpm);
+            const acc = typed > 0 ? clamp(0, 100 * (1 - errs / typed), 100) : 0;
+
+            const displayName = pickFirstNonEmpty(
+              [apiA.displayName, afterR.displayName, key],
+              key
+            );
+
+            eventRows.push({
+              displayName,
+              username: key,
+              deltaRaces,
+              avgWPM,
+              acc,
+              deltaViews,
+              deltaNitros
+            });
+          }
+
+          eventRows.sort((a, b) => b.deltaRaces - a.deltaRaces);
+
+          const tbody = document.querySelector('#eventTable tbody');
+          if (!tbody) return;
+          tbody.innerHTML = '';
+
+          const frag = document.createDocumentFragment();
+          eventRows.forEach((r, i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td data-label="Rank">${i + 1}</td>
+              <td data-label="Display Name">
+                <a class="link-quiet" href="${escapeAttr(ntRacerURL(r.username))}" target="_blank" rel="noopener noreferrer">${escapeHTML(r.displayName)}</a>
+              </td>
+              <td data-label="Total Races" class="num">${formatDeltaInt(r.deltaRaces)}</td>
+              <td data-label="Avg WPM" class="num">${formatFixed(r.avgWPM, 2, 2)}</td>
+              <td data-label="Avg Accuracy" class="num">${formatPercent(r.acc, 2, 2)}</td>
+              <td data-label="Profile Views" class="num">${formatDeltaInt(r.deltaViews)}</td>
+              <td data-label="Nitros Used" class="num">${formatDeltaInt(r.deltaNitros)}</td>
+            `.trim();
+            frag.appendChild(tr);
+          });
+          tbody.appendChild(frag);
+
+          const note = document.getElementById('eventStatus');
+          if (note) note.textContent = `${eventRows.length.toLocaleString()} racers tracked for this event.`;
+        })
+        .catch(err => {
+          console.error('Event tab error:', err);
+          document.getElementById('eventComingSoon')?.classList.remove('hidden');
+        });
+      }
+
+    })();
+  </script>
+</body>
+</html>
