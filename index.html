@@ -1,9 +1,11 @@
- <meta charset="UTF-8" />
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
   <title>Nitro Type Top 1000 Racers</title>
 
   <style>
     /* Nitro Type Leaderboard — Dark, fast, responsive */
-
 
     :root {
       --bg: #111317;
@@ -51,28 +53,6 @@
     }
 
     /* Header */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     header {
       text-align: center;
       padding: 16px 12px;
@@ -89,20 +69,12 @@
       letter-spacing: 0.2px;
       color: #f0f5ff;
       text-shadow: 0 6px 18px rgba(110,168,254,0.18);
-
-
-
-
-
-
     }
     header p { margin: 2px 0; color: var(--text-dim); }
     header a { color: var(--accent); text-decoration: none; }
     header a:hover { color: var(--accent-2); }
 
     /* Tabs */
-
-
     .tabs {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -110,7 +82,6 @@
       align-items: stretch;
       margin: 0 auto var(--pad-3);
       max-width: 1200px;
-
     }
     .tabs .tab {
       background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
@@ -131,15 +102,12 @@
       box-shadow: 0 6px 16px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.03) inset;
     }
     .tabs .tab.active {
-
       color: #ffffff;
       border-color: var(--focus);
       text-shadow: 0 0 10px rgba(110,168,254,0.6);
     }
 
     /* Sections */
-
-
     .table-container {
       display: none;
       background: var(--surface);
@@ -150,7 +118,6 @@
       max-width: 1200px;
       overflow: hidden;
       box-shadow: 0 18px 40px rgba(0,0,0,0.35);
-
     }
     .table-container.active { display: block; }
 
@@ -161,7 +128,6 @@
       border-spacing: 0;
       font-size: 0.92rem;
     }
-
     thead th {
       position: sticky;
       top: 0;
@@ -235,17 +201,21 @@
       font-size: 0.95rem;
       text-align: center;
       margin: 6px 0 10px;
-
     }
     .hidden { display: none !important; }
 
     /* Responsive stacked cards */
-
-
     @media (max-width: 900px) {
       table, thead, tbody, th, td, tr { display: block; }
       thead { display: none; }
-@@ -298,7 +219,7 @@
+      tr { margin-bottom: 15px; }
+      td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+      }
+      td::before {
         content: attr(data-label);
         flex: 1 1 40%;
         color: var(--text-dim);
@@ -253,7 +223,8 @@
         text-transform: uppercase;
       }
       td span, td a, td div {
-@@ -307,70 +228,29 @@
+        flex: 1 1 60%;
+        text-align: right;
       }
     }
 
@@ -262,27 +233,6 @@
       outline: 3px solid rgba(130,177,255,0.35);
       outline-offset: 2px;
       border-radius: 8px;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     }
     @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
@@ -293,43 +243,25 @@
       background: linear-gradient(180deg, #3a4560, #2b344a);
       border-radius: 10px;
       border: 2px solid var(--surface);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     }
     ::-webkit-scrollbar-thumb:hover {
       background: linear-gradient(180deg, #4b5a7c, #37415a);
-
-
     }
   </style>
 </head>
 
 <body>
-
-
-
   <header>
     <h1>Nitro Type Top 1000 Racers</h1>
     <p>
-@@ -383,25 +263,20 @@ <h1>Nitro Type Top 1000 Racers</h1>
+      made by
+      <a href="https://www.youtube.com/@InternetTyper" target="_blank">
+        @InternetTyper on YouTube
+      </a>
+    </p>
+    <p id="lastUpdated">Last updated: 8PM Daily</p>
     <p>Contact: https://discord.gg/3XVdxvKgAt on Discord</p>
   </header>
-
-
-
 
   <div class="tabs">
     <div class="tab active" data-target="leaderboardSection">Leaderboard</div>
@@ -340,8 +272,6 @@
 
   <!-- Leaderboard -->
   <section id="leaderboardSection" class="table-container active">
-
-
     <table id="leaderboardTable">
       <thead>
         <tr>
@@ -350,27 +280,22 @@
           <th>Team Tag</th>
           <th>Title</th>
           <th>Total Races</th>
-@@ -410,125 +285,87 @@ <h1>Nitro Type Top 1000 Racers</h1>
+          <th>Avg WPM</th>
+          <th>Top WPM</th>
           <th>Profile Views</th>
           <th>Member Since</th>
           <th>Garage Cars</th>
-
-
           <th>Nitros Used</th>
           <th>Longest Session</th>
           <th>League Tier</th>
         </tr>
       </thead>
       <tbody></tbody>
-
-
     </table>
     <p class="note" id="leaderboardNote"></p>
   </section>
 
   <!-- Races Per Day -->
-
-
   <section id="racesPerDaySection" class="table-container">
     <table id="racesPerDayTable">
       <thead>
@@ -383,19 +308,11 @@
         </tr>
       </thead>
       <tbody></tbody>
-
-
     </table>
   </section>
 
   <!-- 24-Hour Leaderboard -->
   <section id="changes24Section" class="table-container">
-
-
-
-
-
-
     <table id="changes24Table">
       <thead>
         <tr>
@@ -404,42 +321,18 @@
           <th class="desc">Δ Total Races</th>
           <th>Δ Top WPM</th>
           <th>Δ Profile Views</th>
-
           <th>Δ Nitros Used</th>
-
         </tr>
       </thead>
       <tbody></tbody>
-
-
     </table>
     <p class="note" id="dailyNote"></p>
   </section>
 
   <!-- Event -->
-
-
-
-
-
-
   <section id="eventSection" class="table-container">
     <div class="note" id="eventInfo">Event metrics combine API_before/now and Before/After profile snapshots. Typed/errs are used for accuracy and points but not displayed.</div>
     <div class="note hidden" id="eventComingSoon">Coming Soon</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     <table id="eventTable">
       <thead>
         <tr>
@@ -451,22 +344,15 @@
           <th>Avg Accuracy</th>
           <th>Avg Points</th>
           <th>Δ Nitros Used</th>
-
         </tr>
       </thead>
       <tbody></tbody>
-
-
     </table>
     <p class="note" id="eventStatus"></p>
   </section>
 
-
-
-
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-
       // Constants
       const MAX_24H_RACES = 2600; // anomaly cutoff
       const EVENT_FILES = {
@@ -480,18 +366,18 @@
       // Tabs
       const tabs = document.querySelectorAll('.tabs .tab');
       const sections = document.querySelectorAll('.table-container');
-
       tabs.forEach(tab => {
         tab.addEventListener('click', () => {
           tabs.forEach(t => t.classList.remove('active'));
-@@ -540,456 +377,408 @@ <h1>Nitro Type Top 1000 Racers</h1>
+          sections.forEach(s => s.classList.remove('active'));
+          tab.classList.add('active');
+          const targetId = tab.dataset.target;
+          const section = document.getElementById(targetId);
+          if (section) section.classList.add('active');
         });
       });
 
       // Fetch main snapshots (Data current/previous)
-
-
-
       Promise.all([
         fetchJSONFlexible('sample_data.json'),               // current data
         fetchJSONFlexible('sample_data_prev.json', true)     // previous data (optional)
@@ -501,16 +387,7 @@
         const prev = normalizeData(prevData);
 
         // Leaderboard + RacesPerDay
-
-
-
-
-
         renderLeaderboard(cur.racers);
-
-
-
-
         enableSorting('leaderboardTable');
 
         renderRacesPerDay(cur.racers);
@@ -532,13 +409,9 @@
         msg.style.textAlign = 'center';
         document.body.appendChild(msg);
         initEventTab(); // still attempt event
-
-
       });
 
       // Event initialization
-
-
       function initEventTab() {
         loadEventFourFiles(EVENT_FILES)
           .then(result => {
@@ -555,63 +428,11 @@
           })
           .catch(err => {
             console.error('Event computation error:', err);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
             showEventComingSoon(true);
             clearEventTable();
             setEventStatus('Error loading event data.');
           });
       }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
       // Files: flexible JSON (supports JSON array, object with racers, or NDJSON lines)
       async function fetchJSONFlexible(url, allowEmpty = false) {
@@ -629,30 +450,7 @@
           if (firstChar === '{' || firstChar === '[') {
             // Regular JSON
             return JSON.parse(trimmed);
-
           }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
           // NDJSON fallback
           const lines = trimmed.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
@@ -662,10 +460,6 @@
               arr.push(JSON.parse(line));
             } catch (e) {
               // skip bad lines
-
-
-
-
             }
           }
           return arr;
@@ -676,23 +470,13 @@
       }
 
       // Normalize: { updatedAt, racers } | [ ... ] -> { updatedAt, racers: [] }
-
-
-
-
       function normalizeData(payload) {
         if (Array.isArray(payload)) return { updatedAt: null, racers: payload };
         if (payload && Array.isArray(payload.racers)) return { updatedAt: payload.updatedAt || null, racers: payload.racers };
-
-
-
-
         return { updatedAt: null, racers: [] };
       }
 
       // Leaderboard render (Data current)
-
-
       function renderLeaderboard(data) {
         const list = [...(data || [])].map(r => ({
           slug: String(r.username || ''),
@@ -720,21 +504,6 @@
           const tr = document.createElement('tr');
           const racerUrl = ntRacerURL(r.slug);
           const teamUrl = r.tag ? ntTeamURL(r.tag) : '#';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
           tr.innerHTML = `
             <td data-label="Rank">${i + 1}</td>
             <td data-label="Display Name">
@@ -742,14 +511,6 @@
             </td>
             <td data-label="Team Tag">
               ${r.tag ? `<a class="tag-link" href="${escapeAttr(teamUrl)}" target="_blank">${escapeHTML(r.tag)}</a>` : '<span>-</span>'}
-
-
-
-
-
-
-
-
             </td>
             <td data-label="Title">${escapeHTML(r.title)}</td>
             <td data-label="Total Races">${r.racesPlayed.toLocaleString()}</td>
@@ -763,7 +524,6 @@
             <td data-label="League Tier">${r.leagueTier.toLocaleString()}</td>
           `.trim();
           frag.appendChild(tr);
-
         });
 
         tbody.appendChild(frag);
@@ -771,37 +531,20 @@
       }
 
       // Races Per Day (Data current)
-
-
       function renderRacesPerDay(data) {
         const now = Date.now();
         const list = (data || []).map(r => {
           const joined = parseLocalDate(r.joinDate).getTime();
           const days = Math.max(1, Math.floor((now - joined) / 86400000));
           const total = safeNumber(r.racesPlayed);
-
-
-
-
-
-
-
-
-
-
           return {
             slug: String(r.username || ''),
             tag: String(r.tag || ''),
             total,
             days,
             perDay: total / days
-
-
-
           };
         }).sort((a, b) => b.perDay - a.perDay);
-
-
 
         const tbody = document.querySelector('#racesPerDayTable tbody');
         tbody.innerHTML = '';
@@ -827,12 +570,6 @@
       }
 
       // 24-Hour diffs (Data current vs previous)
-
-
-
-
-
-
       function renderChanges24(currentRacers, prevMap) {
         const filtered = (currentRacers || []).filter(r => safeNumber(r.racesPlayed) > 0);
 
@@ -851,15 +588,6 @@
         .filter(d => d.dRaces !== 0 && d.dRaces < MAX_24H_RACES)
         .sort((a, b) => b.dRaces - a.dRaces);
 
-
-
-
-
-
-
-
-
-
         const tbody = document.querySelector('#changes24Table tbody');
         tbody.innerHTML = '';
         const frag = document.createDocumentFragment();
@@ -874,9 +602,7 @@
             <td data-label="Δ Total Races">${formatDeltaInt(d.dRaces)}</td>
             <td data-label="Δ Top WPM">${formatDeltaInt(d.dTop)}</td>
             <td data-label="Δ Profile Views">${formatDeltaInt(d.dViews)}</td>
-
             <td data-label="Δ Nitros Used">${formatDeltaInt(d.dNitro)}</td>
-
           `.trim();
           frag.appendChild(tr);
         });
@@ -1029,22 +755,14 @@
       }
 
       // Sorting (numeric-aware + rank renumbering)
-
-
-
-
-
       function enableSorting(tableId) {
         const table = document.getElementById(tableId);
         if (!table) return;
-
         const headers = table.querySelectorAll('th');
-
         headers.forEach((th, idx) => {
           th.addEventListener('click', () => {
             const tbody = table.querySelector('tbody');
             const rows = Array.from(tbody.querySelectorAll('tr'));
-
             const asc = !th.classList.contains('asc');
 
             rows.sort((a, b) => {
@@ -1053,9 +771,6 @@
               const aNum = parseFloat(aText.replace(/,/g, '').replace(/[^0-9.\-]/g, ''));
               const bNum = parseFloat(bText.replace(/,/g, '').replace(/[^0-9.\-]/g, ''));
               if (!isNaN(aNum) && !isNaN(bNum)) return asc ? aNum - bNum : bNum - aNum;
-
-
-
               return asc ? aText.localeCompare(bText) : bText.localeCompare(aText);
             });
 
@@ -1067,10 +782,10 @@
             });
 
             tbody.innerHTML = '';
-@@ -998,20 +787,37 @@ <h1>Nitro Type Top 1000 Racers</h1>
+            rows.forEach(r => tbody.appendChild(r));
+          });
         });
       }
-
 
       // Utilities
       function ntRacerURL(username) {
@@ -1103,15 +818,14 @@
         if (!isNaN(dt2.getTime())) return dt2;
         return new Date();
       }
-
       function escapeHTML(s) {
         return String(s ?? '')
           .replace(/&/g, '&amp;')
-@@ -1020,27 +826,35 @@ <h1>Nitro Type Top 1000 Racers</h1>
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
           .replace(/"/g, '&quot;')
           .replace(/'/g, '&#39;');
       }
-
       function escapeAttr(s) {
         return escapeHTML(s).replace(/"/g, '&quot;');
       }
@@ -1140,11 +854,7 @@
         }
         return fallback;
       }
-
-
     });
   </script>
-
 </body>
 </html>
-
