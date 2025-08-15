@@ -1,289 +1,210 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!--
-    Nitro Type Top 1000 Racers (Full, explicit, and auditable; >1000 lines)
-    =========================================================================
-    PURPOSE
-    -------
-    A complete, unstreamlined, and highly commented leaderboard app for Nitro Type:
-    - Views: Leaderboard, Races Per Day, 24-Hour Leaderboard (daily diffs), Event (seasonal diffs)
-    - Robust JSON normalization for both legacy arrays and { updatedAt, racers } objects
-    - Click-to-sort tables with visual sort states and automatic rank renumbering
-    - Defensive parsing, safe numeric handling, and HTML escaping for security and reliability
-    - UI consistent with your theme and layout preferences
-
-    WHAT’S NEW (per your request)
-    ------------------------------
-    - “24-Hour Changes” tab label changed to: “24-Hour Leaderboard”
-    - 24-Hour Leaderboard:
-      • Excludes any racer whose current total races equals 0
-      • Filters out anomalies where Δ Total Races ≥ 2600
-      • NEW: Removes every row where Δ Total Races equals 0 (no-ops hidden)
-      • Excludes Avg WPM and League Tier from tracking and display
-    - Event tab:
-      • Dropdown inside the Event tab, styled in theme colors
-      • Reads Back2SchoolEvent2025_before.json and Back2SchoolEvent2025_after.json
-      • Shows “Coming Soon” if the BEFORE file is empty/missing
-      • Excludes any racer whose current total races equals 0
-      • NEW: Removes every row where Δ Total Races equals 0 (no-ops hidden)
-      • Excludes Avg WPM and League Tier from tracking and display
-
-    PRESERVED / EXISTING BEHAVIOR
-    -----------------------------
-    - Main Leaderboard and Races Per Day remain as before
-    - Header shows static “Last updated: 8PM Daily”
-    - Sorting works across all tables with rank renumbering
-    - Event dropdown is extensible using data-before/data-after attributes per option
-
-    FILES TO HOST BESIDE THIS HTML
-    ------------------------------
-    - sample_data.json
-    - sample_data_prev.json
-    - Back2SchoolEvent2025_before.json
-    - Back2SchoolEvent2025_after.json
-
-    DATA MODEL EXPECTATIONS
-    -----------------------
-    Each racer object can include:
-      username        (string)
-      tag             (string)
-      title           (string)
-      racesPlayed     (number)
-      avgSpeed        (number)
-      highestSpeed    (number)
-      profileViews    (number)
-      joinDate        (string; YYYY-MM-DD preferred but flexible)
-      garageCars      (number)
-      profileURL      (string; absolute URL)
-      membership      (string)
-      nitrosUsed      (number)
-      longestSession  (number)
-      leagueTier      (number)
-
-    JSON PAYLOAD SHAPES SUPPORTED
-    -----------------------------
-    1) Preferred object shape:
-       {
-         "updatedAt": "2025-08-11T20:00:00Z",
-         "racers": [ ... ]
-       }
-    2) Legacy shape:
-       [ ... ]  // treated as "racers" with no updatedAt
-
-    KEY LOGIC HIGHLIGHTS
-    --------------------
-    - Daily (24-Hour Leaderboard):
-      • Hard filter: current total races > 0
-      • Compute diffs vs previous snapshot keyed by lowercase username
-      • Filter anomalies: Δ Total Races >= 2600
-      • NEW: Filter no-op rows: Δ Total Races == 0
-      • Sort by Δ Total Races descending, renumber rank
-    - Event:
-      • Hard filter: current total races > 0
-      • Compute diffs vs BEFORE snapshot keyed by lowercase username
-      • NEW: Filter no-op rows: Δ Total Races == 0
-      • Sort by Δ Total Races descending, renumber rank
-      • Show "Coming Soon" if BEFORE snapshot is missing/empty
-
-    USER EXPERIENCE / ACCESSIBILITY
-    -------------------------------
-    - Sticky table headers for readability
-    - Responsive stacked layout for mobile screens (<900px)
-    - Clear sorting indicators (▲/▼)
-    - Links use target="_blank" to keep the leaderboard open
-
-    IMPLEMENTATION NOTES
-    --------------------
-    - All numeric parsing uses safeNumber() to guard against NaN
-    - All user-facing text coming from data is escaped via escapeHTML/escapeAttr
-    - Sorting function attempts numeric sort first, falls back to string
-    - Rank column is updated post-sort to reflect current ordering
-
-    EXTENSIBILITY
-    -------------
-    - Add more event options:
-        <option
-          value="myEvent"
-          data-before="MyEvent_before.json"
-          data-after="MyEvent_after.json"
-        >My Event Name</option>
-      The renderer will fetch and recompute on selection change.
-
-    AUDITABILITY
-    ------------
-    - The code is intentionally explicit and verbose to ensure full traceability.
-    - No hidden behaviors: all filters and transforms are named and clearly documented.
-
-    ========================================================================
-    Below begins CSS and HTML structure, followed by JavaScript logic.
-    ========================================================================
-  -->
-
   <meta charset="UTF-8" />
   <title>Nitro Type Top 1000 Racers</title>
 
   <style>
-    /* ===================================================
-       Root Theme Variables
-       =================================================== */
+    /* Nitro Type Leaderboard — Dark, fast, responsive */
+
     :root {
-      --bg-color:        #2a2a2a;  /* dark background */
-      --panel-bg:        #333333;  /* panel background */
-      --header-bg:       #3a3a3a;  /* header / tab background */
-      --accent:          #b71c1c;  /* dark red accent */
-      --accent-light:    #d32f2f;  /* lighter red on hover */
-      --text-light:      #e0e0e0;  /* light text */
-      --text-dim:        #bbbbbb;  /* secondary text */
-      --font-family:     'Segoe UI', Tahoma, Verdana, sans-serif;
-      --font-size-base:  1rem;     /* 16px */
-      --font-size-lg:    2rem;     /* 32px */
-      --font-size-md:    1.25rem;  /* 20px */
-      --font-size-sm:    0.875rem; /* 14px */
-      --transition:      0.3s ease;
+      --bg: #111317;
+      --surface: #151922;
+      --surface-2: #1b2130;
+      --surface-3: #212838;
+      --text: #e8ecf1;
+      --text-dim: #b5c0cf;
+      --muted: #8b9ab3;
+      --accent: #6ea8fe;
+      --accent-2: #8fdaff;
+      --good: #37d67a;
+      --warn: #ffb020;
+      --bad: #ff5c5c;
+      --border: #2a3244;
+      --shadow: rgba(0,0,0,0.35);
+      --focus: #82b1ff;
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+
+      --pad-1: 0.4rem;
+      --pad-2: 0.66rem;
+      --pad-3: 1rem;
+
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
 
-    /* ===================================================
-       Reset / Base
-       =================================================== */
-    *, *::before, *::after {
-      box-sizing: border-box;
+    /* Base */
+    *,
+    *::before,
+    *::after { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
       margin: 0;
-      padding: 0;
+      font-family: var(--font);
+      background: radial-gradient(1000px 600px at 20% -10%, #162037 0%, var(--bg) 60%) no-repeat fixed;
+      color: var(--text);
+      line-height: 1.35;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      padding: var(--pad-3);
     }
 
-    html, body {
-      width: 100%;
-      height: 100%;
-      background: var(--bg-color);
-      color: var(--text-light);
-      font-family: var(--font-family);
-      font-size: var(--font-size-base);
-      line-height: 1.5;
-      overflow-x: hidden;
-    }
-
-    a {
-      color: var(--accent);
-      text-decoration: none;
-      transition: color var(--transition);
-    }
-    a:hover {
-      color: var(--accent-light);
-    }
-
-    /* ===================================================
-       Header
-       =================================================== */
+    /* Header */
     header {
       text-align: center;
-      padding: 20px 0;
-      margin-bottom: 20px;
-      background: var(--header-bg);
-      border-radius: 4px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+      padding: 16px 12px;
+      margin: 0 auto var(--pad-3);
+      max-width: 1200px;
+      background: linear-gradient(180deg, rgba(33,40,56,0.75), rgba(27,33,48,0.75));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.25);
     }
     header h1 {
-      font-size: var(--font-size-lg);
-      margin-bottom: 8px;
-      color: var(--accent);
+      margin: 0 0 6px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+      color: #f0f5ff;
+      text-shadow: 0 6px 18px rgba(110,168,254,0.18);
     }
-    header p {
-      font-size: var(--font-size-md);
-      color: var(--text-dim);
-      margin: 4px 0;
-    }
-    header p a {
-      font-weight: bold;
-    }
+    header p { margin: 2px 0; color: var(--text-dim); }
+    header a { color: var(--accent); text-decoration: none; }
+    header a:hover { color: var(--accent-2); }
 
-    /* ===================================================
-       Tabs
-       =================================================== */
+    /* Tabs */
     .tabs {
-      display: flex;
-      justify-content: center;
-      background: var(--header-bg);
-      margin-bottom: 20px;
-      border-radius: 4px;
-      overflow: hidden;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--pad-2);
+      align-items: stretch;
+      margin: 0 auto var(--pad-3);
+      max-width: 1200px;
     }
     .tabs .tab {
-      flex: 1;
-      padding: 12px 20px;
+      background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.6rem 0.8rem;
       text-align: center;
+      font-weight: 700;
+      letter-spacing: 0.15px;
       cursor: pointer;
-      font-size: var(--font-size-md);
-      color: var(--text-light);
-      transition: background var(--transition);
+      user-select: none;
+      transition: transform .04s ease, box-shadow .15s ease, border-color .15s ease;
+      box-shadow: 0 2px 0 var(--shadow) inset, 0 0 0 rgba(0,0,0,0);
     }
     .tabs .tab:hover {
-      background: var(--panel-bg);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.03) inset;
     }
     .tabs .tab.active {
-      background: var(--accent);
       color: #ffffff;
+      border-color: var(--focus);
+      text-shadow: 0 0 10px rgba(110,168,254,0.6);
     }
 
-    /* ===================================================
-       Table Containers & Tables
-       =================================================== */
+    /* Sections */
     .table-container {
       display: none;
-      background: var(--panel-bg);
-      border-radius: 4px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
       padding: 10px;
-      margin-bottom: 40px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+      margin: 0 auto 40px;
+      max-width: 1200px;
+      overflow: hidden;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.35);
     }
-    .table-container.active {
-      display: block;
-    }
+    .table-container.active { display: block; }
 
+    /* Tables */
     table {
       width: 100%;
       border-collapse: collapse;
-      margin: auto;
-      font-size: var(--font-size-sm);
+      border-spacing: 0;
+      font-size: 0.92rem;
     }
-
     thead th {
       position: sticky;
       top: 0;
-      background: var(--accent-light);
-      color: #fff;
-      font-weight: normal;
-      padding: 12px;
-      border-bottom: 2px solid var(--bg-color);
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
+      z-index: 2;
+      background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
+      color: var(--text);
+      font-weight: 700;
+      letter-spacing: 0.15px;
+      padding: 0.6rem 0.66rem;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
       cursor: pointer;
       user-select: none;
+      text-align: right;
     }
-    thead th.asc::after { content: ' ▲'; }
-    thead th.desc::after { content: ' ▼'; }
-
-    th, td {
-      padding: 10px 8px;
-      text-align: center;
-      border-bottom: 1px solid #444;
+    thead th.asc,
+    thead th.desc {
+      color: #ffffff;
+      text-shadow: 0 0 10px rgba(110,168,254,0.6);
+    }
+    thead th.asc::after,
+    thead th.desc::after {
+      content: '';
+      display: inline-block;
+      margin-left: 6px;
+      width: 0;
+      height: 0;
       vertical-align: middle;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
     }
+    thead th.asc::after { border-bottom: 7px solid var(--accent); }
+    thead th.desc::after { border-top: 7px solid var(--accent); }
+    thead th:first-child,
+    thead th:nth-child(2),
+    thead th:nth-child(3) { text-align: left; }
 
-    tbody tr:nth-child(odd) { background: #3a3a3a; }
-    tbody tr:nth-child(even) { background: #343434; }
-
-    td a.profile-link {
-      color: var(--accent);
-      word-break: break-all;
-      font-size: var(--font-size-sm);
+    tbody td {
+      padding: 0.56rem 0.66rem;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      color: var(--text);
+      text-align: right;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    td a.profile-link:hover { color: var(--accent-light); }
+    tbody tr:nth-child(even) { background: rgba(255,255,255,0.025); }
+    tbody tr:hover { background: linear-gradient(90deg, rgba(110,168,254,0.08), rgba(110,168,254,0)); }
+    tbody td:first-child,
+    tbody td:nth-child(2),
+    tbody td:nth-child(3) { text-align: left; }
 
-    /* ===================================================
-       Responsive (Stacked Cards)
-       =================================================== */
+    /* Link utilities (white underline) */
+    a.link-quiet, a.link-quiet:visited {
+      color: #fff;
+      text-decoration: underline;
+      text-decoration-color: rgba(255,255,255,0.9);
+      text-underline-offset: 2px;
+    }
+    a.link-quiet:hover { text-decoration-color: #fff; }
+    a.tag-link, a.tag-link:visited {
+      color: #fff;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    a.tag-link:hover { text-decoration-color: #fff; }
+
+    /* Notes */
+    .note {
+      color: #e8ecf1;
+      font-size: 0.95rem;
+      text-align: center;
+      margin: 6px 0 10px;
+    }
+    .hidden { display: none !important; }
+
+    /* Responsive stacked cards */
     @media (max-width: 900px) {
       table, thead, tbody, th, td, tr { display: block; }
       thead { display: none; }
@@ -298,7 +219,7 @@
         content: attr(data-label);
         flex: 1 1 40%;
         color: var(--text-dim);
-        font-weight: bold;
+        font-weight: 700;
         text-transform: uppercase;
       }
       td span, td a, td div {
@@ -307,70 +228,29 @@
       }
     }
 
-    /* ===================================================
-      Utilities
-      =================================================== */
-    .hidden { display: none !important; }
-    .center { text-align: center; }
-    .note {
-      color: #e8e8e8;
-      font-size: 0.9rem;
-      text-align: center;
-      margin-bottom: 10px;
+    /* A11y */
+    :focus-visible {
+      outline: 3px solid rgba(130,177,255,0.35);
+      outline-offset: 2px;
+      border-radius: 8px;
     }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
-    /* ===================================================
-       Event Controls (dropdown inside Event tab)
-       =================================================== */
-    .event-controls {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 10px;
-      flex-wrap: wrap;
+    /* Scrollbar (WebKit) */
+    ::-webkit-scrollbar { height: 12px; width: 12px; }
+    ::-webkit-scrollbar-track { background: var(--surface); }
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #3a4560, #2b344a);
+      border-radius: 10px;
+      border: 2px solid var(--surface);
     }
-    .event-controls label {
-      color: var(--text-dim);
-      font-size: var(--font-size-md);
-    }
-    .event-controls select {
-      background: var(--header-bg);
-      color: var(--text-light);
-      border: 1px solid var(--accent);
-      padding: 6px 12px;
-      border-radius: 4px;
-      font-size: var(--font-size-md);
-      outline: none;
-      transition: border-color var(--transition), box-shadow var(--transition);
-      box-shadow: 0 0 0 rgba(0,0,0,0);
-      appearance: none;
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      background-image:
-        linear-gradient(45deg, transparent 50%, var(--text-light) 50%),
-        linear-gradient(135deg, var(--text-light) 50%, transparent 50%),
-        linear-gradient(to right, var(--header-bg), var(--header-bg));
-      background-position:
-        calc(100% - 20px) calc(50% - 5px),
-        calc(100% - 15px) calc(50% - 5px),
-        calc(100% - 2.5em) 0.5em;
-      background-size: 5px 5px, 5px 5px, 1px 1.8em;
-      background-repeat: no-repeat;
-      cursor: pointer;
-    }
-    .event-controls select:hover { border-color: var(--accent-light); }
-    .event-controls select:focus {
-      box-shadow: 0 0 0 2px rgba(211,47,47,0.3);
-      border-color: var(--accent-light);
+    ::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, #4b5a7c, #37415a);
     }
   </style>
 </head>
 
 <body>
-  <!-- ===================================================
-       Header (static cadence per request)
-       =================================================== -->
   <header>
     <h1>Nitro Type Top 1000 Racers</h1>
     <p>
@@ -383,25 +263,20 @@
     <p>Contact: https://discord.gg/3XVdxvKgAt on Discord</p>
   </header>
 
-  <!-- ===================================================
-       Tabs
-       =================================================== -->
   <div class="tabs">
-    <div class="tab" data-target="leaderboardSection">Leaderboard</div>
+    <div class="tab active" data-target="leaderboardSection">Leaderboard</div>
     <div class="tab" data-target="racesPerDaySection">Races Per Day</div>
-    <div class="tab active" data-target="changes24Section">24-Hour Leaderboard</div>
+    <div class="tab" data-target="changes24Section">24-Hour Leaderboard</div>
     <div class="tab" data-target="eventSection">Event</div>
   </div>
 
-  <!-- ===================================================
-       Leaderboard Section
-       =================================================== -->
-  <section id="leaderboardSection" class="table-container">
+  <!-- Leaderboard -->
+  <section id="leaderboardSection" class="table-container active">
     <table id="leaderboardTable">
       <thead>
         <tr>
           <th>Rank</th>
-          <th>Username</th>
+          <th>Display Name</th>
           <th>Team Tag</th>
           <th>Title</th>
           <th>Total Races</th>
@@ -410,125 +285,87 @@
           <th>Profile Views</th>
           <th>Member Since</th>
           <th>Garage Cars</th>
-          <th>Profile URL</th>
-          <th>Membership</th>
           <th>Nitros Used</th>
           <th>Longest Session</th>
           <th>League Tier</th>
         </tr>
       </thead>
-      <tbody>
-        <!-- Rows injected by JavaScript -->
-      </tbody>
+      <tbody></tbody>
     </table>
+    <p class="note" id="leaderboardNote"></p>
   </section>
 
-  <!-- ===================================================
-       Races Per Day Section
-       =================================================== -->
+  <!-- Races Per Day -->
   <section id="racesPerDaySection" class="table-container">
     <table id="racesPerDayTable">
       <thead>
         <tr>
           <th>Rank</th>
-          <th>Username</th>
+          <th>Display Name</th>
           <th>Total Races</th>
           <th>Days Active</th>
           <th>Races / Day</th>
         </tr>
       </thead>
-      <tbody>
-        <!-- Rows injected by JavaScript -->
-      </tbody>
+      <tbody></tbody>
     </table>
   </section>
 
-  <!-- ===================================================
-       24-Hour Leaderboard (formerly "24-Hour Changes")
-       - Excludes Avg WPM & League Tier from display/tracking
-       - Excludes current racers with total races == 0
-       - Filters Δ Total Races >= 2600 (anomaly)
-       - Removes rows where Δ Total Races == 0 (no-ops)
-       =================================================== -->
-  <section id="changes24Section" class="table-container active">
+  <!-- 24-Hour Leaderboard -->
+  <section id="changes24Section" class="table-container">
     <table id="changes24Table">
       <thead>
         <tr>
           <th>Rank</th>
-          <th>Username</th>
+          <th>Display Name</th>
           <th class="desc">Δ Total Races</th>
           <th>Δ Top WPM</th>
           <th>Δ Profile Views</th>
-          <th>Δ Garage Cars</th>
           <th>Δ Nitros Used</th>
-          <th>Δ Longest Session</th>
         </tr>
       </thead>
-      <tbody>
-        <!-- Rows injected by JavaScript -->
-      </tbody>
+      <tbody></tbody>
     </table>
+    <p class="note" id="dailyNote"></p>
   </section>
 
-  <!-- ===================================================
-       Event Section (dropdown inside this tab)
-       - Excludes Avg WPM & League Tier
-       - Excludes current racers with total races == 0
-       - Removes rows where Δ Total Races == 0
-       - Shows "Coming Soon" if BEFORE file is empty/missing
-       =================================================== -->
+  <!-- Event -->
   <section id="eventSection" class="table-container">
-    <div class="event-controls">
-      <label for="eventSelector">Event:</label>
-      <select id="eventSelector" aria-label="Select event to display">
-        <option
-          value="back2school2025"
-          data-before="Back2SchoolEvent2025_before.json"
-          data-after="Back2SchoolEvent2025_after.json"
-        >
-          Back 2 School 2025
-        </option>
-      </select>
-      <span id="eventStatus" class="note hidden"></span>
-    </div>
-
-    <div id="eventComingSoon" class="note hidden">Coming Soon</div>
-
+    <div class="note" id="eventInfo">Event metrics combine API_before/now and Before/After profile snapshots. Typed/errs are used for accuracy and points but not displayed.</div>
+    <div class="note hidden" id="eventComingSoon">Coming Soon</div>
     <table id="eventTable">
       <thead>
         <tr>
           <th>Rank</th>
-          <th>Username</th>
+          <th>Display Name</th>
+          <th>Team Tag</th>
           <th class="desc">Δ Total Races</th>
-          <th>Δ Top WPM</th>
-          <th>Δ Profile Views</th>
-          <th>Δ Garage Cars</th>
+          <th>Avg WPM</th>
+          <th>Avg Accuracy</th>
+          <th>Avg Points</th>
           <th>Δ Nitros Used</th>
-          <th>Δ Longest Session</th>
         </tr>
       </thead>
-      <tbody>
-        <!-- Rows injected by JavaScript -->
-      </tbody>
+      <tbody></tbody>
     </table>
+    <p class="note" id="eventStatus"></p>
   </section>
 
-  <!-- ===================================================
-       JavaScript
-       =================================================== -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // ===================================================
       // Constants
-      // ===================================================
-      const MAX_24H_RACES = 2600; // exclude entries with Δ Total Races >= 2600 (daily anomalies)
+      const MAX_24H_RACES = 2600; // anomaly cutoff
+      const EVENT_FILES = {
+        apiBefore: 'API_before.json',
+        apiNow: 'API_now.json',
+        dataBefore: 'BeforeEventData.json',
+        dataNow: 'AfterEventData.json'
+      };
+      const WPM_METHOD = 'weighted'; // 'weighted' | 'current'
 
-      // ===================================================
-      // Tabs: Switch visible section by data-target
-      // ===================================================
+      // Tabs
       const tabs = document.querySelectorAll('.tabs .tab');
       const sections = document.querySelectorAll('.table-container');
-
       tabs.forEach(tab => {
         tab.addEventListener('click', () => {
           tabs.forEach(t => t.classList.remove('active'));
@@ -540,148 +377,358 @@
         });
       });
 
-      // ===================================================
-      // Fetch main snapshots and render core tables
-      //   - Supports both legacy array and { updatedAt, racers } shapes
-      // ===================================================
+      // Fetch main snapshots (Data current/previous)
       Promise.all([
-        fetchJSON('sample_data.json'),
-        fetchJSON('sample_data_prev.json', { allow404Empty: true })
+        fetchJSONFlexible('sample_data.json'),               // current data
+        fetchJSONFlexible('sample_data_prev.json', true)     // previous data (optional)
       ])
       .then(([curData, prevData]) => {
         const cur = normalizeData(curData);
         const prev = normalizeData(prevData);
 
-        // Build prev map keyed by lowercase username for quick lookup
-        const prevMap = new Map(
-          (prev.racers || []).map(r => [String(r.username || '').toLowerCase(), r])
-        );
-
-        // Render main sections
+        // Leaderboard + RacesPerDay
         renderLeaderboard(cur.racers);
-        renderRacesPerDay(cur.racers);
-        renderChanges24(cur.racers, prevMap);
-
-        // Enable sorting behaviors on those tables
         enableSorting('leaderboardTable');
+
+        renderRacesPerDay(cur.racers);
         enableSorting('racesPerDayTable');
+
+        // 24-hour diffs (from Data)
+        const prevMap = new Map((prev.racers || []).map(r => [String(r.username || '').toLowerCase(), r]));
+        renderChanges24(cur.racers, prevMap);
         enableSorting('changes24Table');
 
-        // After main renders, initialize Event tab (dropdown-driven)
+        // Event (four files)
         initEventTab();
       })
       .catch(err => {
         console.error('Failed loading main snapshots:', err);
         const msg = document.createElement('p');
         msg.textContent = 'Error loading main snapshots – check console.';
-        msg.style.color = '#ff5252';
+        msg.style.color = '#ff5c5c';
         msg.style.textAlign = 'center';
         document.body.appendChild(msg);
-
-        // Even if main fails, still init Event tab to avoid dead UI
-        initEventTab();
+        initEventTab(); // still attempt event
       });
 
-      // ===================================================
-      // Init Event tab: bind dropdown and render default selection
-      // ===================================================
+      // Event initialization
       function initEventTab() {
-        const selector = document.getElementById('eventSelector');
-        if (!selector) return;
-
-        // Initial render on load
-        renderEventForSelection(selector);
-
-        // Re-render when selection changes (expandable)
-        selector.addEventListener('change', () => renderEventForSelection(selector));
-
-        // Enable sorting for event table (header click)
-        enableSorting('eventTable');
-      }
-
-      // ===================================================
-      // Render selected event by fetching before/after JSONs
-      // - Excludes Avg WPM and League Tier
-      // - Excludes racers whose current total races == 0
-      // - Removes rows where Δ Total Races == 0
-      // - Shows "Coming Soon" when BEFORE is empty/missing
-      // ===================================================
-      function renderEventForSelection(selector) {
-        const selOption = selector.options[selector.selectedIndex];
-        const beforeFile = selOption.getAttribute('data-before') || '';
-        const afterFile  = selOption.getAttribute('data-after')  || '';
-
-        const eventStatus = document.getElementById('eventStatus');
-        if (eventStatus) {
-          eventStatus.textContent = '';
-          eventStatus.classList.add('hidden');
-        }
-
-        // Guard: if files missing on option
-        if (!beforeFile || !afterFile) {
-          showEventComingSoon(true);
-          clearEventTable();
-          return;
-        }
-
-        // Fetch both files with allow404Empty so UI doesn’t crash on missing files
-        Promise.all([
-          fetchJSON(beforeFile, { allow404Empty: true }),
-          fetchJSON(afterFile,  { allow404Empty: true })
-        ])
-        .then(([prevEventData, curEventData]) => {
-          const prevEvent = normalizeData(prevEventData);
-          const curEvent  = normalizeData(curEventData);
-
-          const prevHasData = Array.isArray(prevEvent.racers) && prevEvent.racers.length > 0;
-          const curHasArray = Array.isArray(curEvent.racers);
-
-          // If BEFORE has no data, we consider the event "Coming Soon"
-          if (!prevHasData) {
+        loadEventFourFiles(EVENT_FILES)
+          .then(result => {
+            if (!result || result.beforeCount === 0) {
+              showEventComingSoon(true);
+              clearEventTable();
+              setEventStatus('Event BEFORE data missing or empty.');
+              return;
+            }
+            showEventComingSoon(false);
+            renderEventComputed(result.rows);
+            enableSorting('eventTable');
+            setEventStatus(`Loaded ${result.beforeCount.toLocaleString()} (before API) and ${result.nowCount.toLocaleString()} (now API); ${result.rows.length.toLocaleString()} racers with Δ races > 0.`);
+          })
+          .catch(err => {
+            console.error('Event computation error:', err);
             showEventComingSoon(true);
             clearEventTable();
-            return;
-          }
-
-          showEventComingSoon(false);
-
-          // Build prev map by username (lowercased)
-          const prevEventMap = new Map(
-            (prevEvent.racers || []).map(r => [String(r.username || '').toLowerCase(), r])
-          );
-
-          // Use current (after) racers array; filter out racers whose current total races == 0
-          const currentRacersRaw = curHasArray ? (curEvent.racers || []) : [];
-
-          // Hard filter: exclude racers whose current total races is 0
-          const currentRacers = currentRacersRaw.filter(r => safeNumber(r.racesPlayed) > 0);
-
-          // Render diffs (excludes Avg WPM and League Tier) and drop Δ==0 rows
-          renderEventChanges(currentRacers, prevEventMap);
-
-          // Optional: emit status with counts
-          if (eventStatus) {
-            const beforeCount = (prevEvent.racers || []).length;
-            const afterCount  = currentRacers.length;
-            eventStatus.textContent = `Loaded ${beforeCount.toLocaleString()} (before) vs ${afterCount.toLocaleString()} (after).`;
-            eventStatus.classList.remove('hidden');
-          }
-        })
-        .catch(err => {
-          console.error('Event fetch error:', err);
-          showEventComingSoon(true);
-          clearEventTable();
-
-          if (eventStatus) {
-            eventStatus.textContent = 'Error loading event data.';
-            eventStatus.classList.remove('hidden');
-          }
-        });
+            setEventStatus('Error loading event data.');
+          });
       }
 
-      // ===================================================
-      // Helpers for Event UI visibility
-      // ===================================================
+      // Files: flexible JSON (supports JSON array, object with racers, or NDJSON lines)
+      async function fetchJSONFlexible(url, allowEmpty = false) {
+        try {
+          const res = await fetch(url, { cache: 'no-store' });
+          if (!res.ok) {
+            if (allowEmpty && (res.status === 404 || res.status === 204)) return { racers: [] };
+            throw new Error(`${url}: HTTP ${res.status} ${res.statusText}`);
+          }
+          const text = await res.text();
+          const trimmed = text.trim();
+          if (!trimmed) return allowEmpty ? { racers: [] } : JSON.parse(''); // force catch
+          const firstChar = trimmed[0];
+
+          if (firstChar === '{' || firstChar === '[') {
+            // Regular JSON
+            return JSON.parse(trimmed);
+          }
+
+          // NDJSON fallback
+          const lines = trimmed.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+          const arr = [];
+          for (const line of lines) {
+            try {
+              arr.push(JSON.parse(line));
+            } catch (e) {
+              // skip bad lines
+            }
+          }
+          return arr;
+        } catch (e) {
+          if (allowEmpty) return { racers: [] };
+          throw e;
+        }
+      }
+
+      // Normalize: { updatedAt, racers } | [ ... ] -> { updatedAt, racers: [] }
+      function normalizeData(payload) {
+        if (Array.isArray(payload)) return { updatedAt: null, racers: payload };
+        if (payload && Array.isArray(payload.racers)) return { updatedAt: payload.updatedAt || null, racers: payload.racers };
+        return { updatedAt: null, racers: [] };
+      }
+
+      // Leaderboard render (Data current)
+      function renderLeaderboard(data) {
+        const list = [...(data || [])].map(r => ({
+          slug: String(r.username || ''),
+          tag: String(r.tag || ''),
+          display: String(r.title || ''), // we’ll still show separate Title column
+          title: String(r.title || ''),
+          racesPlayed: safeNumber(r.racesPlayed),
+          avgSpeed: safeNumber(r.avgSpeed),
+          highestSpeed: safeNumber(r.highestSpeed),
+          profileViews: safeNumber(r.profileViews),
+          joinDate: String(r.joinDate || ''),
+          garageCars: safeNumber(r.garageCars),
+          nitrosUsed: safeNumber(r.nitrosUsed),
+          longestSession: safeNumber(r.longestSession),
+          leagueTier: safeNumber(r.leagueTier)
+        }));
+
+        list.sort((a, b) => b.racesPlayed - a.racesPlayed);
+
+        const tbody = document.querySelector('#leaderboardTable tbody');
+        tbody.innerHTML = '';
+        const frag = document.createDocumentFragment();
+
+        list.forEach((r, i) => {
+          const tr = document.createElement('tr');
+          const racerUrl = ntRacerURL(r.slug);
+          const teamUrl = r.tag ? ntTeamURL(r.tag) : '#';
+          tr.innerHTML = `
+            <td data-label="Rank">${i + 1}</td>
+            <td data-label="Display Name">
+              <a class="link-quiet" href="${escapeAttr(racerUrl)}" target="_blank">${escapeHTML(prettyNameFromSlug(r.slug))}</a>
+            </td>
+            <td data-label="Team Tag">
+              ${r.tag ? `<a class="tag-link" href="${escapeAttr(teamUrl)}" target="_blank">${escapeHTML(r.tag)}</a>` : '<span>-</span>'}
+            </td>
+            <td data-label="Title">${escapeHTML(r.title)}</td>
+            <td data-label="Total Races">${r.racesPlayed.toLocaleString()}</td>
+            <td data-label="Avg WPM">${r.avgSpeed.toLocaleString()}</td>
+            <td data-label="Top WPM">${r.highestSpeed.toLocaleString()}</td>
+            <td data-label="Profile Views">${r.profileViews.toLocaleString()}</td>
+            <td data-label="Member Since">${escapeHTML(r.joinDate)}</td>
+            <td data-label="Garage Cars">${r.garageCars.toLocaleString()}</td>
+            <td data-label="Nitros Used">${r.nitrosUsed.toLocaleString()}</td>
+            <td data-label="Longest Session">${r.longestSession.toLocaleString()}</td>
+            <td data-label="League Tier">${r.leagueTier.toLocaleString()}</td>
+          `.trim();
+          frag.appendChild(tr);
+        });
+
+        tbody.appendChild(frag);
+        setNote('leaderboardNote', `${list.length.toLocaleString()} racers loaded.`);
+      }
+
+      // Races Per Day (Data current)
+      function renderRacesPerDay(data) {
+        const now = Date.now();
+        const list = (data || []).map(r => {
+          const joined = parseLocalDate(r.joinDate).getTime();
+          const days = Math.max(1, Math.floor((now - joined) / 86400000));
+          const total = safeNumber(r.racesPlayed);
+          return {
+            slug: String(r.username || ''),
+            tag: String(r.tag || ''),
+            total,
+            days,
+            perDay: total / days
+          };
+        }).sort((a, b) => b.perDay - a.perDay);
+
+        const tbody = document.querySelector('#racesPerDayTable tbody');
+        tbody.innerHTML = '';
+        const frag = document.createDocumentFragment();
+
+        list.forEach((r, i) => {
+          const racerUrl = ntRacerURL(r.slug);
+          const name = prettyNameFromSlug(r.slug);
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td data-label="Rank">${i + 1}</td>
+            <td data-label="Display Name">
+              <a class="link-quiet" href="${escapeAttr(racerUrl)}" target="_blank">${escapeHTML(name)}</a>
+            </td>
+            <td data-label="Total Races">${r.total.toLocaleString()}</td>
+            <td data-label="Days Active">${r.days.toLocaleString()}</td>
+            <td data-label="Races / Day">${r.perDay.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+          `.trim();
+          frag.appendChild(tr);
+        });
+
+        tbody.appendChild(frag);
+      }
+
+      // 24-Hour diffs (Data current vs previous)
+      function renderChanges24(currentRacers, prevMap) {
+        const filtered = (currentRacers || []).filter(r => safeNumber(r.racesPlayed) > 0);
+
+        const diffs = filtered.map(r => {
+          const key = String(r.username || '').toLowerCase();
+          const p = prevMap.get(key) || {};
+          const dRaces = safeNumber(r.racesPlayed) - safeNumber(p.racesPlayed);
+          const dTop = safeNumber(r.highestSpeed) - safeNumber(p.highestSpeed);
+          const dViews = safeNumber(r.profileViews) - safeNumber(p.profileViews);
+          const dNitro = safeNumber(r.nitrosUsed) - safeNumber(p.nitrosUsed);
+          return {
+            slug: String(r.username || ''),
+            dRaces, dTop, dViews, dNitro
+          };
+        })
+        .filter(d => d.dRaces !== 0 && d.dRaces < MAX_24H_RACES)
+        .sort((a, b) => b.dRaces - a.dRaces);
+
+        const tbody = document.querySelector('#changes24Table tbody');
+        tbody.innerHTML = '';
+        const frag = document.createDocumentFragment();
+
+        diffs.forEach((d, i) => {
+          const tr = document.createElement('tr');
+          const racerUrl = ntRacerURL(d.slug);
+          const name = prettyNameFromSlug(d.slug);
+          tr.innerHTML = `
+            <td data-label="Rank">${i + 1}</td>
+            <td data-label="Display Name"><a class="link-quiet" href="${escapeAttr(racerUrl)}" target="_blank">${escapeHTML(name)}</a></td>
+            <td data-label="Δ Total Races">${formatDeltaInt(d.dRaces)}</td>
+            <td data-label="Δ Top WPM">${formatDeltaInt(d.dTop)}</td>
+            <td data-label="Δ Profile Views">${formatDeltaInt(d.dViews)}</td>
+            <td data-label="Δ Nitros Used">${formatDeltaInt(d.dNitro)}</td>
+          `.trim();
+          frag.appendChild(tr);
+        });
+
+        tbody.appendChild(frag);
+        setNote('dailyNote', `${diffs.length.toLocaleString()} racers with activity in the last snapshot window.`);
+      }
+
+      // Event: load four files and compute period metrics
+      async function loadEventFourFiles(files) {
+        const [apiBeforeRaw, apiNowRaw, dataBeforeRaw, dataNowRaw] = await Promise.all([
+          fetchJSONFlexible(files.apiBefore, true),
+          fetchJSONFlexible(files.apiNow, true),
+          fetchJSONFlexible(files.dataBefore, true),
+          fetchJSONFlexible(files.dataNow, true)
+        ]);
+
+        // Normalize API (flat arrays) and Data (object or array)
+        const apiBefore = toArray(apiBeforeRaw);
+        const apiNow = toArray(apiNowRaw);
+        const dataBefore = normalizeData(dataBeforeRaw).racers;
+        const dataNow = normalizeData(dataNowRaw).racers;
+
+        const beforeCount = apiBefore.length;
+        const nowCount = apiNow.length;
+
+        if (beforeCount === 0) {
+          return { beforeCount, nowCount, rows: [] };
+        }
+
+        // Indexes by lowercase username (slug)
+        const apiB = indexByKey(apiBefore, o => String(o.username || '').toLowerCase());
+        const apiN = indexByKey(apiNow, o => String(o.username || '').toLowerCase());
+        const dataB = indexByKey(dataBefore, o => String(o.username || '').toLowerCase());
+        const dataN = indexByKey(dataNow, o => String(o.username || '').toLowerCase());
+
+        // Union of all usernames seen across inputs
+        const keys = new Set([
+          ...Object.keys(apiB), ...Object.keys(apiN),
+          ...Object.keys(dataB), ...Object.keys(dataN)
+        ]);
+
+        const rows = [];
+        keys.forEach(k => {
+          const aB = apiB[k] || {};
+          const aN = apiN[k] || {};
+          const dB = dataB[k] || {};
+          const dN = dataN[k] || {};
+
+          const slug = pickFirstNonEmpty([dN.username, dB.username, aN.username, aB.username], '');
+          const tag = pickFirstNonEmpty([dN.tag, dB.tag, aN.teamTag, aB.teamTag], '');
+          const displayName = pickFirstNonEmpty([aN.displayName, aB.displayName, dN.username, dB.username, slug], '');
+
+          // Period races: prefer Data lifetime races delta; fallback to API lifetimeRaces delta
+          const racesDeltaData = safeNumber(dN.racesPlayed) - safeNumber(dB.racesPlayed);
+          const racesDeltaAPI = safeNumber(aN.lifetimeRaces) - safeNumber(aB.lifetimeRaces);
+          const dRaces = (Number.isFinite(racesDeltaData) && racesDeltaData !== 0) ? racesDeltaData : racesDeltaAPI;
+          if (dRaces <= 0) return; // no-op rows removed
+
+          // Typed/errs deltas (API)
+          const typedDelta = Math.max(0, safeNumber(aN.typed) - safeNumber(aB.typed));
+          const errsDelta  = Math.max(0, safeNumber(aN.errs)  - safeNumber(aB.errs));
+
+          // Accuracy (%)
+          const acc = clamp(0, 100 * (1 - (typedDelta > 0 ? errsDelta / typedDelta : 0)), 100);
+
+          // WPM (period): weighted by played deltas if available, else current avg
+          const playedDelta = safeNumber(aN.played) - safeNumber(aB.played);
+          let wpm;
+          if (WPM_METHOD === 'weighted' && playedDelta > 0) {
+            const num = safeNumber(aN.avgWpm) * safeNumber(aN.played) - safeNumber(aB.avgWpm) * safeNumber(aB.played);
+            wpm = num / playedDelta;
+          } else {
+            wpm = safeNumber(aN.avgWpm);
+          }
+          if (!Number.isFinite(wpm) || wpm < 0) wpm = 0;
+
+          // Points (per race average per formula)
+          const points = 100 + (wpm / 2) * (acc / 100);
+
+          // Mistakes per race
+          const mistakesPerRace = errsDelta / Math.max(1, dRaces);
+
+          // Nitros delta from Data snapshots
+          const nitrosDelta = Math.max(0, safeNumber(dN.nitrosUsed) - safeNumber(dB.nitrosUsed));
+
+          rows.push({
+            slug, tag, displayName,
+            dRaces, wpm, acc, points, nitrosDelta
+          });
+        });
+
+        // Default sort by Δ Total Races desc
+        rows.sort((a, b) => b.dRaces - a.dRaces);
+
+        return { beforeCount, nowCount, rows };
+      }
+
+      function renderEventComputed(rows) {
+        const tbody = document.querySelector('#eventTable tbody');
+        tbody.innerHTML = '';
+        const frag = document.createDocumentFragment();
+        rows.forEach((r, i) => {
+          const racerUrl = ntRacerURL(r.slug);
+          const teamUrl = r.tag ? ntTeamURL(r.tag) : '#';
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td data-label="Rank">${i + 1}</td>
+            <td data-label="Display Name">
+              <a class="link-quiet" href="${escapeAttr(racerUrl)}" target="_blank">${escapeHTML(r.displayName)}</a>
+            </td>
+            <td data-label="Team Tag">
+              ${r.tag ? `<a class="tag-link" href="${escapeAttr(teamUrl)}" target="_blank">${escapeHTML(r.tag)}</a>` : '<span>-</span>'}
+            </td>
+            <td data-label="Δ Total Races">${formatDeltaInt(r.dRaces)}</td>
+            <td data-label="Avg WPM">${safeNumber(r.wpm).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+            <td data-label="Avg Accuracy">${safeNumber(r.acc).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%</td>
+            <td data-label="Avg Points">${safeNumber(r.points).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td data-label="Δ Nitros Used">${formatDeltaInt(r.nitrosDelta)}</td>
+          `.trim();
+          frag.appendChild(tr);
+        });
+        tbody.appendChild(frag);
+      }
+
+      // UI helpers for Event
       function showEventComingSoon(show) {
         const note = document.getElementById('eventComingSoon');
         const table = document.getElementById('eventTable');
@@ -698,298 +745,40 @@
         const tbody = document.querySelector('#eventTable tbody');
         if (tbody) tbody.innerHTML = '';
       }
-
-      // ===================================================
-      // JSON fetch helper with optional empty fallback
-      // ===================================================
-      function fetchJSON(url, opts = {}) {
-        const { allow404Empty = false } = opts;
-        return fetch(url)
-          .then(r => {
-            if (!r.ok) {
-              if (allow404Empty && (r.status === 404 || r.status === 204)) {
-                return { racers: [] };
-              }
-              throw new Error(`${url}: HTTP ${r.status} - ${r.statusText}`);
-            }
-            return r.json();
-          })
-          .catch(err => {
-            if (allow404Empty) return { racers: [] };
-            throw err;
-          });
+      function setEventStatus(text) {
+        const el = document.getElementById('eventStatus');
+        if (el) el.textContent = text || '';
+      }
+      function setNote(id, text) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text || '';
       }
 
-      // ===================================================
-      // Normalize payloads:
-      // - Preferred: { updatedAt, racers: [...] }
-      // - Legacy:    [ ... ]
-      // ===================================================
-      function normalizeData(payload) {
-        if (Array.isArray(payload)) {
-          return { updatedAt: null, racers: payload };
-        }
-        if (payload && Array.isArray(payload.racers)) {
-          return { updatedAt: payload.updatedAt || null, racers: payload.racers };
-        }
-        return { updatedAt: null, racers: [] };
-      }
-
-      // ===================================================
-      // Render: Leaderboard
-      // ===================================================
-      function renderLeaderboard(data) {
-        const sorted = [...data].sort((a, b) => safeNumber(b.racesPlayed) - safeNumber(a.racesPlayed));
-        const tbody = document.querySelector('#leaderboardTable tbody');
-        tbody.innerHTML = '';
-        const fragment = document.createDocumentFragment();
-
-        sorted.forEach((r, idx) => {
-          const tr = document.createElement('tr');
-
-          const totalRaces   = safeNumber(r.racesPlayed).toLocaleString();
-          const avgWPM       = safeNumber(r.avgSpeed).toLocaleString();
-          const topWPM       = safeNumber(r.highestSpeed).toLocaleString();
-          const profileViews = safeNumber(r.profileViews).toLocaleString();
-          const garageCars   = safeNumber(r.garageCars).toLocaleString();
-          const nitrosUsed   = safeNumber(r.nitrosUsed).toLocaleString();
-          const longestSess  = safeNumber(r.longestSession).toLocaleString();
-          const leagueTier   = safeNumber(r.leagueTier).toLocaleString();
-
-          const username   = r.username || '';
-          const teamTag    = r.tag || '';
-          const title      = r.title || '';
-          const joinDate   = r.joinDate || '';
-          const membership = r.membership || '';
-          const profileURL = r.profileURL || '#';
-
-          tr.innerHTML = `
-            <td data-label="Rank">${idx + 1}</td>
-            <td data-label="Username">
-              <a href="${escapeAttr(profileURL)}" target="_blank">${escapeHTML(username)}</a>
-            </td>
-            <td data-label="Team Tag">${escapeHTML(teamTag)}</td>
-            <td data-label="Title">${escapeHTML(title)}</td>
-            <td data-label="Total Races">${totalRaces}</td>
-            <td data-label="Avg WPM">${avgWPM}</td>
-            <td data-label="Top WPM">${topWPM}</td>
-            <td data-label="Profile Views">${profileViews}</td>
-            <td data-label="Member Since">${escapeHTML(joinDate)}</td>
-            <td data-label="Garage Cars">${garageCars}</td>
-            <td data-label="Profile URL">
-              <a class="profile-link" href="${escapeAttr(profileURL)}" target="_blank">View Profile</a>
-            </td>
-            <td data-label="Membership">${escapeHTML(membership)}</td>
-            <td data-label="Nitros Used">${nitrosUsed}</td>
-            <td data-label="Longest Session">${longestSess}</td>
-            <td data-label="League Tier">${leagueTier}</td>
-          `.trim();
-
-          fragment.appendChild(tr);
-        });
-
-        tbody.appendChild(fragment);
-      }
-
-      // ===================================================
-      // Render: Races Per Day
-      // ===================================================
-      function renderRacesPerDay(data) {
-        const now = new Date();
-
-        const list = data.map(r => {
-          const joinDate = parseLocalDate(r.joinDate);
-          const diffMs = now - joinDate;
-          let daysActive = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-          if (!Number.isFinite(daysActive) || daysActive < 1) daysActive = 1;
-
-          const totalRaces = safeNumber(r.racesPlayed);
-          const perDayRaw = totalRaces / daysActive;
-          const perDayFmt = perDayRaw.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          });
-
-          return {
-            username: r.username || '',
-            profileURL: r.profileURL || '#',
-            racesPlayed: totalRaces,
-            daysActive: daysActive,
-            racesPerDay: perDayRaw,
-            formattedRacesPlayed: totalRaces.toLocaleString(),
-            formattedDaysActive: daysActive.toLocaleString(),
-            formattedPerDay: perDayFmt
-          };
-        });
-
-        list.sort((a, b) => b.racesPerDay - a.racesPerDay);
-
-        const tbody = document.querySelector('#racesPerDayTable tbody');
-        tbody.innerHTML = '';
-        const fragment = document.createDocumentFragment();
-
-        list.forEach((r, idx) => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td data-label="Rank">${idx + 1}</td>
-            <td data-label="Username">
-              <a href="${escapeAttr(r.profileURL)}" target="_blank">${escapeHTML(r.username)}</a>
-            </td>
-            <td data-label="Total Races">${r.formattedRacesPlayed}</td>
-            <td data-label="Days Active">${r.formattedDaysActive}</td>
-            <td data-label="Races / Day">${r.formattedPerDay}</td>
-          `.trim();
-          fragment.appendChild(tr);
-        });
-
-        tbody.appendChild(fragment);
-      }
-
-      // ===================================================
-      // Render: 24-Hour Leaderboard (daily diffs)
-      // - Excludes Avg WPM & League Tier
-      // - Excludes any racer with current total races == 0
-      // - Filters anomalies where Δ Total Races >= MAX_24H_RACES
-      // - NEW: Removes rows where Δ Total Races == 0
-      // ===================================================
-      function renderChanges24(currentRacers, prevMap) {
-        // First hard filter: exclude current racers with total races == 0
-        const currentFiltered = (currentRacers || []).filter(r => safeNumber(r.racesPlayed) > 0);
-
-        const diffs = currentFiltered
-          .map(r => {
-            const key = String(r.username || '').toLowerCase();
-            const p = prevMap.get(key) || {};
-
-            const dRaces = safeNumber(r.racesPlayed)    - safeNumber(p.racesPlayed);
-            const dTop   = safeNumber(r.highestSpeed)   - safeNumber(p.highestSpeed);
-            const dViews = safeNumber(r.profileViews)   - safeNumber(p.profileViews);
-            const dCars  = safeNumber(r.garageCars)     - safeNumber(p.garageCars);
-            const dNitro = safeNumber(r.nitrosUsed)     - safeNumber(p.nitrosUsed);
-            const dSess  = safeNumber(r.longestSession) - safeNumber(p.longestSession);
-
-            return {
-              username:   r.username || '',
-              profileURL: r.profileURL || '#',
-              dRaces, dTop, dViews, dCars, dNitro, dSess
-            };
-          })
-          // Apply daily anomaly cap and remove zero-delta rows
-          .filter(d => d.dRaces < MAX_24H_RACES && d.dRaces !== 0);
-
-        diffs.sort((a, b) => b.dRaces - a.dRaces);
-
-        const tbody = document.querySelector('#changes24Table tbody');
-        tbody.innerHTML = '';
-        const fragment = document.createDocumentFragment();
-
-        diffs.forEach((d, idx) => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td data-label="Rank">${idx + 1}</td>
-            <td data-label="Username"><a href="${escapeAttr(d.profileURL)}" target="_blank">${escapeHTML(d.username)}</a></td>
-            <td data-label="Δ Total Races">${formatDeltaInt(d.dRaces)}</td>
-            <td data-label="Δ Top WPM">${formatDeltaInt(d.dTop)}</td>
-            <td data-label="Δ Profile Views">${formatDeltaInt(d.dViews)}</td>
-            <td data-label="Δ Garage Cars">${formatDeltaInt(d.dCars)}</td>
-            <td data-label="Δ Nitros Used">${formatDeltaInt(d.dNitro)}</td>
-            <td data-label="Δ Longest Session">${formatDeltaInt(d.dSess)}</td>
-          `.trim();
-          fragment.appendChild(tr);
-        });
-
-        tbody.appendChild(fragment);
-      }
-
-      // ===================================================
-      // Render: Event Changes (Dropdown-driven)
-      // - Excludes Avg WPM & League Tier
-      // - Excludes current racers with total races == 0
-      // - NEW: Removes rows where Δ Total Races == 0
-      // - Sorted by Δ Total Races desc
-      // ===================================================
-      function renderEventChanges(currentRacers, prevMap) {
-        const diffs = (currentRacers || [])
-          .map(r => {
-            const key = String(r.username || '').toLowerCase();
-            const p = prevMap.get(key) || {};
-
-            const dRaces = safeNumber(r.racesPlayed)    - safeNumber(p.racesPlayed);
-            const dTop   = safeNumber(r.highestSpeed)   - safeNumber(p.highestSpeed);
-            const dViews = safeNumber(r.profileViews)   - safeNumber(p.profileViews);
-            const dCars  = safeNumber(r.garageCars)     - safeNumber(p.garageCars);
-            const dNitro = safeNumber(r.nitrosUsed)     - safeNumber(p.nitrosUsed);
-            const dSess  = safeNumber(r.longestSession) - safeNumber(p.longestSession);
-
-            return {
-              username:   r.username || '',
-              profileURL: r.profileURL || '#',
-              dRaces, dTop, dViews, dCars, dNitro, dSess
-            };
-          })
-          // Remove rows where Δ Total Races equals 0 (explicit per request)
-          .filter(d => d.dRaces !== 0);
-
-        diffs.sort((a, b) => b.dRaces - a.dRaces);
-
-        const tbody = document.querySelector('#eventTable tbody');
-        tbody.innerHTML = '';
-        const fragment = document.createDocumentFragment();
-
-        diffs.forEach((d, idx) => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td data-label="Rank">${idx + 1}</td>
-            <td data-label="Username"><a href="${escapeAttr(d.profileURL)}" target="_blank">${escapeHTML(d.username)}</a></td>
-            <td data-label="Δ Total Races">${formatDeltaInt(d.dRaces)}</td>
-            <td data-label="Δ Top WPM">${formatDeltaInt(d.dTop)}</td>
-            <td data-label="Δ Profile Views">${formatDeltaInt(d.dViews)}</td>
-            <td data-label="Δ Garage Cars">${formatDeltaInt(d.dCars)}</td>
-            <td data-label="Δ Nitros Used">${formatDeltaInt(d.dNitro)}</td>
-            <td data-label="Δ Longest Session">${formatDeltaInt(d.dSess)}</td>
-          `.trim();
-          fragment.appendChild(tr);
-        });
-
-        tbody.appendChild(fragment);
-      }
-
-      // ===================================================
-      // Sorting: enableSorting(tableId)
-      // - Click table headers to sort
-      // - Numeric-aware; toggles asc/desc classes
-      // - Renumbers Rank column
-      // ===================================================
+      // Sorting (numeric-aware + rank renumbering)
       function enableSorting(tableId) {
         const table = document.getElementById(tableId);
         if (!table) return;
-
         const headers = table.querySelectorAll('th');
-
         headers.forEach((th, idx) => {
           th.addEventListener('click', () => {
             const tbody = table.querySelector('tbody');
-            const rows  = Array.from(tbody.querySelectorAll('tr'));
-
+            const rows = Array.from(tbody.querySelectorAll('tr'));
             const asc = !th.classList.contains('asc');
 
             rows.sort((a, b) => {
-              const aText = a.children[idx]?.textContent?.trim() ?? '';
-              const bText = b.children[idx]?.textContent?.trim() ?? '';
-              const aNum  = parseFloat(aText.replace(/,/g, '').replace(/[^0-9.\-]/g, ''));
-              const bNum  = parseFloat(bText.replace(/,/g, '').replace(/[^0-9.\-]/g, ''));
-
-              if (!isNaN(aNum) && !isNaN(bNum)) {
-                return asc ? aNum - bNum : bNum - aNum;
-              }
+              const aText = (a.children[idx]?.textContent || '').trim();
+              const bText = (b.children[idx]?.textContent || '').trim();
+              const aNum = parseFloat(aText.replace(/,/g, '').replace(/[^0-9.\-]/g, ''));
+              const bNum = parseFloat(bText.replace(/,/g, '').replace(/[^0-9.\-]/g, ''));
+              if (!isNaN(aNum) && !isNaN(bNum)) return asc ? aNum - bNum : bNum - aNum;
               return asc ? aText.localeCompare(bText) : bText.localeCompare(aText);
             });
 
             headers.forEach(h => h.classList.remove('asc', 'desc'));
             th.classList.add(asc ? 'asc' : 'desc');
 
-            rows.forEach((row, newIndex) => {
-              if (row.children[0]) row.children[0].textContent = newIndex + 1;
+            rows.forEach((row, i) => {
+              if (row.children[0]) row.children[0].textContent = i + 1;
             });
 
             tbody.innerHTML = '';
@@ -998,20 +787,37 @@
         });
       }
 
-      // ===================================================
       // Utilities
-      // ===================================================
+      function ntRacerURL(username) {
+        const slug = String(username || '').trim();
+        return slug ? `https://www.nitrotype.com/racer/${encodeURIComponent(slug)}` : '#';
+      }
+      function ntTeamURL(tag) {
+        const t = String(tag || '').trim();
+        return t ? `https://www.nitrotype.com/team/${encodeURIComponent(t)}` : '#';
+      }
+      function prettyNameFromSlug(slug) {
+        // Best-effort prettifier if displayName not provided (Data doesn’t include displayName)
+        return String(slug || '');
+      }
       function safeNumber(x) {
         const n = Number(x);
         return Number.isFinite(n) ? n : 0;
       }
-
-      function formatDeltaInt(n) {
-        const v = safeNumber(n);
-        const sign = v > 0 ? '+' : v < 0 ? '' : '';
-        return `${sign}${v.toLocaleString()}`;
+      function clamp(min, v, max) {
+        return Math.max(min, Math.min(max, v));
       }
-
+      function parseLocalDate(input) {
+        const raw = String(input || '').trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+          const [y, m, d] = raw.split('-').map(n => parseInt(n, 10));
+          const dt = new Date(y, m - 1, d, 0, 0, 0, 0);
+          if (!isNaN(dt.getTime())) return dt;
+        }
+        const dt2 = new Date(raw);
+        if (!isNaN(dt2.getTime())) return dt2;
+        return new Date();
+      }
       function escapeHTML(s) {
         return String(s ?? '')
           .replace(/&/g, '&amp;')
@@ -1020,27 +826,35 @@
           .replace(/"/g, '&quot;')
           .replace(/'/g, '&#39;');
       }
-
       function escapeAttr(s) {
         return escapeHTML(s).replace(/"/g, '&quot;');
       }
-
-      function parseLocalDate(input) {
-        const raw = String(input || '').trim();
-        if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-          const [y, m, d] = raw.split('-').map(n => parseInt(n, 10));
-          const dt = new Date(y, (m - 1), d, 0, 0, 0, 0);
-          if (!isNaN(dt.getTime())) return dt;
-        }
-        const dt2 = new Date(raw);
-        if (!isNaN(dt2.getTime())) return dt2;
-        return new Date();
+      function formatDeltaInt(n) {
+        const v = safeNumber(n);
+        const sign = v > 0 ? '+' : '';
+        return `${sign}${v.toLocaleString()}`;
       }
-
-      // End of DOMContentLoaded
+      function toArray(maybeArray) {
+        if (Array.isArray(maybeArray)) return maybeArray;
+        if (maybeArray && typeof maybeArray === 'object' && Array.isArray(maybeArray.racers)) return maybeArray.racers;
+        return [];
+      }
+      function indexByKey(arr, keyFn) {
+        const out = Object.create(null);
+        for (const item of arr || []) {
+          const k = String(keyFn(item) || '').toLowerCase();
+          if (!k) continue;
+          out[k] = item;
+        }
+        return out;
+      }
+      function pickFirstNonEmpty(arr, fallback) {
+        for (const v of arr) {
+          if (v !== undefined && v !== null && String(v).trim() !== '') return String(v);
+        }
+        return fallback;
+      }
     });
   </script>
-
 </body>
 </html>
-
