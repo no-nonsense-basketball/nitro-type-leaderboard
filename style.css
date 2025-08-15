@@ -56,8 +56,15 @@ header a:hover { color: var(--accent-2); }
 
 /* Sections */
 .table-container {
-  display: none; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
-  padding: 10px; margin: 0 auto 40px; max-width: 1200px; overflow: hidden; box-shadow: 0 18px 40px rgba(0,0,0,0.35);
+  display: block;
+  overflow-x: auto; /* enables horizontal scroll */
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 10px;
+  margin: 0 auto 40px;
+  max-width: 100%; /* allow full width */
+  box-shadow: 0 18px 40px rgba(0,0,0,0.35);
 }
 .table-container.active { display: block; }
 
