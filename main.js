@@ -1,16 +1,42 @@
-// main.js
-document.addEventListener('DOMContentLoaded', () => {
-  // Constants
-  const MAX_24H_RACES = 2600; // anomaly cutoff
-  const EVENT_FILES = {
-    apiBefore: 'API_before.json',
-    apiNow: 'API_now.json',
-    dataBefore: 'BeforeEventData.json',
-    dataNow: 'AfterEventData.json'
-  };
-  const WPM_METHOD = 'weighted'; // 'weighted' | 'current'
+/* ============================================================================
+   Nitro Type Leaderboard + Event Viewer (Full Script, No Streamlining)
+   - Loads Data snapshots (Before/After) for general leaderboards
+   - Loads API snapshots (Before/After, NDJSON) + Data (Before/After) for Event
+   - Renders: Leaderboard, Races Per Day, 24-Hour (snapshot) Changes, Event Table
+   - Includes robust helpers, sorting, NDJSON parsing, escaping, and UX notes
+   ============================================================================ */
 
-  // Tabs
+document.addEventListener('DOMContentLoaded', () => {
+  // ---------------------------------------------------------------------------
+  // Constants and configuration
+  // ---------------------------------------------------------------------------
+
+  // Anomaly cutoff for 24h diffs (ignore insane values)
+  const MAX_24H_RACES = 2600;
+
+  // File set for the Event view
+  // API snapshots are NDJSON, Data snapshots are JSON (array or { racers: [] })
+  const EVENT_FILES = {
+    apiBefore: 'API_before.ndjson',       // REQUIRED: NDJSON
+    apiNow: 'API_now.ndjson',             // REQUIRED: NDJSON
+    dataBefore: 'BeforeEventData.json',   // REQUIRED: JSON or { racers: [] }
+    dataNow: 'AfterEventData.json'        // REQUIRED: JSON or { racers: [] }
+  };
+
+  // For the general leaderboards, we will use AfterEventData.json as "current"
+  // and BeforeEventData.json as "previous" to populate the 24h-like changes.
+  const DATA_CURRENT = 'AfterEventData.json';
+  const DATA_PREVIOUS = 'BeforeEventData.json';
+
+  // WPM calculation preference for the Event period:
+  // - 'weighted': derive period WPM from (avgWpm * played) deltas
+  // - 'current' : use end snapshot avgWpm only
+  const WPM_METHOD = 'weighted';
+
+  // ---------------------------------------------------------------------------
+  // Tabs behavior (HTML should have .tabs .tab elements with data-target)
+  // ---------------------------------------------------------------------------
+
   const tabs = document.querySelectorAll('.tabs .tab');
   const sections = document.querySelectorAll('.table-container');
   tabs.forEach(tab => {
@@ -24,41 +50,45 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Fetch main snapshots (Data current/previous)
+  // ---------------------------------------------------------------------------
+  // Load "main" snapshots (Data current/previous) then render the three tabs
+  // ---------------------------------------------------------------------------
+
   Promise.all([
-    fetchJSONFlexible('sample_data.json'),               // current data
-    fetchJSONFlexible('sample_data_prev.json', true)     // previous data (optional)
+    fetchJSONFlexible(DATA_CURRENT),           // "current" Data (array or { racers })
+    fetchJSONFlexible(DATA_PREVIOUS, true)     // "previous" Data (optional)
   ])
   .then(([curData, prevData]) => {
     const cur = normalizeData(curData);
     const prev = normalizeData(prevData);
 
-    // Leaderboard + RacesPerDay
+    // Leaderboard
     renderLeaderboard(cur.racers);
     enableSorting('leaderboardTable');
 
+    // Races Per Day
     renderRacesPerDay(cur.racers);
     enableSorting('racesPerDayTable');
 
-    // 24-hour diffs (from Data)
+    // 24-hour-like changes (current vs previous snapshots)
     const prevMap = new Map((prev.racers || []).map(r => [String(r.username || '').toLowerCase(), r]));
     renderChanges24(cur.racers, prevMap);
     enableSorting('changes24Table');
 
-    // Event (four files)
+    // Event (four-file computation)
     initEventTab();
   })
   .catch(err => {
     console.error('Failed loading main snapshots:', err);
-    const msg = document.createElement('p');
-    msg.textContent = 'Error loading main snapshots – check console.';
-    msg.style.color = '#ff5c5c';
-    msg.style.textAlign = 'center';
-    document.body.appendChild(msg);
-    initEventTab(); // still attempt event
+    showPageMessage('Error loading main snapshots – check console.', '#ff5c5c');
+    // Still try to initialize event
+    initEventTab();
   });
 
-  // Event initialization
+  // ---------------------------------------------------------------------------
+  // Event initialization (four-file load + render)
+  // ---------------------------------------------------------------------------
+
   function initEventTab() {
     loadEventFourFiles(EVENT_FILES)
       .then(result => {
@@ -78,7 +108,11 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
-  // Files: flexible JSON (supports JSON array, object with racers, or NDJSON lines)
+  // ---------------------------------------------------------------------------
+  // Flexible fetcher: JSON array/object or NDJSON (one JSON object per line)
+  // When allowEmpty is true: return { racers: [] } for 404/204
+  // ---------------------------------------------------------------------------
+
   async function fetchJSONFlexible(url, allowEmpty = false) {
     try {
       const res = await fetch(url, { cache: 'no-store' });
@@ -88,22 +122,22 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const text = await res.text();
       const trimmed = text.trim();
-      if (!trimmed) return allowEmpty ? { racers: [] } : JSON.parse(''); // force catch
-      const firstChar = trimmed[0];
+      if (!trimmed) return allowEmpty ? { racers: [] } : JSON.parse(''); // force catch for empty when not allowed
 
+      const firstChar = trimmed[0];
       if (firstChar === '{' || firstChar === '[') {
-        // Regular JSON
+        // JSON object/array
         return JSON.parse(trimmed);
       }
 
-      // NDJSON fallback
+      // NDJSON fallback: split by lines and parse each line
       const lines = trimmed.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
       const arr = [];
       for (const line of lines) {
         try {
           arr.push(JSON.parse(line));
         } catch (e) {
-          // skip bad lines
+          console.warn('Skipping bad NDJSON line:', line);
         }
       }
       return arr;
@@ -113,17 +147,45 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Normalize: { updatedAt, racers } | [ ... ] -> { updatedAt, racers: [] }
+  // ---------------------------------------------------------------------------
+  // Normalization helpers
+  // ---------------------------------------------------------------------------
+
+  // Normalize Data payload to { updatedAt, racers: [] }
   function normalizeData(payload) {
     if (Array.isArray(payload)) return { updatedAt: null, racers: payload };
     if (payload && Array.isArray(payload.racers)) return { updatedAt: payload.updatedAt || null, racers: payload.racers };
     return { updatedAt: null, racers: [] };
   }
 
-  // Leaderboard render (Data current) — 16 columns to align with CSS
+  // Ensure we have an array (for API snapshots that may come in array or object)
+  function toArray(payload) {
+    if (!payload) return [];
+    if (Array.isArray(payload)) return payload;
+    if (payload && Array.isArray(payload.racers)) return payload.racers;
+    return [];
+  }
+
+  // Build an index (object) keyed by a computed key function
+  function indexByKey(arr, keyFn) {
+    const out = Object.create(null);
+    for (const item of arr || []) {
+      const key = keyFn(item);
+      if (!key) continue;
+      out[key] = item;
+    }
+    return out;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Render: Leaderboard (Data current)
+  //
+  // Columns (16):
   // 1 Rank, 2 Display Name, 3 Username, 4 Team Tag, 5 Title, 6 Total Races,
   // 7 Avg WPM, 8 Top WPM, 9 Profile Views, 10 Member Since, 11 Garage Cars,
   // 12 Membership, 13 Profile URL, 14 Nitros Used, 15 Longest Session, 16 League Tier
+  // ---------------------------------------------------------------------------
+
   function renderLeaderboard(data) {
     const list = [...(data || [])].map(r => ({
       slug: String(r.username || ''),
@@ -145,6 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
     list.sort((a, b) => b.racesPlayed - a.racesPlayed);
 
     const tbody = document.querySelector('#leaderboardTable tbody');
+    if (!tbody) return;
     tbody.innerHTML = '';
     const frag = document.createDocumentFragment();
 
@@ -183,8 +246,13 @@ document.addEventListener('DOMContentLoaded', () => {
     setNote('leaderboardNote', `${list.length.toLocaleString()} racers loaded.`);
   }
 
-  // Races Per Day (Data current) — 6 columns to align with CSS
+  // ---------------------------------------------------------------------------
+  // Render: Races Per Day (Data current)
+  //
+  // Columns (6):
   // 1 Rank, 2 Display Name, 3 Total Races, 4 Days Active, 5 Races / Day, 6 Member Since
+  // ---------------------------------------------------------------------------
+
   function renderRacesPerDay(data) {
     const now = Date.now();
     const list = (data || []).map(r => {
@@ -202,6 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }).sort((a, b) => b.perDay - a.perDay);
 
     const tbody = document.querySelector('#racesPerDayTable tbody');
+    if (!tbody) return;
     tbody.innerHTML = '';
 
     const frag = document.createDocumentFragment();
@@ -226,7 +295,13 @@ document.addEventListener('DOMContentLoaded', () => {
     tbody.appendChild(frag);
   }
 
-  // 24-Hour diffs (Data current vs previous) — 6 columns
+  // ---------------------------------------------------------------------------
+  // Render: 24-Hour-like diffs (Data current vs previous)
+  //
+  // Columns (6):
+  // 1 Rank, 2 Display Name, 3 Δ Total Races, 4 Δ Top WPM, 5 Δ Profile Views, 6 Δ Nitros Used
+  // ---------------------------------------------------------------------------
+
   function renderChanges24(currentRacers, prevMap) {
     const filtered = (currentRacers || []).filter(r => safeNumber(r.racesPlayed) > 0);
 
@@ -246,6 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
     .sort((a, b) => b.dRaces - a.dRaces);
 
     const tbody = document.querySelector('#changes24Table tbody');
+    if (!tbody) return;
     tbody.innerHTML = '';
     const frag = document.createDocumentFragment();
 
@@ -268,12 +344,17 @@ document.addEventListener('DOMContentLoaded', () => {
     setNote('dailyNote', `${diffs.length.toLocaleString()} racers with activity in the last snapshot window.`);
   }
 
-  // Event: load four files and compute period metrics (7-column render)
+  // ---------------------------------------------------------------------------
+  // Event: load four files, compute period metrics, and render
+  //
+  // Output Columns (7):
   // 1 Rank, 2 Display Name, 3 Δ Total Races, 4 Avg WPM, 5 Avg Accuracy, 6 Δ Profile Views, 7 Δ Nitros Used
+  // ---------------------------------------------------------------------------
+
   async function loadEventFourFiles(files) {
     const [apiBeforeRaw, apiNowRaw, dataBeforeRaw, dataNowRaw] = await Promise.all([
-      fetchJSONFlexible(files.apiBefore, true),
-      fetchJSONFlexible(files.apiNow, true),
+      fetchJSONFlexible(files.apiBefore, true), // NDJSON
+      fetchJSONFlexible(files.apiNow, true),    // NDJSON
       fetchJSONFlexible(files.dataBefore, true),
       fetchJSONFlexible(files.dataNow, true)
     ]);
@@ -319,7 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const typedDelta = Math.max(0, safeNumber(aN.typed) - safeNumber(aB.typed));
       const errsDelta  = Math.max(0, safeNumber(aN.errs)  - safeNumber(aB.errs));
 
-      // Accuracy (%)
+      // Accuracy (%) for period
       const acc = clamp(0, 100 * (typedDelta > 0 ? (1 - (errsDelta / typedDelta)) : 0), 100);
 
       // WPM (period): weighted by played deltas if available, else current avg
@@ -353,6 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderEventComputed(rows) {
     const tbody = document.querySelector('#eventTable tbody');
+    if (!tbody) return;
     tbody.innerHTML = '';
     const frag = document.createDocumentFragment();
     rows.forEach((r, i) => {
@@ -374,117 +456,171 @@ document.addEventListener('DOMContentLoaded', () => {
     tbody.appendChild(frag);
   }
 
-  // UI helpers
-  function clearEventTable() {
-    const tbody = document.querySelector('#eventTable tbody');
-    if (tbody) tbody.innerHTML = '';
-  }
-  function setEventStatus(text) {
-    const el = document.getElementById('eventStatus');
-    if (el) el.textContent = text || '';
-  }
-  function setNote(id, text) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = text || '';
-  }
+  // ---------------------------------------------------------------------------
+  // Sorting, formatting, and DOM utilities
+  // ---------------------------------------------------------------------------
 
-  // Sorting (numeric-aware + rank renumbering)
   function enableSorting(tableId) {
     const table = document.getElementById(tableId);
     if (!table) return;
-    const headers = table.querySelectorAll('th');
+    const thead = table.tHead || table.querySelector('thead');
+    const tbody = table.tBodies[0] || table.querySelector('tbody');
+    if (!thead || !tbody) return;
+
+    const headers = Array.from(thead.querySelectorAll('th'));
     headers.forEach((th, idx) => {
+      th.style.cursor = 'pointer';
       th.addEventListener('click', () => {
-        const tbody = table.querySelector('tbody');
+        const currentDir = th.dataset.sortDir === 'asc' ? 'asc' : (th.dataset.sortDir === 'desc' ? 'desc' : null);
+        // Reset all headers
+        headers.forEach(h => { if (h !== th) delete h.dataset.sortDir; });
+        const nextDir = currentDir === 'asc' ? 'desc' : 'asc';
+        th.dataset.sortDir = nextDir;
+
         const rows = Array.from(tbody.querySelectorAll('tr'));
-        const asc = !th.classList.contains('asc');
+        const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
 
         rows.sort((a, b) => {
-          const aText = (a.children[idx]?.textContent || '').trim();
-          const bText = (b.children[idx]?.textContent || '').trim();
-          const aNum = parseFloat(aText.replace(/,/g, '').replace(/[^0-9.\-]/g, ''));
-          const bNum = parseFloat(bText.replace(/,/g, '').replace(/[^0-9.\-]/g, ''));
-          if (!isNaN(aNum) && !isNaN(bNum)) return asc ? aNum - bNum : bNum - aNum;
-          return asc ? aText.localeCompare(bText) : bText.localeCompare(aText);
+          const ta = extractCellValue(a, idx);
+          const tb = extractCellValue(b, idx);
+          const na = parseMaybeNumber(ta);
+          const nb = parseMaybeNumber(tb);
+
+          let cmp;
+          if (Number.isFinite(na) && Number.isFinite(nb)) {
+            cmp = na - nb;
+          } else {
+            cmp = collator.compare(ta, tb);
+          }
+          return nextDir === 'asc' ? cmp : -cmp;
         });
 
-        headers.forEach(h => h.classList.remove('asc', 'desc'));
-        th.classList.add(asc ? 'asc' : 'desc');
-
-        rows.forEach((row, i) => {
-          if (row.children[0]) row.children[0].textContent = i + 1;
-        });
-
-        tbody.innerHTML = '';
-        rows.forEach(r => tbody.appendChild(r));
+        // Re-append in sorted order
+        for (const r of rows) tbody.appendChild(r);
       });
     });
   }
 
-  // Utilities
-  function ntRacerURL(username) {
-    const slug = String(username || '').trim();
-    return slug ? `https://www.nitrotype.com/racer/${encodeURIComponent(slug)}` : '#';
+  function extractCellValue(tr, index) {
+    const cell = tr.children[index];
+    if (!cell) return '';
+    // Extract text content without labels or links
+    let value = cell.textContent || '';
+    value = value.replace(/\s+/g, ' ').trim();
+    // Remove thousands separators and % signs for numeric detection
+    value = value.replace(/,/g, '');
+    return value;
   }
-  function ntTeamURL(tag) {
-    const t = String(tag || '').trim();
-    return t ? `https://www.nitrotype.com/team/${encodeURIComponent(t)}` : '#';
+
+  function parseMaybeNumber(value) {
+    if (typeof value !== 'string') return NaN;
+    // Allow +/- and decimals
+    const cleaned = value.replace(/%$/, '');
+    const n = parseFloat(cleaned);
+    return Number.isFinite(n) ? n : NaN;
+    }
+
+  function setNote(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
   }
-  function prettyNameFromSlug(slug) {
-    return String(slug || '');
+
+  function setEventStatus(text) {
+    const el = document.getElementById('eventStatus');
+    if (el) {
+      el.textContent = text;
+    } else {
+      console.log('[Event Status]', text);
+    }
   }
-  function safeNumber(x) {
-    const n = Number(x);
-    return Number.isFinite(n) ? n : 0;
+
+  function clearEventTable() {
+    const tbody = document.querySelector('#eventTable tbody');
+    if (tbody) tbody.innerHTML = '';
   }
+
+  function showPageMessage(text, color = '#999') {
+    const msg = document.createElement('p');
+    msg.textContent = text;
+    msg.style.color = color;
+    msg.style.textAlign = 'center';
+    document.body.appendChild(msg);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Math and safety helpers
+  // ---------------------------------------------------------------------------
+
+  function safeNumber(v, def = 0) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : def;
+  }
+
   function clamp(min, v, max) {
     return Math.max(min, Math.min(max, v));
   }
-  function parseLocalDate(input) {
-    const raw = String(input || '').trim();
-    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-      const [y, m, d] = raw.split('-').map(n => parseInt(n, 10));
-      const dt = new Date(y, m - 1, d, 0, 0, 0, 0);
-      if (!isNaN(dt.getTime())) return dt;
-    }
-    const dt2 = new Date(raw);
-    if (!isNaN(dt2.getTime())) return dt2;
-    return new Date();
-  }
-  function escapeHTML(s) {
-    return String(s ?? '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  }
-  function escapeAttr(s) {
-    return escapeHTML(s).replace(/"/g, '&quot;');
-  }
-  function formatDeltaInt(n) {
-    const v = safeNumber(n);
-    const sign = v > 0 ? '+' : '';
-    return `${sign}${v.toLocaleString()}`;
-  }
-  function toArray(maybeArray) {
-    if (Array.isArray(maybeArray)) return maybeArray;
-    if (maybeArray && typeof maybeArray === 'object' && Array.isArray(maybeArray.racers)) return maybeArray.racers;
-    return [];
-  }
-  function indexByKey(arr, keyFn) {
-    const out = Object.create(null);
-    for (const item of arr || []) {
-      const k = String(keyFn(item) || '').toLowerCase();
-      if (!k) continue;
-      out[k] = item;
-    }
-    return out;
-  }
-  function pickFirstNonEmpty(arr, fallback) {
-    for (const v of arr) {
-      if (v !== undefined && v !== null && String(v).trim() !== '') return String(v);
+
+  function pickFirstNonEmpty(arr, fallback = '') {
+    for (const v of arr || []) {
+      if (v !== undefined && v !== null && String(v).trim() !== '') {
+        return v;
+      }
     }
     return fallback;
+  }
+
+  function parseLocalDate(input) {
+    // Try YYYY-MM-DD quickly; otherwise fall back to Date parse
+    if (typeof input === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(input)) {
+      const [y, m, d] = input.split('-').map(s => parseInt(s, 10));
+      // Months are zero-based
+      const dt = new Date(y, m - 1, d, 12, 0, 0, 0); // noon to avoid TZ shifts
+      return Number.isNaN(dt.getTime()) ? new Date() : dt;
+    }
+    const dt = new Date(input);
+    return Number.isNaN(dt.getTime()) ? new Date() : dt;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Escaping and URL builders
+  // ---------------------------------------------------------------------------
+
+  function escapeHTML(str) {
+    return String(str)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
+
+  function escapeAttr(str) {
+    return escapeHTML(str);
+  }
+
+  function ntRacerURL(slug) {
+    return `https://www.nitrotype.com/racer/${encodeURIComponent(slug)}`;
+  }
+
+  function ntTeamURL(tag) {
+    return `https://www.nitrotype.com/team/${encodeURIComponent(tag)}`;
+  }
+
+  function prettyNameFromSlug(slug) {
+    // Heuristic prettifier: split on underscores/dashes, capitalize words
+    const s = String(slug || '').trim();
+    if (!s) return '';
+    return s
+      .replace(/[_-]+/g, ' ')
+      .split(' ')
+      .map(w => (w ? w[0].toUpperCase() + w.slice(1) : ''))
+      .join(' ');
+  }
+
+  function formatDeltaInt(n) {
+    const v = safeNumber(n);
+    const sign = v > 0 ? '+' : (v < 0 ? '−' : '');
+    const abs = Math.abs(v).toLocaleString();
+    return `${sign}${abs}`;
   }
 });
