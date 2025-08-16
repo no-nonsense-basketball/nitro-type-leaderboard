@@ -1,15 +1,3 @@
-/* =========================================================================================
-   Nitro Type Top 1000 — Comprehensive CSS
-   - Wide-frame layout for many columns
-   - Smooth horizontal scrolling for tables
-   - Sticky headers, optional sticky first column
-   - Responsive tweaks and print rules
-   - A11y focus rings and high-contrast support
-   ========================================================================================= */
-
-/* -------------------------------------
-   Theme variables
-------------------------------------- */
 :root {
   /* Color palette (dark theme) */
   --bg: #0f1217;
@@ -50,7 +38,7 @@
   --scroll-hint-fade: linear-gradient(90deg, rgba(21,25,37,0), rgba(21,25,37,0.9) 65%, rgba(21,25,37,1));
 }
 
-/* Light mode support (optional). Add .light on <html> or rely on prefers-color-scheme */
+/* Light mode support (optional) */
 @media (prefers-color-scheme: light) {
   :root {
     --bg: #f4f7fb;
@@ -118,12 +106,11 @@ a:hover { color: var(--accent-2); }
 header,
 .tabs,
 .table-container {
-  /* Expanded frame width */
   width: min(100%, var(--page-max));
   margin-inline: auto;
 }
 
-/* Full-bleed helper (optional): apply to a container to span viewport width */
+/* Full-bleed helper (optional) */
 .full-bleed {
   width: 100vw;
   margin-left: 50%;
@@ -193,21 +180,22 @@ header p { margin: 4px 0; color: var(--text-dim); }
    Sections
 ------------------------------------- */
 .table-container {
-  display: block;               /* ensure container participates in layout */
+  display: none;               /* tabs toggle visibility */
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 10px;
   margin: 0 auto 40px;
-  overflow-x: auto;             /* horizontal scroll for wide tables */
+  overflow-x: auto;            /* horizontal scroll for wide tables */
   overflow-y: hidden;
-  /* Smooth native momentum scrolling on touch devices */
   -webkit-overflow-scrolling: touch;
   box-shadow: 0 18px 40px var(--shadow);
-  position: relative;           /* anchor for scroll hints */
+  position: relative;          /* anchor for scroll hints */
 }
 
-/* Optional: gradient scroll hint overlay — add .has-scroll-hint to container */
+.table-container.active { display: block; }
+
+/* Optional: gradient scroll hint overlay — add .has-scroll-hint */
 .table-container.has-scroll-hint::after {
   content: '';
   position: sticky;
@@ -219,15 +207,9 @@ header p { margin: 4px 0; color: var(--text-dim); }
   background: var(--scroll-hint-fade);
   z-index: 3;
 }
-/* If JS toggles .is-end when scrolled to rightmost, hide hint */
-.table-container.has-scroll-hint.is-end::after {
-  opacity: 0;
-  transition: opacity .25s ease;
-}
-.table-container.has-scroll-hint:not(.is-end)::after {
-  opacity: 1;
-  transition: opacity .25s ease;
-}
+/* hide hint at end */
+.table-container.has-scroll-hint.is-end::after { opacity: 0; transition: opacity .25s ease; }
+.table-container.has-scroll-hint:not(.is-end)::after { opacity: 1; transition: opacity .25s ease; }
 
 .table-container .note {
   color: #e8ecf1;
@@ -236,7 +218,6 @@ header p { margin: 4px 0; color: var(--text-dim); }
   margin: 8px 0 12px;
 }
 
-.table-container.active { display: block; }
 .hidden { display: none !important; }
 
 /* -------------------------------------
@@ -244,14 +225,13 @@ header p { margin: 4px 0; color: var(--text-dim); }
 ------------------------------------- */
 table {
   width: 100%;
-  min-width: var(--table-min);  /* keep columns readable; scroll container handles overflow */
+  min-width: var(--table-min);  /* keep columns readable; container scrolls */
   border-collapse: collapse;
   border-spacing: 0;
   font-size: 0.92rem;
 }
 
-/* Column sizing hints for the main leaderboard (16 cols).
-   Adjust as needed for your data. */
+/* Leaderboard: 16 columns */
 #leaderboardTable th:nth-child(1),
 #leaderboardTable td:nth-child(1) { min-width: 70px; }   /* Rank */
 #leaderboardTable th:nth-child(2),
@@ -299,7 +279,7 @@ table {
 #changes24Table th:nth-child(6),
 #changes24Table td:nth-child(6) { min-width: 160px; }   /* Δ Nitros Used */
 
-/* Races per day: 6 columns (added Member Since) */
+/* Races per day: 6 columns (Member Since at col 6) */
 #racesPerDayTable th:nth-child(1),
 #racesPerDayTable td:nth-child(1) { min-width: 70px; }   /* Rank */
 #racesPerDayTable th:nth-child(2),
@@ -404,7 +384,7 @@ a.tag-link, a.tag-link:visited {
 }
 a.tag-link:hover { text-decoration-color: #fff; }
 
-/* Optional: sticky first column for huge tables (apply .sticky-first-col on the table) */
+/* Optional: sticky first column for huge tables (add .sticky-first-col on table) */
 table.sticky-first-col th:first-child,
 table.sticky-first-col td:first-child {
   position: sticky;
@@ -598,30 +578,16 @@ table.sticky-first-col td:first-child {
 .p-2 { padding: .5rem !important; }
 .p-3 { padding: 1rem !important; }
 
-/* -------------------------------------
-   Optional: header/tabs width tweaks
-   - If you want the header and tabs to also expand to the full “frame”, they
-     already use --page-max. To go full-bleed, add .full-bleed on them.
-------------------------------------- */
-
-/* -------------------------------------
-   Optional: density mode for super wide monitors
-   - Add .dense to <body> to condense padding and font size slightly.
-------------------------------------- */
+/* Optional: density mode for super wide monitors */
 body.dense table { font-size: 0.88rem; }
 body.dense thead th,
 body.dense tbody td { padding: 0.5rem 0.6rem; }
 
-/* -------------------------------------
-   Optional: emphasize sticky header separation on scroll
-   - Add .scrolled to .table-container via JS when scrolled vertically.
-------------------------------------- */
+/* Optional: emphasize sticky header separation on scroll */
 .table-container.scrolled thead th {
   box-shadow: 0 6px 10px -4px rgba(0,0,0,0.25);
 }
 
-/* -------------------------------------
-   Optional: zebra intensity tweak
-------------------------------------- */
+/* Optional: zebra intensity tweak */
 .table-container.light-zebra tbody tr:nth-child(even) { background: rgba(255,255,255,0.015); }
 .table-container.dark-zebra  tbody tr:nth-child(even) { background: rgba(255,255,255,0.05); }
