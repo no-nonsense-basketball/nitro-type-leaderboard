@@ -77,11 +77,13 @@
     /* Tabs */
     .tabs {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(4, minmax(140px, 1fr));
       gap: var(--pad-2);
       align-items: stretch;
       margin: 0 auto var(--pad-3);
       max-width: 1200px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
     .tabs .tab {
       background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
@@ -96,6 +98,7 @@
       user-select: none;
       transition: transform .04s ease, box-shadow .15s ease, border-color .15s ease;
       box-shadow: 0 2px 0 var(--shadow) inset, 0 0 0 rgba(0,0,0,0);
+      white-space: nowrap;
     }
     .tabs .tab:hover {
       transform: translateY(-1px);
@@ -116,10 +119,19 @@
       padding: 10px;
       margin: 0 auto 40px;
       max-width: 1200px;
-      overflow: hidden;
+      overflow: visible;
       box-shadow: 0 18px 40px rgba(0,0,0,0.35);
     }
     .table-container.active { display: block; }
+
+    /* Table scroller for wide tables */
+    .table-scroller {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .table-scroller table {
+      min-width: max-content;
+    }
 
     /* Tables */
     table {
@@ -142,12 +154,15 @@
       cursor: pointer;
       user-select: none;
       text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
     }
     thead th.asc,
     thead th.desc {
       color: #ffffff;
       text-shadow: 0 0 10px rgba(110,168,254,0.6);
     }
+
     thead th.asc::after,
     thead th.desc::after {
       content: '';
@@ -173,6 +188,8 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
     }
     tbody tr:nth-child(even) { background: rgba(255,255,255,0.025); }
     tbody tr:hover { background: linear-gradient(90deg, rgba(110,168,254,0.08), rgba(110,168,254,0)); }
@@ -272,83 +289,91 @@
 
   <!-- Leaderboard -->
   <section id="leaderboardSection" class="table-container active">
-    <table id="leaderboardTable">
-      <thead>
-        <tr>
-          <th>Rank</th>
-          <th>Display Name</th>
-          <th>Team Tag</th>
-          <th>Title</th>
-          <th>Total Races</th>
-          <th>Avg WPM</th>
-          <th>Top WPM</th>
-          <th>Profile Views</th>
-          <th>Member Since</th>
-          <th>Garage Cars</th>
-          <th>Nitros Used</th>
-          <th>Longest Session</th>
-          <th>League Tier</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="table-scroller">
+      <table id="leaderboardTable">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Display Name</th>
+            <th>Team Tag</th>
+            <th>Title</th>
+            <th>Total Races</th>
+            <th>Avg WPM</th>
+            <th>Top WPM</th>
+            <th>Profile Views</th>
+            <th>Member Since</th>
+            <th>Garage Cars</th>
+            <th>Nitros Used</th>
+            <th>Longest Session</th>
+            <th>League Tier</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
     <p class="note" id="leaderboardNote"></p>
   </section>
 
   <!-- Races Per Day -->
   <section id="racesPerDaySection" class="table-container">
-    <table id="racesPerDayTable">
-      <thead>
-        <tr>
-          <th>Rank</th>
-          <th>Display Name</th>
-          <th>Total Races</th>
-          <th>Days Active</th>
-          <th>Races / Day</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="table-scroller">
+      <table id="racesPerDayTable">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Display Name</th>
+            <th>Total Races</th>
+            <th>Join Date</th>
+            <th>Days Active</th>
+            <th>Races / Day</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </section>
 
   <!-- 24-Hour Leaderboard -->
   <section id="changes24Section" class="table-container">
-    <table id="changes24Table">
-      <thead>
-        <tr>
-          <th>Rank</th>
-          <th>Display Name</th>
-          <th class="desc">Δ Total Races</th>
-          <th>Δ Top WPM</th>
-          <th>Δ Profile Views</th>
-          <th>Δ Nitros Used</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="table-scroller">
+      <table id="changes24Table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Display Name</th>
+            <th class="desc">Δ Total Races</th>
+            <th>Δ Top WPM</th>
+            <th>Δ Profile Views</th>
+            <th>Δ Nitros Used</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
     <p class="note" id="dailyNote"></p>
   </section>
 
   <!-- Event -->
   <section id="eventSection" class="table-container">
     <div class="note" id="eventInfo">Event metrics combine API_before/now and Before/After profile snapshots. Typed/errs are used for accuracy and points but not displayed.</div>
-    <div class="note hidden" id="eventComingSoon">Coming Soon</div>
-    <table id="eventTable">
-      <thead>
-        <tr>
-          <th>Rank</th>
-          <th>Display Name</th>
-          <th>Team Tag</th>
-          <th class="desc">Δ Total Races</th>
-          <th>Avg WPM</th>
-          <th>Avg Accuracy</th>
-          <th>Avg Points</th>
-          <th>Δ Nitros Used</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <p class="note" id="eventStatus"></p>
+    <div class="note" id="eventStatus"></div>
+    <div class="table-scroller">
+      <table id="eventTable">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Display Name</th>
+            <th>Team Tag</th>
+            <th class="desc">Δ Total Races</th>
+            <th>Avg WPM</th>
+            <th>Avg Accuracy</th>
+            <th>Avg Points</th>
+            <th>Δ Nitros Used</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </section>
 
   <script>
@@ -416,19 +441,16 @@
         loadEventFourFiles(EVENT_FILES)
           .then(result => {
             if (!result || result.beforeCount === 0) {
-              showEventComingSoon(true);
               clearEventTable();
-              setEventStatus('Event BEFORE data missing or empty.');
+              setEventStatus('No event data available.');
               return;
             }
-            showEventComingSoon(false);
             renderEventComputed(result.rows);
             enableSorting('eventTable');
             setEventStatus(`Loaded ${result.beforeCount.toLocaleString()} (before API) and ${result.nowCount.toLocaleString()} (now API); ${result.rows.length.toLocaleString()} racers with Δ races > 0.`);
           })
           .catch(err => {
             console.error('Event computation error:', err);
-            showEventComingSoon(true);
             clearEventTable();
             setEventStatus('Error loading event data.');
           });
@@ -534,13 +556,15 @@
       function renderRacesPerDay(data) {
         const now = Date.now();
         const list = (data || []).map(r => {
-          const joined = parseLocalDate(r.joinDate).getTime();
+          const parsed = parseLocalDate(r.joinDate);
+          const joined = parsed.getTime();
           const days = Math.max(1, Math.floor((now - joined) / 86400000));
           const total = safeNumber(r.racesPlayed);
           return {
             slug: String(r.username || ''),
             tag: String(r.tag || ''),
             total,
+            joinDate: String(r.joinDate || ''),
             days,
             perDay: total / days
           };
@@ -548,6 +572,7 @@
 
         const tbody = document.querySelector('#racesPerDayTable tbody');
         tbody.innerHTML = '';
+
         const frag = document.createDocumentFragment();
 
         list.forEach((r, i) => {
@@ -560,6 +585,7 @@
               <a class="link-quiet" href="${escapeAttr(racerUrl)}" target="_blank">${escapeHTML(name)}</a>
             </td>
             <td data-label="Total Races">${r.total.toLocaleString()}</td>
+            <td data-label="Join Date">${escapeHTML(r.joinDate)}</td>
             <td data-label="Days Active">${r.days.toLocaleString()}</td>
             <td data-label="Races / Day">${r.perDay.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
           `.trim();
@@ -729,18 +755,6 @@
       }
 
       // UI helpers for Event
-      function showEventComingSoon(show) {
-        const note = document.getElementById('eventComingSoon');
-        const table = document.getElementById('eventTable');
-        if (!note || !table) return;
-        if (show) {
-          note.classList.remove('hidden');
-          table.classList.add('hidden');
-        } else {
-          note.classList.add('hidden');
-          table.classList.remove('hidden');
-        }
-      }
       function clearEventTable() {
         const tbody = document.querySelector('#eventTable tbody');
         if (tbody) tbody.innerHTML = '';
@@ -858,4 +872,3 @@
   </script>
 </body>
 </html>
-
