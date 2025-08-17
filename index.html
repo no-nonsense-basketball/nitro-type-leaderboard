@@ -2,153 +2,297 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Nitro Type Top 1000 Racers</title>
-
+  <title>Nitro Type: Top 1000, Diffs, Races/Day, and Event Engine (Auditable, Mobile-Fluent, Wide-Frame)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark light" />
   <style>
-    /* Nitro Type Leaderboard — Dark, fast, responsive */
+    /* ======================================================================
+       Nitro Type Leaderboard Suite
+       - Dark-first, responsive, wide-frame with horizontal scroll
+       - Fully auditable with Inspect modal
+       - File inputs (local), URL inputs, NDJSON parsing, 4-file event engine
+       - Sorting, filtering, column picker, export, pinned rows
+       - Mobile stacked-card layout with data-labels
+       - Accessible focus and reduced-motion preferences
+       ====================================================================== */
 
     :root {
-      --bg: #111317;
-      --surface: #151922;
-      --surface-2: #1b2130;
-      --surface-3: #212838;
-      --text: #e8ecf1;
-      --text-dim: #b5c0cf;
-      --muted: #8b9ab3;
+      /* Palette */
+      --bg: #0f131a;
+      --surface: #141a24;
+      --surface-2: #1a2130;
+      --surface-3: #20293c;
+      --surface-4: #27314a;
+      --text: #e8edf5;
+      --text-dim: #b9c5d9;
+      --muted: #8ea0bf;
+      --border: #2a3348;
+
       --accent: #6ea8fe;
-      --accent-2: #8fdaff;
-      --good: #37d67a;
+      --accent-2: #89c2ff;
+      --good: #36d17b;
       --warn: #ffb020;
-      --bad: #ff5c5c;
-      --border: #2a3244;
-      --shadow: rgba(0,0,0,0.35);
-      --focus: #82b1ff;
+      --bad: #ff6565;
+      --info: #61dafb;
 
-      --radius-sm: 6px;
-      --radius-md: 10px;
-      --radius-lg: 14px;
+      /* Radius, spacing, font */
+      --r-sm: 6px;
+      --r-md: 10px;
+      --r-lg: 14px;
 
-      --pad-1: 0.4rem;
-      --pad-2: 0.66rem;
-      --pad-3: 1rem;
+      --p-1: 0.4rem;
+      --p-2: 0.66rem;
+      --p-3: 1rem;
+      --p-4: 1.5rem;
 
       --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+      /* Other */
+      --shadow: rgba(0,0,0,0.4);
+      --focus: #82b1ff;
+      --bar-bg: rgba(110,168,254,0.18);
+      --bar-fg: #6ea8fe;
+
+      --row-height: 40px;
+      --sticky-top: 0;
+
+      /* Density scale (adjustable) */
+      --density: 1;
     }
 
-    /* Base */
-    *,
-    *::before,
-    *::after { box-sizing: border-box; }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f6f8fb;
+        --surface: #ffffff;
+        --surface-2: #f4f6fa;
+        --surface-3: #eef2f9;
+        --surface-4: #e9eff8;
+        --text: #0d1b2a;
+        --text-dim: #334155;
+        --muted: #64748b;
+        --border: #dbe3f1;
+
+        --accent: #1e66f5;
+        --accent-2: #5294ff;
+        --good: #0f9d58;
+        --warn: #f59e0b;
+        --bad: #ef4444;
+        --info: #0ea5e9;
+
+        --bar-bg: rgba(30,102,245,0.12);
+        --bar-fg: #1e66f5;
+        --shadow: rgba(0,0,0,0.1);
+      }
+    }
+
+    /* Base reset */
+    *, *::before, *::after { box-sizing: border-box; }
     html, body { height: 100%; }
     body {
       margin: 0;
       font-family: var(--font);
-      background: radial-gradient(1000px 600px at 20% -10%, #162037 0%, var(--bg) 60%) no-repeat fixed;
+      background:
+        radial-gradient(1400px 700px at 12% -10%, #162340 0%, var(--bg) 50%) fixed no-repeat,
+        var(--bg);
       color: var(--text);
-      line-height: 1.35;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
-      padding: var(--pad-3);
+      letter-spacing: 0.02px;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: var(--p-4) var(--p-3);
     }
 
     /* Header */
-    header {
-      text-align: center;
-      padding: 16px 12px;
-      margin: 0 auto var(--pad-3);
-      max-width: 1200px;
-      background: linear-gradient(180deg, rgba(33,40,56,0.75), rgba(27,33,48,0.75));
+    header.site {
+      background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
       border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+      border-radius: var(--r-lg);
+      padding: var(--p-3);
+      box-shadow: 0 30px 60px var(--shadow);
+      margin-bottom: var(--p-4);
     }
-    header h1 {
-      margin: 0 0 6px;
-      font-weight: 800;
-      letter-spacing: 0.2px;
-      color: #f0f5ff;
-      text-shadow: 0 6px 18px rgba(110,168,254,0.18);
+    header.site h1 {
+      margin: 0 0 4px 0;
+      font-size: clamp(1.4rem, 2.6vw, 2rem);
+      font-weight: 900;
+      color: #f1f5ff;
+      text-shadow: 0 10px 24px rgba(110,168,254,0.25);
     }
-    header p { margin: 2px 0; color: var(--text-dim); }
-    header a { color: var(--accent); text-decoration: none; }
-    header a:hover { color: var(--accent-2); }
+    header.site .sub {
+      margin: 4px 0 0 0;
+      color: var(--text-dim);
+      font-size: 0.98rem;
+    }
+    .links a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .links a:hover { color: var(--accent-2); }
+
+    /* Actions bar */
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 12px;
+      align-items: center;
+      margin: 18px 0 0 0;
+    }
+    .actions .group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .btn {
+      background: linear-gradient(180deg, var(--surface-4), var(--surface-2));
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 8px 12px;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+      transition: transform .04s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn:hover { transform: translateY(-1px); border-color: var(--focus); box-shadow: 0 10px 24px var(--shadow); }
+    .btn:active { transform: translateY(0); }
+    .btn.primary { background: linear-gradient(180deg, #1f3c78, var(--accent)); border-color: rgba(255,255,255,0.2); color: #fff; }
+    .btn.good { background: linear-gradient(180deg, #1f3c30, var(--good)); border-color: rgba(255,255,255,0.18); color:#fff; }
+    .btn.warn { background: linear-gradient(180deg, #4a3c1d, var(--warn)); border-color: rgba(255,255,255,0.18); color:#121212; }
+    .btn.bad  { background: linear-gradient(180deg, #4a1f1f, var(--bad)); border-color: rgba(255,255,255,0.18); color:#fff; }
+    .btn.icon { padding: 8px; width: 36px; height: 36px; justify-content: center; }
+
+    .switch {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(180deg, var(--surface-4), var(--surface-2));
+      border: 1px solid var(--border); border-radius: var(--r-sm);
+      padding: 8px 10px; color: var(--text);
+      user-select: none;
+    }
+    .switch input { margin: 0; accent-color: var(--accent); }
+
+    /* Filters and data sources panels */
+    .panels {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      box-shadow: 0 18px 40px var(--shadow);
+      padding: 12px;
+    }
+    .panel h2 {
+      margin: 4px 4px 8px 4px;
+      font-size: 1.05rem;
+      letter-spacing: .2px;
+    }
+    .panel .row {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .panel .row > label { grid-column: span 3; color: var(--text-dim); }
+    .panel .row > input[type="text"],
+    .panel .row > input[type="number"],
+    .panel .row > select {
+      grid-column: span 9;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 8px 10px;
+      color: var(--text);
+      width: 100%;
+    }
+    .panel .row input[type="checkbox"] { transform: translateY(1px); margin-right: 6px; accent-color: var(--accent); }
+    .panel small { color: var(--muted); }
+    .inline { display: inline-flex; align-items: center; gap: 8px; }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .chip {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 10px;
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      cursor: default;
+    }
 
     /* Tabs */
     .tabs {
       display: grid;
-      grid-template-columns: repeat(4, minmax(140px, 1fr));
-      gap: var(--pad-2);
-      align-items: stretch;
-      margin: 0 auto var(--pad-3);
-      max-width: 1200px;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
+      grid-template-columns: repeat(5, minmax(120px, 1fr));
+      gap: 10px;
+      margin: 18px 0;
     }
-    .tabs .tab {
+    .tab {
       background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
-      color: var(--text);
       border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 0.6rem 0.8rem;
+      border-radius: var(--r-sm);
       text-align: center;
-      font-weight: 700;
-      letter-spacing: 0.15px;
+      padding: 10px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
       cursor: pointer;
       user-select: none;
-      transition: transform .04s ease, box-shadow .15s ease, border-color .15s ease;
-      box-shadow: 0 2px 0 var(--shadow) inset, 0 0 0 rgba(0,0,0,0);
+      color: var(--text);
       white-space: nowrap;
+      box-shadow: 0 2px 0 var(--shadow) inset, 0 0 0 rgba(0,0,0,0);
+      transition: transform .04s ease, box-shadow .15s ease, border-color .15s ease, color .15s ease;
     }
-    .tabs .tab:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 6px 16px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.03) inset;
-    }
-    .tabs .tab.active {
-      color: #ffffff;
-      border-color: var(--focus);
-      text-shadow: 0 0 10px rgba(110,168,254,0.6);
-    }
+    .tab:hover { transform: translateY(-1px); box-shadow: 0 6px 16px var(--shadow), 0 0 0 1px rgba(255,255,255,0.03) inset; }
+    .tab.active { color:#fff; border-color: var(--focus); text-shadow: 0 0 10px rgba(110,168,254,0.6); }
 
-    /* Sections */
-    .table-container {
-      display: none;
+    /* Section containers */
+    .section {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
+      border-radius: var(--r-lg);
       padding: 10px;
-      margin: 0 auto 40px;
-      max-width: 1200px;
-      overflow: visible;
-      box-shadow: 0 18px 40px rgba(0,0,0,0.35);
+      margin-bottom: 24px;
+      box-shadow: 0 18px 40px var(--shadow);
     }
-    .table-container.active { display: block; }
+    .section.hidden { display: none; }
 
     /* Table scroller for wide tables */
     .table-scroller {
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
+      border-radius: var(--r-md);
     }
-    .table-scroller table {
-      min-width: max-content;
-    }
+    .table-scroller table { min-width: max-content; width: 100%; }
 
     /* Tables */
     table {
-      width: 100%;
       border-collapse: collapse;
       border-spacing: 0;
-      font-size: 0.92rem;
+      font-size: calc(0.92rem * var(--density));
+      width: 100%;
     }
+
     thead th {
-      position: sticky;
-      top: 0;
+      position: sticky; top: var(--sticky-top);
       z-index: 2;
       background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
       color: var(--text);
-      font-weight: 700;
-      letter-spacing: 0.15px;
-      padding: 0.6rem 0.66rem;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+      padding: 0.66rem 0.7rem;
       border-bottom: 1px solid var(--border);
       white-space: nowrap;
       cursor: pointer;
@@ -157,37 +301,32 @@
       font-variant-numeric: tabular-nums;
       font-feature-settings: "tnum";
     }
-    thead th.asc,
-    thead th.desc {
-      color: #ffffff;
-      text-shadow: 0 0 10px rgba(110,168,254,0.6);
+    thead th.asc, thead th.desc {
+      color: #fff; text-shadow: 0 0 10px rgba(110,168,254,0.6);
     }
-
-    thead th.asc::after,
-    thead th.desc::after {
+    thead th.asc::after, thead th.desc::after {
       content: '';
-      display: inline-block;
-      margin-left: 6px;
-      width: 0;
-      height: 0;
-      vertical-align: middle;
-      border-left: 5px solid transparent;
-      border-right: 5px solid transparent;
+      display: inline-block; margin-left: 6px;
+      width: 0; height: 0; vertical-align: middle;
+      border-left: 5px solid transparent; border-right: 5px solid transparent;
     }
     thead th.asc::after { border-bottom: 7px solid var(--accent); }
     thead th.desc::after { border-top: 7px solid var(--accent); }
+
     thead th:first-child,
     thead th:nth-child(2),
     thead th:nth-child(3) { text-align: left; }
 
     tbody td {
-      padding: 0.56rem 0.66rem;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
+      padding: 0.58rem 0.7rem;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
       color: var(--text);
       text-align: right;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      height: var(--row-height);
+      vertical-align: middle;
       font-variant-numeric: tabular-nums;
       font-feature-settings: "tnum";
     }
@@ -197,691 +336,679 @@
     tbody td:nth-child(2),
     tbody td:nth-child(3) { text-align: left; }
 
-    /* Link utilities (white underline) */
-    a.link-quiet, a.link-quiet:visited {
-      color: #fff;
-      text-decoration: underline;
-      text-decoration-color: rgba(255,255,255,0.9);
+    /* Bar cells (e.g., points bars) */
+    .bar {
+      display: inline-flex; align-items: center; gap: 8px; min-width: 140px;
+    }
+    .bar .track {
+      position: relative; width: 120px; height: 8px; border-radius: 999px;
+      background: var(--bar-bg); overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .bar .fill {
+      position: absolute; left: 0; top: 0; bottom: 0;
+      background: var(--bar-fg);
+      width: 0%;
+      transition: width .25s ease;
+    }
+
+    /* Inline links */
+    a.link, a.link:visited {
+      color: #fff; text-decoration: underline; text-decoration-color: rgba(255,255,255,0.9);
       text-underline-offset: 2px;
     }
-    a.link-quiet:hover { text-decoration-color: #fff; }
-    a.tag-link, a.tag-link:visited {
-      color: #fff;
-      text-decoration: underline;
-      text-underline-offset: 2px;
-    }
-    a.tag-link:hover { text-decoration-color: #fff; }
+    a.link:hover { text-decoration-color: #fff; }
+    a.team, a.team:visited { color: #fff; text-decoration: underline; text-underline-offset: 2px; }
+    a.team:hover { text-decoration-color: #fff; }
 
     /* Notes */
-    .note {
-      color: #e8ecf1;
-      font-size: 0.95rem;
-      text-align: center;
-      margin: 6px 0 10px;
-    }
-    .hidden { display: none !important; }
+    .note { color: var(--text-dim); font-size: 0.95rem; margin: 8px 0 0 2px; }
+    .note strong { color: var(--text); }
 
-    /* Responsive stacked cards */
+    /* Footer summary */
+    .footer-summary {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; color: var(--muted);
+    }
+
+    /* Modal (Inspect) */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      display: none; align-items: center; justify-content: center; z-index: 50;
+    }
+    .modal-backdrop.active { display: flex; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      max-width: 900px; width: 96%;
+      max-height: 86vh; overflow: auto;
+      box-shadow: 0 30px 60px var(--shadow);
+      padding: 12px;
+    }
+    .modal h3 { margin: 0 0 8px 0; }
+    .modal pre {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      color: var(--text);
+      padding: 10px; overflow: auto;
+      font-family: var(--mono);
+      font-size: 0.88rem;
+    }
+    .modal .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .modal .row {
+      display: grid; grid-template-columns: 1fr 2fr; gap: 6px;
+      background: var(--surface-2);
+      padding: 6px 8px; border-radius: var(--r-sm);
+      border: 1px solid var(--border);
+    }
+    .modal .row .label { color: var(--text-dim); }
+    .modal .actions { display:flex; gap:8px; justify-content:flex-end; margin-top: 10px; }
+
+    /* Pinned rows highlight */
+    tr.pinned { box-shadow: inset 0 0 0 9999px rgba(255,255,0,0.05); }
+
+    /* Mobile stacked-card layout */
     @media (max-width: 900px) {
+      .panels { grid-template-columns: 1fr; }
+      .actions { grid-template-columns: 1fr; }
+      .tabs { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
       table, thead, tbody, th, td, tr { display: block; }
       thead { display: none; }
-      tr { margin-bottom: 15px; }
+      tr { margin-bottom: 12px; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; }
       td {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 8px 12px;
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.06);
       }
       td::before {
         content: attr(data-label);
-        flex: 1 1 40%;
-        color: var(--text-dim);
-        font-weight: 700;
-        text-transform: uppercase;
+        flex: 1 1 45%; color: var(--text-dim); font-weight: 800; text-transform: uppercase; padding-right: 8px;
       }
-      td span, td a, td div {
-        flex: 1 1 60%;
-        text-align: right;
-      }
+      td > span, td > a, td > div, td > button { flex: 1 1 55%; text-align: right; }
+      .bar { justify-content: flex-end; }
     }
 
-    /* A11y */
-    :focus-visible {
-      outline: 3px solid rgba(130,177,255,0.35);
-      outline-offset: 2px;
-      border-radius: 8px;
-    }
+    /* Accessibility */
+    :focus-visible { outline: 3px solid rgba(130,177,255,0.35); outline-offset: 2px; border-radius: 8px; }
     @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
-    /* Scrollbar (WebKit) */
+    /* Scrollbars */
     ::-webkit-scrollbar { height: 12px; width: 12px; }
     ::-webkit-scrollbar-track { background: var(--surface); }
     ::-webkit-scrollbar-thumb {
       background: linear-gradient(180deg, #3a4560, #2b344a);
-      border-radius: 10px;
-      border: 2px solid var(--surface);
+      border-radius: 10px; border: 2px solid var(--surface);
     }
-    ::-webkit-scrollbar-thumb:hover {
-      background: linear-gradient(180deg, #4b5a7c, #37415a);
-    }
+    ::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #4b5a7c, #37415a); }
   </style>
 </head>
-
 <body>
-  <header>
-    <h1>Nitro Type Top 1000 Racers</h1>
-    <p>
-      made by
-      <a href="https://www.youtube.com/@InternetTyper" target="_blank">
-        @InternetTyper on YouTube
-      </a>
-    </p>
-    <p id="lastUpdated">Last updated: 7AM Daily CST</p>
-    <p>Contact: https://discord.gg/3XVdxvKgAt on Discord</p>
-  </header>
+  <div class="container">
+    <header class="site">
+      <h1>Nitro Type Leaderboard Suite — Top 1000, Diffs, Races/Day, Event</h1>
+      <div class="sub">
+        <span class="links">
+          made by <a href="https://www.youtube.com/@InternetTyper" target="_blank" rel="noopener">InternetTyper</a>
+        </span>
+        • <span id="lastUpdated">Last updated: —</span>
+        • <span>Discord: <a href="https://discord.gg/3XVdxvKgAt" target="_blank" rel="noopener">invite</a></span>
+      </div>
 
-  <div class="tabs">
-    <div class="tab active" data-target="leaderboardSection">Leaderboard</div>
-    <div class="tab" data-target="racesPerDaySection">Races Per Day</div>
-    <div class="tab" data-target="changes24Section">24-Hour Leaderboard</div>
-    <div class="tab" data-target="eventSection">Event</div>
+      <div class="actions">
+        <div class="group">
+          <button class="btn primary" id="reloadBtn" title="Reload using current sources">⟳ Reload</button>
+          <button class="btn" id="exportVisibleCsvBtn" title="Export the active table as CSV">⤓ Export CSV</button>
+          <button class="btn" id="exportVisibleJsonBtn" title="Export the active table as JSON">⤓ Export JSON</button>
+          <button class="btn" id="exportStateBtn" title="Export all inputs, preferences, and toggles">⤓ Export State</button>
+          <button class="btn" id="importStateBtn" title="Import previously exported state">⇪ Import State</button>
+        </div>
+
+        <label class="switch" title="Dark/Light">
+          <input type="checkbox" id="themeToggle" />
+          Theme
+        </label>
+
+        <label class="switch" title="Show all sections on one page">
+          <input type="checkbox" id="showAllSections" />
+          Show all sections
+        </label>
+
+        <label class="switch" title="Compact density">
+          <input type="checkbox" id="densityToggle" />
+          Compact rows
+        </label>
+      </div>
+    </header>
+
+    <!-- Panels -->
+    <div class="panels">
+      <!-- Data sources -->
+      <section class="panel" aria-labelledby="dataSourcesH2">
+        <h2 id="dataSourcesH2">Data sources and inputs</h2>
+
+        <div class="row">
+          <label for="currentDataUrl"><strong>Current Data URL:</strong></label>
+          <input id="currentDataUrl" type="text" placeholder="e.g., sample_data.json (array or {racers})" />
+        </div>
+        <div class="row">
+          <label for="previousDataUrl"><strong>Previous Data URL:</strong></label>
+          <input id="previousDataUrl" type="text" placeholder="e.g., sample_data_prev.json (optional)" />
+        </div>
+
+        <div class="row">
+          <label><strong>Event files (4):</strong></label>
+          <div class="inline" style="gap:6px; flex-wrap:wrap;">
+            <input id="apiBeforeUrl" type="text" placeholder="API_before.ndjson" style="width: calc(50% - 4px);" />
+            <input id="apiNowUrl" type="text" placeholder="API_now.ndjson" style="width: calc(50% - 4px);" />
+            <input id="dataBeforeUrl" type="text" placeholder="BeforeEventData.json" style="width: calc(50% - 4px);" />
+            <input id="dataNowUrl" type="text" placeholder="AfterEventData.json" style="width: calc(50% - 4px);" />
+          </div>
+        </div>
+
+        <div class="row">
+          <label><strong>Local file inputs:</strong></label>
+          <div class="inline" style="gap:8px; flex-wrap:wrap;">
+            <input type="file" id="fileCurrentData" accept=".json,.ndjson,.txt" />
+            <input type="file" id="filePreviousData" accept=".json,.ndjson,.txt" />
+            <input type="file" id="fileApiBefore" accept=".json,.ndjson,.txt" />
+            <input type="file" id="fileApiNow" accept=".json,.ndjson,.txt" />
+            <input type="file" id="fileDataBefore" accept=".json,.ndjson,.txt" />
+            <input type="file" id="fileDataNow" accept=".json,.ndjson,.txt" />
+          </div>
+        </div>
+
+        <div class="row">
+          <label><strong>Quick presets:</strong></label>
+          <div class="group">
+            <button class="btn" id="loadDefaultPreset">Preset: defaults</button>
+            <button class="btn" id="clearInputs">Clear inputs</button>
+          </div>
+        </div>
+
+        <div class="chips">
+          <span class="chip">Supports JSON arrays and { racers: [...] }</span>
+          <span class="chip">NDJSON line-by-line parsing</span>
+          <span class="chip">Merges API/Data, Before/After</span>
+          <span class="chip">Auditable Inspect modal</span>
+        </div>
+      </section>
+
+      <!-- Filters / View options -->
+      <section class="panel" aria-labelledby="filtersH2">
+        <h2 id="filtersH2">Filters and view options</h2>
+
+        <div class="row">
+          <label for="searchBox"><strong>Search:</strong></label>
+          <input id="searchBox" type="text" placeholder="Filter by display name, username, or team tag…" />
+        </div>
+
+        <div class="row">
+          <label for="teamFilter"><strong>Team tag filter:</strong></label>
+          <input id="teamFilter" type="text" placeholder="e.g., NT or NT-XYZ (comma to OR)" />
+        </div>
+
+        <div class="row">
+          <label for="minRacesDelta"><strong>Min Δ races (24h/Event):</strong></label>
+          <input id="minRacesDelta" type="number" min="0" step="1" placeholder="e.g., 10" />
+        </div>
+
+        <div class="row">
+          <label><strong>Toggles:</strong></label>
+          <div class="inline" style="gap: 12px;">
+            <label class="inline"><input id="hideZeroChanges" type="checkbox" /> Hide zero-change rows</label>
+            <label class="inline"><input id="hideAnomalies" type="checkbox" /> Hide anomalies</label>
+            <label class="inline"><input id="showBars" type="checkbox" checked /> Show points bars</label>
+          </div>
+        </div>
+
+        <div class="row">
+          <label for="anomalyCutoff"><strong>Anomaly cutoff (24h Δ races):</strong></label>
+          <input id="anomalyCutoff" type="number" min="100" step="50" placeholder="2600" />
+        </div>
+
+        <div class="row">
+          <label for="wpmMethod"><strong>WPM method:</strong></label>
+          <select id="wpmMethod">
+            <option value="weighted">Weighted by played delta</option>
+            <option value="current">Use current avgWpm</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label><strong>Column visibility:</strong></label>
+          <div class="inline" id="columnToggles" style="flex-wrap: wrap; gap: 8px;"></div>
+        </div>
+
+        <small>All filters apply to the currently visible table. Sorting is preserved in exports.</small>
+      </section>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs" role="tablist" aria-label="Leaderboard tabs">
+      <div class="tab active" data-target="leaderboardSec" role="tab" aria-selected="true" tabindex="0">Leaderboard</div>
+      <div class="tab" data-target="racesDaySec" role="tab" aria-selected="false" tabindex="-1">Races/Day</div>
+      <div class="tab" data-target="diff24Sec" role="tab" aria-selected="false" tabindex="-1">24h Diffs</div>
+      <div class="tab" data-target="eventSec" role="tab" aria-selected="false" tabindex="-1">Event</div>
+      <div class="tab" data-target="teamsSec" role="tab" aria-selected="false" tabindex="-1">Teams</div>
+    </div>
+
+    <!-- Sections -->
+    <section id="leaderboardSec" class="section">
+      <div class="table-scroller">
+        <table id="leaderboardTable" aria-label="Overall leaderboard table">
+          <thead>
+            <tr>
+              <th data-col="rank">Rank</th>
+              <th data-col="name">Display Name</th>
+              <th data-col="team">Team Tag</th>
+              <th data-col="username">Username</th>
+              <th data-col="title">Title</th>
+              <th data-col="races">Total Races</th>
+              <th data-col="avgWpm">Avg WPM</th>
+              <th data-col="topWpm">Top WPM</th>
+              <th data-col="views">Profile Views</th>
+              <th data-col="joinDate">Join Date</th>
+              <th data-col="days">Days Since Join</th>
+              <th data-col="racesDay">Races/Day</th>
+              <th data-col="cars">Garage Cars</th>
+              <th data-col="nitros">Nitros Used</th>
+              <th data-col="session">Longest Session</th>
+              <th data-col="league">League Tier</th>
+              <th data-col="inspect">Inspect</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="footer-summary" id="leaderboardSummary"></div>
+      <p class="note" id="leaderboardNote"></p>
+    </section>
+
+    <section id="racesDaySec" class="section hidden">
+      <div class="table-scroller">
+        <table id="racesDayTable" aria-label="Races per day table">
+          <thead>
+            <tr>
+              <th data-col="rank">Rank</th>
+              <th data-col="name">Display Name</th>
+              <th data-col="team">Team Tag</th>
+              <th data-col="username">Username</th>
+              <th data-col="totalRaces">Total Races</th>
+              <th data-col="joinDate">Join Date</th>
+              <th data-col="days">Days Active</th>
+              <th data-col="racesDay">Races/Day</th>
+              <th data-col="inspect">Inspect</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="diff24Sec" class="section hidden">
+      <div class="table-scroller">
+        <table id="diff24Table" aria-label="24-hour changes table">
+          <thead>
+            <tr>
+              <th data-col="rank">Rank</th>
+              <th data-col="name">Display Name</th>
+              <th data-col="team">Team Tag</th>
+              <th data-col="username">Username</th>
+              <th data-col="dRaces">Δ Total Races</th>
+              <th data-col="dTopWpm">Δ Top WPM</th>
+              <th data-col="dViews">Δ Profile Views</th>
+              <th data-col="dNitros">Δ Nitros Used</th>
+              <th data-col="inspect">Inspect</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="note" id="diff24Note"></p>
+    </section>
+
+    <section id="eventSec" class="section hidden">
+      <p class="note" id="eventInfo">Event metrics merge four files: API_before/now (NDJSON okay) and Before/After profile snapshots. Typed/errs deltas drive accuracy; WPM can be weighted by played deltas; Points derive from both. Data deltas supply nitros. Full audit per racer via Inspect.</p>
+      <p class="note" id="eventStatus">Loading…</p>
+      <div class="table-scroller">
+        <table id="eventTable" aria-label="Event period table">
+          <thead>
+            <tr>
+              <th data-col="rank">Rank</th>
+              <th data-col="name">Display Name</th>
+              <th data-col="team">Team Tag</th>
+              <th data-col="username">Username</th>
+              <th data-col="dRaces">Δ Total Races</th>
+              <th data-col="avgWpm">Avg WPM</th>
+              <th data-col="acc">Avg Accuracy</th>
+              <th data-col="points">Avg Points</th>
+              <th data-col="dNitros">Δ Nitros</th>
+              <th data-col="inspect">Inspect</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="teamsSec" class="section hidden">
+      <div class="table-scroller">
+        <table id="teamsTable" aria-label="Teams aggregate table">
+          <thead>
+            <tr>
+              <th data-col="rank">Rank</th>
+              <th data-col="team">Team Tag</th>
+              <th data-col="count">Racers</th>
+              <th data-col="sumRaces">Total Races</th>
+              <th data-col="avgRaces">Avg Races/Racer</th>
+              <th data-col="avgWpm">Avg WPM (mean)</th>
+              <th data-col="topWpm">Top WPM (max)</th>
+              <th data-col="sumViews">Total Views</th>
+              <th data-col="sumNitros">Total Nitros</th>
+              <th data-col="eventDRaces">Event Δ Races</th>
+              <th data-col="eventPoints">Event Avg Points (mean)</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="note">Team aggregates respect current table filters where applicable. Event columns appear when event data is loaded.</p>
+    </section>
+
+    <!-- Inspect Modal -->
+    <div class="modal-backdrop" id="inspectModalBackdrop" aria-hidden="true">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="inspectTitle">
+        <h3 id="inspectTitle">Inspect racer</h3>
+        <div class="grid" id="inspectGrid">
+          <!-- Populated dynamically: Left = Before, Right = After (API/Data) -->
+        </div>
+        <h4>Raw merged fields</h4>
+        <pre id="inspectRaw"></pre>
+        <div class="actions">
+          <button class="btn" id="copyAuditBtn">Copy audit JSON</button>
+          <button class="btn" id="closeInspectBtn">Close</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <!-- Leaderboard -->
-  <section id="leaderboardSection" class="table-container active">
-    <div class="table-scroller">
-      <table id="leaderboardTable">
-        <thead>
-          <tr>
-            <th>Rank</th>
-            <th>Display Name</th>
-            <th>Team Tag</th>
-            <th>Title</th>
-            <th>Total Races</th>
-            <th>Avg WPM</th>
-            <th>Top WPM</th>
-            <th>Profile Views</th>
-            <th>Member Since</th>
-            <th>Garage Cars</th>
-            <th>Nitros Used</th>
-            <th>Longest Session</th>
-            <th>League Tier</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-    <p class="note" id="leaderboardNote"></p>
-  </section>
-
-  <!-- Races Per Day -->
-  <section id="racesPerDaySection" class="table-container">
-    <div class="table-scroller">
-      <table id="racesPerDayTable">
-        <thead>
-          <tr>
-            <th>Rank</th>
-            <th>Display Name</th>
-            <th>Total Races</th>
-            <th>Join Date</th>
-            <th>Days Active</th>
-            <th>Races / Day</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- 24-Hour Leaderboard -->
-  <section id="changes24Section" class="table-container">
-    <div class="table-scroller">
-      <table id="changes24Table">
-        <thead>
-          <tr>
-            <th>Rank</th>
-            <th>Display Name</th>
-            <th class="desc">Δ Total Races</th>
-            <th>Δ Top WPM</th>
-            <th>Δ Profile Views</th>
-            <th>Δ Nitros Used</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-    <p class="note" id="dailyNote"></p>
-  </section>
-
-  <!-- Event -->
-  <section id="eventSection" class="table-container">
-    <div class="note" id="eventInfo">Event metrics combine API_before/now and Before/After profile snapshots. Typed/errs are used for accuracy and points but not displayed.</div>
-    <div class="note" id="eventStatus"></div>
-    <div class="table-scroller">
-      <table id="eventTable">
-        <thead>
-          <tr>
-            <th>Rank</th>
-            <th>Display Name</th>
-            <th>Team Tag</th>
-            <th class="desc">Δ Total Races</th>
-            <th>Avg WPM</th>
-            <th>Avg Accuracy</th>
-            <th>Avg Points</th>
-            <th>Δ Nitros Used</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </section>
-
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // Constants
-      const MAX_24H_RACES = 2600; // anomaly cutoff
-      const EVENT_FILES = {
-        apiBefore: 'API_before.ndjson',   // NDJSON lines
-        apiNow: 'API_now.ndjson',         // NDJSON lines
-        dataBefore: 'BeforeEventData.json',
-        dataNow: 'AfterEventData.json'
+    /* ======================================================================
+       App State and Configuration
+       ====================================================================== */
+    const App = {
+      // DOM refs filled on init
+      dom: {},
+      // Data caches
+      data: {
+        current: { updatedAt: null, racers: [] },     // { updatedAt?, racers[] } or []
+        previous: { updatedAt: null, racers: [] },
+        event: { rows: [], beforeCount: 0, nowCount: 0, maps: null },
+        // Index maps for inspecting (API/Data, Before/After):
+        sources: {
+          apiBefore: {},
+          apiNow: {},
+          dataBefore: {},
+          dataNow: {}
+        }
+      },
+      // Preferences and filters (persist to localStorage)
+      prefs: {
+        themeDark: true,
+        showAllSections: false,
+        compactDensity: false,
+        showBars: true,
+        anomalyCutoff: 2600,
+        hideZeroChanges: false,
+        hideAnomalies: false,
+        wpmMethod: 'weighted',
+        search: '',
+        teamFilter: '',
+        minRacesDelta: 0,
+        columnVisibility: {
+          leaderboard: {},
+          racesDay: {},
+          diff24: {},
+          event: {},
+          teams: {}
+        }
+      },
+      // Column metadata per table (id, label, defaultVisible)
+      columns: {
+        leaderboard: [
+          { id: 'rank', label: 'Rank', v: true },
+          { id: 'name', label: 'Display Name', v: true },
+          { id: 'team', label: 'Team Tag', v: true },
+          { id: 'username', label: 'Username', v: true },
+          { id: 'title', label: 'Title', v: true },
+          { id: 'races', label: 'Total Races', v: true },
+          { id: 'avgWpm', label: 'Avg WPM', v: true },
+          { id: 'topWpm', label: 'Top WPM', v: true },
+          { id: 'views', label: 'Profile Views', v: true },
+          { id: 'joinDate', label: 'Join Date', v: true },
+          { id: 'days', label: 'Days Since Join', v: false },
+          { id: 'racesDay', label: 'Races/Day', v: true },
+          { id: 'cars', label: 'Garage Cars', v: false },
+          { id: 'nitros', label: 'Nitros Used', v: false },
+          { id: 'session', label: 'Longest Session', v: false },
+          { id: 'league', label: 'League Tier', v: false },
+          { id: 'inspect', label: 'Inspect', v: true }
+        ],
+        racesDay: [
+          { id: 'rank', label: 'Rank', v: true },
+          { id: 'name', label: 'Display Name', v: true },
+          { id: 'team', label: 'Team Tag', v: true },
+          { id: 'username', label: 'Username', v: true },
+          { id: 'totalRaces', label: 'Total Races', v: true },
+          { id: 'joinDate', label: 'Join Date', v: true },
+          { id: 'days', label: 'Days Active', v: true },
+          { id: 'racesDay', label: 'Races/Day', v: true },
+          { id: 'inspect', label: 'Inspect', v: true }
+        ],
+        diff24: [
+          { id: 'rank', label: 'Rank', v: true },
+          { id: 'name', label: 'Display Name', v: true },
+          { id: 'team', label: 'Team Tag', v: true },
+          { id: 'username', label: 'Username', v: true },
+          { id: 'dRaces', label: 'Δ Total Races', v: true },
+          { id: 'dTopWpm', label: 'Δ Top WPM', v: true },
+          { id: 'dViews', label: 'Δ Profile Views', v: true },
+          { id: 'dNitros', label: 'Δ Nitros Used', v: true },
+          { id: 'inspect', label: 'Inspect', v: true }
+        ],
+        event: [
+          { id: 'rank', label: 'Rank', v: true },
+          { id: 'name', label: 'Display Name', v: true },
+          { id: 'team', label: 'Team Tag', v: true },
+          { id: 'username', label: 'Username', v: true },
+          { id: 'dRaces', label: 'Δ Total Races', v: true },
+          { id: 'avgWpm', label: 'Avg WPM', v: true },
+          { id: 'acc', label: 'Avg Accuracy', v: true },
+          { id: 'points', label: 'Avg Points', v: true },
+          { id: 'dNitros', label: 'Δ Nitros', v: true },
+          { id: 'inspect', label: 'Inspect', v: true }
+        ],
+        teams: [
+          { id: 'rank', label: 'Rank', v: true },
+          { id: 'team', label: 'Team Tag', v: true },
+          { id: 'count', label: 'Racers', v: true },
+          { id: 'sumRaces', label: 'Total Races', v: true },
+          { id: 'avgRaces', label: 'Avg Races/Racer', v: true },
+          { id: 'avgWpm', label: 'Avg WPM (mean)', v: true },
+          { id: 'topWpm', label: 'Top WPM (max)', v: true },
+          { id: 'sumViews', label: 'Total Views', v: false },
+          { id: 'sumNitros', label: 'Total Nitros', v: false },
+          { id: 'eventDRaces', label: 'Event Δ Races', v: true },
+          { id: 'eventPoints', label: 'Event Avg Points (mean)', v: true }
+        ]
+      },
+      // Sorting state per table
+      sort: {
+        leaderboard: { colIndex: 5, asc: false }, // default sort by Total Races desc
+        racesDay: { colIndex: 7, asc: false },    // Races/Day desc
+        diff24: { colIndex: 4, asc: false },      // Δ races desc
+        event: { colIndex: 4, asc: false },       // Δ races desc
+        teams: { colIndex: 9, asc: false }        // Event Δ races desc
+      },
+      // Pinned usernames (highlight rows)
+      pinned: new Set()
+    };
+
+    /* ======================================================================
+       Utilities (formatting, parsing, safe ops)
+       ====================================================================== */
+    function escapeHTML(s) {
+      return String(s ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+    function escapeAttr(s) { return escapeHTML(s).replace(/"/g, '&quot;'); }
+
+    function safeNumber(x, dv = 0) {
+      const n = Number(x);
+      return Number.isFinite(n) ? n : dv;
+    }
+    function safeInt(x, dv = 0) {
+      const n = parseInt(x, 10);
+      return Number.isFinite(n) ? n : dv;
+    }
+    function clamp(min, v, max) { return Math.max(min, Math.min(max, v)); }
+
+    function parseLocalDate(input) {
+      const raw = String(input || '').trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+        const [y, m, d] = raw.split('-').map(n => parseInt(n, 10));
+        const dt = new Date(y, m - 1, d, 0, 0, 0, 0);
+        if (!isNaN(dt.getTime())) return dt;
+      }
+      const dt2 = new Date(raw);
+      if (!isNaN(dt2.getTime())) return dt2;
+      return new Date(NaN);
+    }
+    function daysBetween(start, end = new Date()) {
+      const a = start instanceof Date ? start : parseLocalDate(start);
+      const b = end instanceof Date ? end : parseLocalDate(end);
+      if (isNaN(a.getTime()) || isNaN(b.getTime())) return 0;
+      const diffMs = b - a;
+      return Math.max(0, Math.floor(diffMs / 86400000));
+    }
+
+    // Parse numbers from strings with commas, %, ±, etc.
+    function parseNumberSmart(s) {
+      const str = String(s || '').trim();
+      if (!str) return NaN;
+      if (str === '—' || str.toLowerCase() === 'na' || str.toLowerCase() === 'n/a') return NaN;
+      const pct = str.endsWith('%');
+      const cleaned = str.replace(/,/g, '').replace(/[^\d\.\-]/g, '');
+      const num = parseFloat(cleaned);
+      if (isNaN(num)) return NaN;
+      return pct ? num : num;
+    }
+
+    // Simple time formatting from minutes or seconds
+    function formatDurationMinutes(mins) {
+      const m = Math.floor(safeNumber(mins));
+      const h = Math.floor(m / 60);
+      const mm = m % 60;
+      if (h > 0) return `${h}h ${mm}m`;
+      return `${mm}m`;
+    }
+
+    function formatDeltaInt(n) {
+      const v = safeNumber(n);
+      const sign = v > 0 ? '+' : '';
+      return `${sign}${v.toLocaleString()}`;
+    }
+
+    function ntRacerURL(username) {
+      const slug = String(username || '').trim();
+      return slug ? `https://www.nitrotype.com/racer/${encodeURIComponent(slug)}` : '#';
+    }
+    function ntTeamURL(tag) {
+      const t = String(tag || '').trim();
+      return t ? `https://www.nitrotype.com/team/${encodeURIComponent(t)}` : '#';
+    }
+    function prettyNameFromSlug(slug) {
+      // If no displayName is provided in sources, best-effort fallback
+      return String(slug || '');
+    }
+
+    // Array helpers
+    function toArray(maybeArray) {
+      if (Array.isArray(maybeArray)) return maybeArray;
+      if (maybeArray && typeof maybeArray === 'object' && Array.isArray(maybeArray.racers)) return maybeArray.racers;
+      return [];
+    }
+    function indexByKey(arr, keyFn) {
+      const out = Object.create(null);
+      for (const item of arr || []) {
+        const k = String(keyFn(item) || '').toLowerCase();
+        if (!k) continue;
+        out[k] = item;
+      }
+      return out;
+    }
+    function pickFirstNonEmpty(arr, fallback) {
+      for (const v of arr) {
+        if (v !== undefined && v !== null && String(v).trim() !== '') return String(v);
+      }
+      return fallback;
+    }
+    function groupBy(arr, keyFn) {
+      const map = new Map();
+      for (const x of arr || []) {
+        const k = keyFn(x);
+        if (!map.has(k)) map.set(k, []);
+        map.get(k).push(x);
+      }
+      return map;
+    }
+
+    // Debounce
+    function debounce(fn, ms = 200) {
+      let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+    }
+
+    // Persist
+    const STORE_KEY = 'nt_leaderboard_suite_state_v1';
+    function saveState() {
+      const st = {
+        prefs: App.prefs,
+        inputs: {
+          currentDataUrl: App.dom.currentDataUrl.value,
+          previousDataUrl: App.dom.previousDataUrl.value,
+          apiBeforeUrl: App.dom.apiBeforeUrl.value,
+          apiNowUrl: App.dom.apiNowUrl.value,
+          dataBeforeUrl: App.dom.dataBeforeUrl.value,
+          dataNowUrl: App.dom.dataNowUrl.value
+        }
       };
-      const WPM_METHOD = 'weighted'; // 'weighted' | 'current'
-
-      // Tabs
-      const tabs = document.querySelectorAll('.tabs .tab');
-      const sections = document.querySelectorAll('.table-container');
-      tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-          tabs.forEach(t => t.classList.remove('active'));
-          sections.forEach(s => s.classList.remove('active'));
-          tab.classList.add('active');
-          const targetId = tab.dataset.target;
-          const section = document.getElementById(targetId);
-          if (section) section.classList.add('active');
-        });
-      });
-
-      // Fetch main snapshots (Data current/previous)
-      Promise.all([
-        fetchJSONFlexible('sample_data.json'),               // current data
-        fetchJSONFlexible('sample_data_prev.json', true)     // previous data (optional)
-      ])
-      .then(([curData, prevData]) => {
-        const cur = normalizeData(curData);
-        const prev = normalizeData(prevData);
-
-        // Leaderboard + RacesPerDay
-        renderLeaderboard(cur.racers);
-        enableSorting('leaderboardTable');
-
-        renderRacesPerDay(cur.racers);
-        enableSorting('racesPerDayTable');
-
-        // 24-hour diffs (from Data)
-        const prevMap = new Map((prev.racers || []).map(r => [String(r.username || '').toLowerCase(), r]));
-        renderChanges24(cur.racers, prevMap);
-        enableSorting('changes24Table');
-
-        // Event (four files)
-        initEventTab();
-      })
-      .catch(err => {
-        console.error('Failed loading main snapshots:', err);
-        const msg = document.createElement('p');
-        msg.textContent = 'Error loading main snapshots – check console.';
-        msg.style.color = '#ff5c5c';
-        msg.style.textAlign = 'center';
-        document.body.appendChild(msg);
-        initEventTab(); // still attempt event
-      });
-
-      // Event initialization
-      function initEventTab() {
-        loadEventFourFiles(EVENT_FILES)
-          .then(result => {
-            if (!result) {
-              clearEventTable();
-              setEventStatus('No event data available.');
-              return;
-            }
-            const { rows, beforeCount, nowCount } = result;
-            if (!rows || rows.length === 0) {
-              clearEventTable();
-              setEventStatus(`Loaded ${beforeCount.toLocaleString()} (before API) and ${nowCount.toLocaleString()} (now API); 0 racers with Δ races > 0.`);
-              return;
-            }
-            renderEventComputed(rows);
-            enableSorting('eventTable');
-            setEventStatus(`Loaded ${beforeCount.toLocaleString()} (before API) and ${nowCount.toLocaleString()} (now API); ${rows.length.toLocaleString()} racers with Δ races > 0.`);
-          })
-          .catch(err => {
-            console.error('Event computation error:', err);
-            clearEventTable();
-            setEventStatus('Error loading event data.');
-          });
-      }
-
-      // Files: flexible JSON (supports JSON array, object with racers, or NDJSON lines)
-      async function fetchJSONFlexible(url, allowEmpty = false) {
-        try {
-          const res = await fetch(url, { cache: 'no-store' });
-          if (!res.ok) {
-            if (allowEmpty && (res.status === 404 || res.status === 204)) return { racers: [] };
-            throw new Error(`${url}: HTTP ${res.status} ${res.statusText}`);
-          }
-          const text = await res.text();
-          const trimmed = text.trim();
-          if (!trimmed) return allowEmpty ? { racers: [] } : JSON.parse(''); // force catch
-          const firstChar = trimmed[0];
-
-          if (firstChar === '{' || firstChar === '[') {
-            // Regular JSON
-            return JSON.parse(trimmed);
-          }
-
-          // NDJSON fallback
-          const lines = trimmed.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-          const arr = [];
-          for (const line of lines) {
-            try {
-              arr.push(JSON.parse(line));
-            } catch (e) {
-              // skip bad lines
-            }
-          }
-          return arr;
-        } catch (e) {
-          if (allowEmpty) return { racers: [] };
-          throw e;
+      localStorage.setItem(STORE_KEY, JSON.stringify(st));
+    }
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (parsed.inputs) {
+          App.dom.currentDataUrl.value = parsed.inputs.currentDataUrl || '';
+          App.dom.previousDataUrl.value = parsed.inputs.previousDataUrl || '';
+          App.dom.apiBeforeUrl.value = parsed.inputs.apiBeforeUrl || '';
+          App.dom.apiNowUrl.value = parsed.inputs.apiNowUrl || '';
+          App.dom.dataBeforeUrl.value = parsed.inputs.dataBeforeUrl || '';
+          App.dom.dataNowUrl.value = parsed.inputs.dataNowUrl || '';
         }
-      }
-
-      // Normalize: { updatedAt, racers } | [ ... ] -> { updatedAt, racers: [] }
-      function normalizeData(payload) {
-        if (Array.isArray(payload)) return { updatedAt: null, racers: payload };
-        if (payload && Array.isArray(payload.racers)) return { updatedAt: payload.updatedAt || null, racers: payload.racers };
-        return { updatedAt: null, racers: [] };
-      }
-
-      // Leaderboard render (Data current)
-      function renderLeaderboard(data) {
-        const list = [...(data || [])].map(r => ({
-          slug: String(r.username || ''),
-          tag: String(r.tag || ''),
-          display: String(r.title || ''),
-          title: String(r.title || ''),
-          racesPlayed: safeNumber(r.racesPlayed),
-          avgSpeed: safeNumber(r.avgSpeed),
-          highestSpeed: safeNumber(r.highestSpeed),
-          profileViews: safeNumber(r.profileViews),
-          joinDate: String(r.joinDate || ''),
-          garageCars: safeNumber(r.garageCars),
-          nitrosUsed: safeNumber(r.nitrosUsed),
-          longestSession: safeNumber(r.longestSession),
-          leagueTier: safeNumber(r.leagueTier)
-        }));
-
-        list.sort((a, b) => b.racesPlayed - a.racesPlayed);
-
-        const tbody = document.querySelector('#leaderboardTable tbody');
-        tbody.innerHTML = '';
-        const frag = document.createDocumentFragment();
-
-        list.forEach((r, i) => {
-          const tr = document.createElement('tr');
-          const racerUrl = ntRacerURL(r.slug);
-          const teamUrl = r.tag ? ntTeamURL(r.tag) : '#';
-          tr.innerHTML = `
-            <td data-label="Rank">${i + 1}</td>
-            <td data-label="Display Name">
-              <a class="link-quiet" href="${escapeAttr(racerUrl)}" target="_blank">${escapeHTML(prettyNameFromSlug(r.slug))}</a>
-            </td>
-            <td data-label="Team Tag">
-              ${r.tag ? `<a class="tag-link" href="${escapeAttr(teamUrl)}" target="_blank">${escapeHTML(r.tag)}</a>` : '<span>-</span>'}
-            </td>
-            <td data-label="Title">${escapeHTML(r.title)}</td>
-            <td data-label="Total Races">${r.racesPlayed.toLocaleString()}</td>
-            <td data-label="Avg WPM">${r.avgSpeed.toLocaleString()}</td>
-            <td data-label="Top WPM">${r.highestSpeed.toLocaleString()}</td>
-            <td data-label="Profile Views">${r.profileViews.toLocaleString()}</td>
-            <td data-label="Member Since">${escapeHTML(r.joinDate)}</td>
-            <td data-label="Garage Cars">${r.garageCars.toLocaleString()}</td>
-            <td data-label="Nitros Used">${r.nitrosUsed.toLocaleString()}</td>
-            <td data-label="Longest Session">${r.longestSession.toLocaleString()}</td>
-            <td data-label="League Tier">${r.leagueTier.toLocaleString()}</td>
-          `.trim();
-          frag.appendChild(tr);
-        });
-
-        tbody.appendChild(frag);
-        setNote('leaderboardNote', `${list.length.toLocaleString()} racers loaded.`);
-      }
-
-      // Races Per Day (Data current)
-      function renderRacesPerDay(data) {
-        const now = Date.now();
-        const list = (data || []).map(r => {
-          const parsed = parseLocalDate(r.joinDate);
-          const joined = parsed.getTime();
-          const days = Math.max(1, Math.floor((now - joined) / 86400000));
-          const total = safeNumber(r.racesPlayed);
-          return {
-            slug: String(r.username || ''),
-            tag: String(r.tag || ''),
-            total,
-            joinDate: String(r.joinDate || ''),
-            days,
-            perDay: total / days
-          };
-        }).sort((a, b) => b.perDay - a.perDay);
-
-        const tbody = document.querySelector('#racesPerDayTable tbody');
-        tbody.innerHTML = '';
-
-        const frag = document.createDocumentFragment();
-
-        list.forEach((r, i) => {
-          const racerUrl = ntRacerURL(r.slug);
-          const name = prettyNameFromSlug(r.slug);
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td data-label="Rank">${i + 1}</td>
-            <td data-label="Display Name">
-              <a class="link-quiet" href="${escapeAttr(racerUrl)}" target="_blank">${escapeHTML(name)}</a>
-            </td>
-            <td data-label="Total Races">${r.total.toLocaleString()}</td>
-            <td data-label="Join Date">${escapeHTML(r.joinDate)}</td>
-            <td data-label="Days Active">${r.days.toLocaleString()}</td>
-            <td data-label="Races / Day">${r.perDay.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-          `.trim();
-          frag.appendChild(tr);
-        });
-
-        tbody.appendChild(frag);
-      }
-
-      // 24-Hour diffs (Data current vs previous)
-      function renderChanges24(currentRacers, prevMap) {
-        const filtered = (currentRacers || []).filter(r => safeNumber(r.racesPlayed) > 0);
-
-        const diffs = filtered.map(r => {
-          const key = String(r.username || '').toLowerCase();
-          const p = prevMap.get(key) || {};
-          const dRaces = safeNumber(r.racesPlayed) - safeNumber(p.racesPlayed);
-          const dTop = safeNumber(r.highestSpeed) - safeNumber(p.highestSpeed);
-          const dViews = safeNumber(r.profileViews) - safeNumber(p.profileViews);
-          const dNitro = safeNumber(r.nitrosUsed) - safeNumber(p.nitrosUsed);
-          return {
-            slug: String(r.username || ''),
-            dRaces, dTop, dViews, dNitro
-          };
-        })
-        .filter(d => d.dRaces !== 0 && d.dRaces < MAX_24H_RACES)
-        .sort((a, b) => b.dRaces - a.dRaces);
-
-        const tbody = document.querySelector('#changes24Table tbody');
-        tbody.innerHTML = '';
-        const frag = document.createDocumentFragment();
-
-        diffs.forEach((d, i) => {
-          const tr = document.createElement('tr');
-          const racerUrl = ntRacerURL(d.slug);
-          const name = prettyNameFromSlug(d.slug);
-          tr.innerHTML = `
-            <td data-label="Rank">${i + 1}</td>
-            <td data-label="Display Name"><a class="link-quiet" href="${escapeAttr(racerUrl)}" target="_blank">${escapeHTML(name)}</a></td>
-            <td data-label="Δ Total Races">${formatDeltaInt(d.dRaces)}</td>
-            <td data-label="Δ Top WPM">${formatDeltaInt(d.dTop)}</td>
-            <td data-label="Δ Profile Views">${formatDeltaInt(d.dViews)}</td>
-            <td data-label="Δ Nitros Used">${formatDeltaInt(d.dNitro)}</td>
-          `.trim();
-          frag.appendChild(tr);
-        });
-
-        tbody.appendChild(frag);
-        setNote('dailyNote', `${diffs.length.toLocaleString()} racers with activity in the last snapshot window.`);
-      }
-
-      // Event: load four files and compute period metrics (smart merge)
-      async function loadEventFourFiles(files) {
-        const [apiBeforeRaw, apiNowRaw, dataBeforeRaw, dataNowRaw] = await Promise.all([
-          fetchJSONFlexible(files.apiBefore, true),
-          fetchJSONFlexible(files.apiNow, true),
-          fetchJSONFlexible(files.dataBefore, true),
-          fetchJSONFlexible(files.dataNow, true)
-        ]);
-
-        // Normalize API (flat arrays) and Data (object or array)
-        const apiBefore = toArray(apiBeforeRaw);
-        const apiNow = toArray(apiNowRaw);
-        const dataBefore = normalizeData(dataBeforeRaw).racers;
-        const dataNow = normalizeData(dataNowRaw).racers;
-
-        const beforeCount = apiBefore.length;
-        const nowCount = apiNow.length;
-
-        // Indexes by lowercase username (slug)
-        const apiB = indexByKey(apiBefore, o => String(o.username || '').toLowerCase());
-        const apiN = indexByKey(apiNow, o => String(o.username || '').toLowerCase());
-        const dataB = indexByKey(dataBefore, o => String(o.username || '').toLowerCase());
-        const dataN = indexByKey(dataNow, o => String(o.username || '').toLowerCase());
-
-        // Union of all usernames seen across inputs
-        const keys = new Set([
-          ...Object.keys(apiB), ...Object.keys(apiN),
-          ...Object.keys(dataB), ...Object.keys(dataN)
-        ]);
-
-        const rows = [];
-        keys.forEach(k => {
-          const aB = apiB[k];
-          const aN = apiN[k];
-          const dB = dataB[k];
-          const dN = dataN[k];
-
-          const hasAPI = !!(aB && aN);
-          const hasData = !!(dB && dN);
-
-          // Choose identifiers
-          const slug = pickFirstNonEmpty([
-            dN?.username, dB?.username, aN?.username, aB?.username
-          ], k);
-          const tag = pickFirstNonEmpty([
-            dN?.tag, dB?.tag, aN?.teamTag, aB?.teamTag
-          ], '');
-          const displayName = pickFirstNonEmpty([
-            aN?.displayName, aB?.displayName, dN?.username, dB?.username, slug
-          ], slug);
-
-          // Δ races: prefer Data delta when available and non-zero; otherwise API lifetimeRaces delta
-          const racesDeltaData = hasData ? (safeNumber(dN.racesPlayed) - safeNumber(dB.racesPlayed)) : 0;
-          const racesDeltaAPI = hasAPI ? (safeNumber(aN.lifetimeRaces) - safeNumber(aB.lifetimeRaces)) : 0;
-          const dRaces = (hasData && racesDeltaData !== 0) ? racesDeltaData : racesDeltaAPI;
-
-          if (dRaces <= 0) return; // skip inactive
-
-          // Typed/errs deltas (API) for accuracy
-          const typedDelta = hasAPI ? Math.max(0, safeNumber(aN.typed) - safeNumber(aB.typed)) : 0;
-          const errsDelta  = hasAPI ? Math.max(0, safeNumber(aN.errs)  - safeNumber(aB.errs))  : 0;
-
-          // Accuracy (%): only if typedDelta > 0
-          const acc = (hasAPI && typedDelta > 0)
-            ? clamp(0, 100 * (1 - (errsDelta / typedDelta)), 100)
-            : null;
-
-          // WPM (period): weighted by played deltas if available, else current avg; only if API exists
-          let wpm = null;
-          if (hasAPI) {
-            const playedDelta = safeNumber(aN.played) - safeNumber(aB.played);
-            if (WPM_METHOD === 'weighted' && playedDelta > 0) {
-              const num = safeNumber(aN.avgWpm) * safeNumber(aN.played) - safeNumber(aB.avgWpm) * safeNumber(aB.played);
-              wpm = num / playedDelta;
-            } else {
-              wpm = safeNumber(aN.avgWpm);
-            }
-            if (!Number.isFinite(wpm) || wpm < 0) wpm = 0;
-          }
-
-          // Points: only when we have accuracy (and thus API typed/errs)
-          const points = (wpm != null && acc != null) ? (100 + (wpm / 2) * (acc / 100)) : null;
-
-          // Δ Nitros: from Data if present, else null for API-only
-          const nitrosDelta = hasData ? Math.max(0, safeNumber(dN.nitrosUsed) - safeNumber(dB.nitrosUsed)) : null;
-
-          rows.push({
-            slug, tag, displayName,
-            dRaces, wpm, acc, points, nitrosDelta
-          });
-        });
-
-        // Default sort by Δ Total Races desc
-        rows.sort((a, b) => b.dRaces - a.dRaces);
-
-        return { beforeCount, nowCount, rows };
-      }
-
-      function renderEventComputed(rows) {
-        const tbody = document.querySelector('#eventTable tbody');
-        tbody.innerHTML = '';
-        const frag = document.createDocumentFragment();
-        rows.forEach((r, i) => {
-          const racerUrl = ntRacerURL(r.slug);
-          const teamUrl = r.tag ? ntTeamURL(r.tag) : '#';
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td data-label="Rank">${i + 1}</td>
-            <td data-label="Display Name">
-              <a class="link-quiet" href="${escapeAttr(racerUrl)}" target="_blank">${escapeHTML(r.displayName)}</a>
-            </td>
-            <td data-label="Team Tag">
-              ${r.tag ? `<a class="tag-link" href="${escapeAttr(teamUrl)}" target="_blank">${escapeHTML(r.tag)}</a>` : '<span>-</span>'}
-            </td>
-            <td data-label="Δ Total Races">${formatDeltaInt(r.dRaces)}</td>
-            <td data-label="Avg WPM">${r.wpm != null ? safeNumber(r.wpm).toLocaleString(undefined, { maximumFractionDigits: 2 }) : '—'}</td>
-            <td data-label="Avg Accuracy">${r.acc != null ? safeNumber(r.acc).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%' : '—'}</td>
-            <td data-label="Avg Points">${r.points != null ? safeNumber(r.points).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}</td>
-            <td data-label="Δ Nitros Used">${r.nitrosDelta != null ? formatDeltaInt(r.nitrosDelta) : '—'}</td>
-          `.trim();
-          frag.appendChild(tr);
-        });
-        tbody.appendChild(frag);
-      }
-
-      // UI helpers for Event
-      function clearEventTable() {
-        const tbody = document.querySelector('#eventTable tbody');
-        if (tbody) tbody.innerHTML = '';
-      }
-      function setEventStatus(text) {
-        const el = document.getElementById('eventStatus');
-        if (el) el.textContent = text || '';
-      }
-      function setNote(id, text) {
-        const el = document.getElementById(id);
-        if (el) el.textContent = text || '';
-      }
-
-      // Sorting (numeric-aware + rank renumbering)
-      function enableSorting(tableId) {
-        const table = document.getElementById(tableId);
-        if (!table) return;
-        const headers = table.querySelectorAll('th');
-        headers.forEach((th, idx) => {
-          th.addEventListener('click', () => {
-            const tbody = table.querySelector('tbody');
-            const rows = Array.from(tbody.querySelectorAll('tr'));
-            const asc = !th.classList.contains('asc');
-
-            rows.sort((a, b) => {
-              const aText = (a.children[idx]?.textContent || '').trim();
-              const bText = (b.children[idx]?.textContent || '').trim();
-              const aNum = parseFloat(aText.replace(/,/g, '').replace(/[^0-9.\-]/g, ''));
-              const bNum = parseFloat(bText.replace(/,/g, '').replace(/[^0-9.\-]/g, ''));
-              if (!isNaN(aNum) && !isNaN(bNum)) return asc ? aNum - bNum : bNum - aNum;
-              return asc ? aText.localeCompare(bText) : bText.localeCompare(aText);
-            });
-
-            headers.forEach(h => h.classList.remove('asc', 'desc'));
-            th.classList.add(asc ? 'asc' : 'desc');
-
-            rows.forEach((row, i) => {
-              if (row.children[0]) row.children[0].textContent = i + 1;
-            });
-
-            tbody.innerHTML = '';
-            rows.forEach(r => tbody.appendChild(r));
-          });
-        });
-      }
-
-      // Utilities
-      function ntRacerURL(username) {
-        const slug = String(username || '').trim();
-        return slug ? `https://www.nitrotype.com/racer/${encodeURIComponent(slug)}` : '#';
-      }
-      function ntTeamURL(tag) {
-        const t = String(tag || '').trim();
-        return t ? `https://www.nitrotype.com/team/${encodeURIComponent(t)}` : '#';
-      }
-      function prettyNameFromSlug(slug) {
-        return String(slug || '');
-      }
-      function safeNumber(x) {
-        const n = Number(x);
-        return Number.isFinite(n) ? n : 0;
-      }
-      function clamp(min, v, max) {
-        return Math.max(min, Math.min(max, v));
-      }
-      function parseLocalDate(input) {
-        const raw = String(input || '').trim();
-        if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-          const [y, m, d] = raw.split('-').map(n => parseInt(n, 10));
-          const dt = new Date(y, m - 1, d, 0, 0, 0, 0);
-          if (!isNaN(dt.getTime())) return dt;
+        if (parsed.prefs) {
+          // Merge preferences to keep future keys
+          App.prefs = Object.assign({}, App.prefs, parsed.prefs);
         }
-        const dt2 = new Date(raw);
-        if (!isNaN(dt2.getTime())) return dt2;
-        return new Date();
-      }
-      function escapeHTML(s) {
-        return String(s ?? '')
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#39;');
-      }
-      function escapeAttr(s) {
-        return escapeHTML(s).replace(/"/g, '&quot;');
-      }
-      function formatDeltaInt(n) {
-        const v = safeNumber(n);
-        const sign = v > 0 ? '+' : '';
-        return `${sign}${v.toLocaleString()}`;
-      }
-      function toArray(maybeArray) {
-        if (Array.isArray(maybeArray)) return maybeArray;
-        if (maybeArray && typeof maybeArray === 'object' && Array.isArray(maybeArray.racers)) return maybeArray.racers;
-        return [];
-      }
-      function indexByKey(arr, keyFn) {
-        const out = Object.create(null);
-        for (const item of arr || []) {
-          const k = String(keyFn(item) || '').toLowerCase();
-          if (!k) continue;
-          out[k] = item;
-        }
-        return out;
-      }
-      function pickFirstNonEmpty(arr, fallback) {
-        for (const v of arr) {
-          if (v !== undefined && v !== null && String(v).trim() !== '') return String(v);
-        }
-        return fallback;
-      }
-    });
-  </script>
-</body>
-</html>
+      } catch {}
+    }
+
+    //
