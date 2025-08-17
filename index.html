@@ -163,8 +163,8 @@
       text-shadow: 0 0 10px rgba(110,168,254,0.6);
     }
 
-    thead th.asc::after,
-    thead th.desc::after {
+    /* Sort arrows */
+    thead th::after {
       content: '';
       display: inline-block;
       margin-left: 6px;
@@ -176,6 +176,7 @@
     }
     thead th.asc::after { border-bottom: 7px solid var(--accent); }
     thead th.desc::after { border-top: 7px solid var(--accent); }
+
     thead th:first-child,
     thead th:nth-child(2),
     thead th:nth-child(3) { text-align: left; }
@@ -331,6 +332,7 @@
         <tbody></tbody>
       </table>
     </div>
+    <p class="note" id="rpdNote"></p>
   </section>
 
   <!-- 24-Hour Leaderboard -->
@@ -411,6 +413,16 @@
         const cur = normalizeData(curData);
         const prev = normalizeData(prevData);
 
+        if (cur.updatedAt) {
+          const el = document.getElementById('lastUpdated');
+          if (el) {
+            const when = new Date(cur.updatedAt);
+            el.textContent = isNaN(when.getTime())
+              ? `Last updated: ${cur.updatedAt}`
+              : `Last updated: ${when.toLocaleString()}`;
+          }
+        }
+
         // Leaderboard + RacesPerDay
         renderLeaderboard(cur.racers);
         enableSorting('leaderboardTable');
@@ -463,37 +475,58 @@
       }
 
       // Files: flexible JSON (supports JSON array, object with racers, or NDJSON lines)
+      /**
+       * Fetch a URL and parse it as either:
+       *  • Single JSON object/array, or
+       *  • A stream of NDJSON entries (handles both newline-delimited and jammed `}{` objects)
+       */
       async function fetchJSONFlexible(url, allowEmpty = false) {
         try {
           const res = await fetch(url, { cache: 'no-store' });
           if (!res.ok) {
-            if (allowEmpty && (res.status === 404 || res.status === 204)) return { racers: [] };
+            if (allowEmpty && (res.status === 404 || res.status === 204)) {
+              // Missing file is okay when allowEmpty=true
+              return { racers: [] };
+            }
             throw new Error(`${url}: HTTP ${res.status} ${res.statusText}`);
           }
-          const text = await res.text();
-          const trimmed = text.trim();
-          if (!trimmed) return allowEmpty ? { racers: [] } : JSON.parse(''); // force catch
-          const firstChar = trimmed[0];
 
-          if (firstChar === '{' || firstChar === '[') {
-            // Regular JSON
-            return JSON.parse(trimmed);
+          const text = (await res.text()).trim();
+          if (!text) {
+            // Blank body
+            return allowEmpty ? { racers: [] } : JSON.parse(''); // force catch below
           }
 
-          // NDJSON fallback
-          const lines = trimmed.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+          // Try single JSON parse first; if it fails, fall back to NDJSON
+          try {
+            return JSON.parse(text);
+          } catch {
+            // fall through to NDJSON parsing
+          }
+
+          // NDJSON fallback:
+          // If multiple objects are jammed together like `}{`, normalize to newlines first
+          const normalized = text.replace(/}\s*{/g, '}\n{');
+
+          const lines = normalized
+            .split(/\r?\n/)
+            .map(l => l.trim())
+            .filter(Boolean);
+
           const arr = [];
           for (const line of lines) {
             try {
               arr.push(JSON.parse(line));
-            } catch (e) {
-              // skip bad lines
+            } catch {
+              // skip malformed lines
             }
           }
           return arr;
-        } catch (e) {
-          if (allowEmpty) return { racers: [] };
-          throw e;
+        } catch (err) {
+          if (allowEmpty) {
+            return { racers: [] };
+          }
+          throw err;
         }
       }
 
@@ -599,6 +632,7 @@
         });
 
         tbody.appendChild(frag);
+        setNote('rpdNote', `${list.length.toLocaleString()} racers computed.`);
       }
 
       // 24-Hour diffs (Data current vs previous)
@@ -755,7 +789,7 @@
               <a class="link-quiet" href="${escapeAttr(racerUrl)}" target="_blank">${escapeHTML(r.displayName)}</a>
             </td>
             <td data-label="Team Tag">
-              ${r.tag ? `<a class="tag-link" href="${escapeAttr(teamUrl)}" target="_blank">${escapeHTML(r.tag)}</a>` : '<span>-</span>'}
+              ${r.tag ? `<a class="tag-link" href="${escapeAttr(teamUrl)}" target="_blank">${escapeHTML(r.tag)}</a>` : '<span>—</span>'}
             </td>
             <td data-label="Δ Total Races">${formatDeltaInt(r.dRaces)}</td>
             <td data-label="Avg WPM">${r.wpm != null ? safeNumber(r.wpm).toLocaleString(undefined, { maximumFractionDigits: 2 }) : '—'}</td>
@@ -768,7 +802,7 @@
         tbody.appendChild(frag);
       }
 
-      // UI helpers for Event
+      // UI helpers for Event/Notes
       function clearEventTable() {
         const tbody = document.querySelector('#eventTable tbody');
         if (tbody) tbody.innerHTML = '';
@@ -825,7 +859,10 @@
         return t ? `https://www.nitrotype.com/team/${encodeURIComponent(t)}` : '#';
       }
       function prettyNameFromSlug(slug) {
-        return String(slug || '');
+        const s = String(slug || '').trim();
+        if (!s) return '';
+        // Light prettify: replace underscores with spaces
+        return s.replace(/_/g, ' ');
       }
       function safeNumber(x) {
         const n = Number(x);
