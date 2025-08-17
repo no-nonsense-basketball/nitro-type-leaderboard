@@ -381,8 +381,8 @@
       // Constants
       const MAX_24H_RACES = 2600; // anomaly cutoff
       const EVENT_FILES = {
-        apiBefore: 'API_before.json',
-        apiNow: 'API_now.json',
+        apiBefore: 'API_before.ndjson',   // NDJSON lines
+        apiNow: 'API_now.ndjson',         // NDJSON lines
         dataBefore: 'BeforeEventData.json',
         dataNow: 'AfterEventData.json'
       };
@@ -440,14 +440,20 @@
       function initEventTab() {
         loadEventFourFiles(EVENT_FILES)
           .then(result => {
-            if (!result || result.beforeCount === 0) {
+            if (!result) {
               clearEventTable();
               setEventStatus('No event data available.');
               return;
             }
-            renderEventComputed(result.rows);
+            const { rows, beforeCount, nowCount } = result;
+            if (!rows || rows.length === 0) {
+              clearEventTable();
+              setEventStatus(`Loaded ${beforeCount.toLocaleString()} (before API) and ${nowCount.toLocaleString()} (now API); 0 racers with Δ races > 0.`);
+              return;
+            }
+            renderEventComputed(rows);
             enableSorting('eventTable');
-            setEventStatus(`Loaded ${result.beforeCount.toLocaleString()} (before API) and ${result.nowCount.toLocaleString()} (now API); ${result.rows.length.toLocaleString()} racers with Δ races > 0.`);
+            setEventStatus(`Loaded ${beforeCount.toLocaleString()} (before API) and ${nowCount.toLocaleString()} (now API); ${rows.length.toLocaleString()} racers with Δ races > 0.`);
           })
           .catch(err => {
             console.error('Event computation error:', err);
@@ -503,7 +509,7 @@
         const list = [...(data || [])].map(r => ({
           slug: String(r.username || ''),
           tag: String(r.tag || ''),
-          display: String(r.title || ''), // we’ll still show separate Title column
+          display: String(r.title || ''),
           title: String(r.title || ''),
           racesPlayed: safeNumber(r.racesPlayed),
           avgSpeed: safeNumber(r.avgSpeed),
@@ -637,7 +643,7 @@
         setNote('dailyNote', `${diffs.length.toLocaleString()} racers with activity in the last snapshot window.`);
       }
 
-      // Event: load four files and compute period metrics
+      // Event: load four files and compute period metrics (smart merge)
       async function loadEventFourFiles(files) {
         const [apiBeforeRaw, apiNowRaw, dataBeforeRaw, dataNowRaw] = await Promise.all([
           fetchJSONFlexible(files.apiBefore, true),
@@ -655,10 +661,6 @@
         const beforeCount = apiBefore.length;
         const nowCount = apiNow.length;
 
-        if (beforeCount === 0) {
-          return { beforeCount, nowCount, rows: [] };
-        }
-
         // Indexes by lowercase username (slug)
         const apiB = indexByKey(apiBefore, o => String(o.username || '').toLowerCase());
         const apiN = indexByKey(apiNow, o => String(o.username || '').toLowerCase());
@@ -673,47 +675,59 @@
 
         const rows = [];
         keys.forEach(k => {
-          const aB = apiB[k] || {};
-          const aN = apiN[k] || {};
-          const dB = dataB[k] || {};
-          const dN = dataN[k] || {};
+          const aB = apiB[k];
+          const aN = apiN[k];
+          const dB = dataB[k];
+          const dN = dataN[k];
 
-          const slug = pickFirstNonEmpty([dN.username, dB.username, aN.username, aB.username], '');
-          const tag = pickFirstNonEmpty([dN.tag, dB.tag, aN.teamTag, aB.teamTag], '');
-          const displayName = pickFirstNonEmpty([aN.displayName, aB.displayName, dN.username, dB.username, slug], '');
+          const hasAPI = !!(aB && aN);
+          const hasData = !!(dB && dN);
 
-          // Period races: prefer Data lifetime races delta; fallback to API lifetimeRaces delta
-          const racesDeltaData = safeNumber(dN.racesPlayed) - safeNumber(dB.racesPlayed);
-          const racesDeltaAPI = safeNumber(aN.lifetimeRaces) - safeNumber(aB.lifetimeRaces);
-          const dRaces = (Number.isFinite(racesDeltaData) && racesDeltaData !== 0) ? racesDeltaData : racesDeltaAPI;
-          if (dRaces <= 0) return; // no-op rows removed
+          // Choose identifiers
+          const slug = pickFirstNonEmpty([
+            dN?.username, dB?.username, aN?.username, aB?.username
+          ], k);
+          const tag = pickFirstNonEmpty([
+            dN?.tag, dB?.tag, aN?.teamTag, aB?.teamTag
+          ], '');
+          const displayName = pickFirstNonEmpty([
+            aN?.displayName, aB?.displayName, dN?.username, dB?.username, slug
+          ], slug);
 
-          // Typed/errs deltas (API)
-          const typedDelta = Math.max(0, safeNumber(aN.typed) - safeNumber(aB.typed));
-          const errsDelta  = Math.max(0, safeNumber(aN.errs)  - safeNumber(aB.errs));
+          // Δ races: prefer Data delta when available and non-zero; otherwise API lifetimeRaces delta
+          const racesDeltaData = hasData ? (safeNumber(dN.racesPlayed) - safeNumber(dB.racesPlayed)) : 0;
+          const racesDeltaAPI = hasAPI ? (safeNumber(aN.lifetimeRaces) - safeNumber(aB.lifetimeRaces)) : 0;
+          const dRaces = (hasData && racesDeltaData !== 0) ? racesDeltaData : racesDeltaAPI;
 
-          // Accuracy (%)
-          const acc = clamp(0, 100 * (1 - (typedDelta > 0 ? errsDelta / typedDelta : 0)), 100);
+          if (dRaces <= 0) return; // skip inactive
 
-          // WPM (period): weighted by played deltas if available, else current avg
-          const playedDelta = safeNumber(aN.played) - safeNumber(aB.played);
-          let wpm;
-          if (WPM_METHOD === 'weighted' && playedDelta > 0) {
-            const num = safeNumber(aN.avgWpm) * safeNumber(aN.played) - safeNumber(aB.avgWpm) * safeNumber(aB.played);
-            wpm = num / playedDelta;
-          } else {
-            wpm = safeNumber(aN.avgWpm);
+          // Typed/errs deltas (API) for accuracy
+          const typedDelta = hasAPI ? Math.max(0, safeNumber(aN.typed) - safeNumber(aB.typed)) : 0;
+          const errsDelta  = hasAPI ? Math.max(0, safeNumber(aN.errs)  - safeNumber(aB.errs))  : 0;
+
+          // Accuracy (%): only if typedDelta > 0
+          const acc = (hasAPI && typedDelta > 0)
+            ? clamp(0, 100 * (1 - (errsDelta / typedDelta)), 100)
+            : null;
+
+          // WPM (period): weighted by played deltas if available, else current avg; only if API exists
+          let wpm = null;
+          if (hasAPI) {
+            const playedDelta = safeNumber(aN.played) - safeNumber(aB.played);
+            if (WPM_METHOD === 'weighted' && playedDelta > 0) {
+              const num = safeNumber(aN.avgWpm) * safeNumber(aN.played) - safeNumber(aB.avgWpm) * safeNumber(aB.played);
+              wpm = num / playedDelta;
+            } else {
+              wpm = safeNumber(aN.avgWpm);
+            }
+            if (!Number.isFinite(wpm) || wpm < 0) wpm = 0;
           }
-          if (!Number.isFinite(wpm) || wpm < 0) wpm = 0;
 
-          // Points (per race average per formula)
-          const points = 100 + (wpm / 2) * (acc / 100);
+          // Points: only when we have accuracy (and thus API typed/errs)
+          const points = (wpm != null && acc != null) ? (100 + (wpm / 2) * (acc / 100)) : null;
 
-          // Mistakes per race
-          const mistakesPerRace = errsDelta / Math.max(1, dRaces);
-
-          // Nitros delta from Data snapshots
-          const nitrosDelta = Math.max(0, safeNumber(dN.nitrosUsed) - safeNumber(dB.nitrosUsed));
+          // Δ Nitros: from Data if present, else null for API-only
+          const nitrosDelta = hasData ? Math.max(0, safeNumber(dN.nitrosUsed) - safeNumber(dB.nitrosUsed)) : null;
 
           rows.push({
             slug, tag, displayName,
@@ -744,10 +758,10 @@
               ${r.tag ? `<a class="tag-link" href="${escapeAttr(teamUrl)}" target="_blank">${escapeHTML(r.tag)}</a>` : '<span>-</span>'}
             </td>
             <td data-label="Δ Total Races">${formatDeltaInt(r.dRaces)}</td>
-            <td data-label="Avg WPM">${safeNumber(r.wpm).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-            <td data-label="Avg Accuracy">${safeNumber(r.acc).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%</td>
-            <td data-label="Avg Points">${safeNumber(r.points).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-            <td data-label="Δ Nitros Used">${formatDeltaInt(r.nitrosDelta)}</td>
+            <td data-label="Avg WPM">${r.wpm != null ? safeNumber(r.wpm).toLocaleString(undefined, { maximumFractionDigits: 2 }) : '—'}</td>
+            <td data-label="Avg Accuracy">${r.acc != null ? safeNumber(r.acc).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%' : '—'}</td>
+            <td data-label="Avg Points">${r.points != null ? safeNumber(r.points).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}</td>
+            <td data-label="Δ Nitros Used">${r.nitrosDelta != null ? formatDeltaInt(r.nitrosDelta) : '—'}</td>
           `.trim();
           frag.appendChild(tr);
         });
@@ -811,7 +825,6 @@
         return t ? `https://www.nitrotype.com/team/${encodeURIComponent(t)}` : '#';
       }
       function prettyNameFromSlug(slug) {
-        // Best-effort prettifier if displayName not provided (Data doesn’t include displayName)
         return String(slug || '');
       }
       function safeNumber(x) {
