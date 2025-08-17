@@ -1,1014 +1,1443 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Nitro Type: Top 1000, Diffs, Races/Day, and Event Engine (Auditable, Mobile-Fluent, Wide-Frame)</title>
+  <meta charset="utf-8" />
+  <title>Nitro Type Top 1000 — Unified Leaderboards</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="color-scheme" content="dark light" />
   <style>
-    /* ======================================================================
-       Nitro Type Leaderboard Suite
-       - Dark-first, responsive, wide-frame with horizontal scroll
-       - Fully auditable with Inspect modal
-       - File inputs (local), URL inputs, NDJSON parsing, 4-file event engine
-       - Sorting, filtering, column picker, export, pinned rows
-       - Mobile stacked-card layout with data-labels
-       - Accessible focus and reduced-motion preferences
-       ====================================================================== */
-
     :root {
-      /* Palette */
-      --bg: #0f131a;
-      --surface: #141a24;
-      --surface-2: #1a2130;
-      --surface-3: #20293c;
-      --surface-4: #27314a;
-      --text: #e8edf5;
-      --text-dim: #b9c5d9;
-      --muted: #8ea0bf;
-      --border: #2a3348;
-
+      color-scheme: dark;
+      --bg: #0f1115;
+      --panel: #151821;
+      --muted: #9096a9;
+      --text: #e8ecf2;
       --accent: #6ea8fe;
-      --accent-2: #89c2ff;
-      --good: #36d17b;
-      --warn: #ffb020;
-      --bad: #ff6565;
-      --info: #61dafb;
-
-      /* Radius, spacing, font */
-      --r-sm: 6px;
-      --r-md: 10px;
-      --r-lg: 14px;
-
-      --p-1: 0.4rem;
-      --p-2: 0.66rem;
-      --p-3: 1rem;
-      --p-4: 1.5rem;
-
-      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-
-      /* Other */
-      --shadow: rgba(0,0,0,0.4);
-      --focus: #82b1ff;
-      --bar-bg: rgba(110,168,254,0.18);
-      --bar-fg: #6ea8fe;
-
-      --row-height: 40px;
-      --sticky-top: 0;
-
-      /* Density scale (adjustable) */
-      --density: 1;
+      --accent-2: #7ee787;
+      --warn: #ffb86b;
+      --bad: #ff7b7b;
+      --good: #7ee787;
+      --border: #232838;
+      --chip-bg: #1e2230;
+      --chip-tx: #c7cee0;
+      --sticky: #10131b;
+      --table-stripe: #141827;
+      --shadow: 0 8px 24px rgba(0,0,0,.35);
     }
-
-    @media (prefers-color-scheme: light) {
-      :root {
-        --bg: #f6f8fb;
-        --surface: #ffffff;
-        --surface-2: #f4f6fa;
-        --surface-3: #eef2f9;
-        --surface-4: #e9eff8;
-        --text: #0d1b2a;
-        --text-dim: #334155;
-        --muted: #64748b;
-        --border: #dbe3f1;
-
-        --accent: #1e66f5;
-        --accent-2: #5294ff;
-        --good: #0f9d58;
-        --warn: #f59e0b;
-        --bad: #ef4444;
-        --info: #0ea5e9;
-
-        --bar-bg: rgba(30,102,245,0.12);
-        --bar-fg: #1e66f5;
-        --shadow: rgba(0,0,0,0.1);
-      }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 1440px; margin: 0 auto; padding: 16px; }
+    header { display: flex; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .title { font-size: 20px; font-weight: 800; letter-spacing: .2px; }
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip { background: var(--chip-bg); color: var(--chip-tx); border: 1px solid var(--border); padding: 6px 10px; border-radius: 999px; font-size: 12px; }
+    nav.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .tab-btn { background: #0e1220; border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 10px; cursor: pointer; }
+    .tab-btn.active { border-color: var(--accent); color: var(--accent); }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 16px; }
+    .controls { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; padding: 12px; }
+    .controls .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .controls label { font-size: 12px; color: var(--muted); }
+    .controls input[type="text"] { width: 100%; background: #0e1220; border: 1px solid var(--border); color: var(--text); padding: 8px 10px; border-radius: 8px; }
+    .btn { background: #0e1220; border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 8px; cursor: pointer; }
+    .btn:hover { border-color: #2d3650; }
+    .note { font-size: 12px; color: var(--muted); }
+    .status { padding: 10px 12px; border-top: 1px solid var(--border); color: var(--muted); font-size: 13px; display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+    .status strong { color: var(--text); }
+    .toolbar { display: flex; gap: 8px; align-items: center; }
+    .scroll { overflow: auto; border-top: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; min-width: 900px; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    thead th { position: sticky; top: 0; background: var(--sticky); z-index: 2; font-weight: 700; font-size: 12px; color: var(--muted); text-align: left; }
+    tbody tr:nth-child(even) { background: var(--table-stripe); }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .rank { width: 56px; text-align: right; }
+    .tag { font-weight: 700; color: var(--accent-2); }
+    .name { font-weight: 600; }
+    .muted { color: var(--muted); }
+    .src { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .badge { background: #111527; border: 1px solid var(--border); color: #c9d1f0; border-radius: 6px; padding: 2px 6px; font-size: 11px; }
+    .sortable { cursor: pointer; user-select: none; }
+    .sortable .arrow { opacity: .35; margin-left: 6px; font-size: 10px; }
+    .sortable.active .arrow { opacity: 1; }
+    .hide-mobile { display: inline-block; }
+    @media (max-width: 820px) {
+      .controls { grid-template-columns: 1fr; }
+      .hide-mobile { display: none; }
+      table { min-width: 680px; }
+      .wrap { padding: 10px; }
     }
-
-    /* Base reset */
-    *, *::before, *::after { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
-      margin: 0;
-      font-family: var(--font);
-      background:
-        radial-gradient(1400px 700px at 12% -10%, #162340 0%, var(--bg) 50%) fixed no-repeat,
-        var(--bg);
-      color: var(--text);
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      letter-spacing: 0.02px;
-    }
-
-    /* Container */
-    .container {
-      max-width: 1360px;
-      margin: 0 auto;
-      padding: var(--p-4) var(--p-3);
-    }
-
-    /* Header */
-    header.site {
-      background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
-      border: 1px solid var(--border);
-      border-radius: var(--r-lg);
-      padding: var(--p-3);
-      box-shadow: 0 30px 60px var(--shadow);
-      margin-bottom: var(--p-4);
-    }
-    header.site h1 {
-      margin: 0 0 4px 0;
-      font-size: clamp(1.4rem, 2.6vw, 2rem);
-      font-weight: 900;
-      color: #f1f5ff;
-      text-shadow: 0 10px 24px rgba(110,168,254,0.25);
-    }
-    header.site .sub {
-      margin: 4px 0 0 0;
-      color: var(--text-dim);
-      font-size: 0.98rem;
-    }
-    .links a {
-      color: var(--accent);
-      text-decoration: none;
-    }
-    .links a:hover { color: var(--accent-2); }
-
-    /* Actions bar */
-    .actions {
-      display: grid;
-      grid-template-columns: 1fr auto auto auto;
-      gap: 12px;
-      align-items: center;
-      margin: 18px 0 0 0;
-    }
-    .actions .group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-    .btn {
-      background: linear-gradient(180deg, var(--surface-4), var(--surface-2));
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: var(--r-sm);
-      padding: 8px 12px;
-      font-weight: 700;
-      cursor: pointer;
-      user-select: none;
-      transition: transform .04s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .btn:hover { transform: translateY(-1px); border-color: var(--focus); box-shadow: 0 10px 24px var(--shadow); }
-    .btn:active { transform: translateY(0); }
-    .btn.primary { background: linear-gradient(180deg, #1f3c78, var(--accent)); border-color: rgba(255,255,255,0.2); color: #fff; }
-    .btn.good { background: linear-gradient(180deg, #1f3c30, var(--good)); border-color: rgba(255,255,255,0.18); color:#fff; }
-    .btn.warn { background: linear-gradient(180deg, #4a3c1d, var(--warn)); border-color: rgba(255,255,255,0.18); color:#121212; }
-    .btn.bad  { background: linear-gradient(180deg, #4a1f1f, var(--bad)); border-color: rgba(255,255,255,0.18); color:#fff; }
-    .btn.icon { padding: 8px; width: 36px; height: 36px; justify-content: center; }
-
-    .switch {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: linear-gradient(180deg, var(--surface-4), var(--surface-2));
-      border: 1px solid var(--border); border-radius: var(--r-sm);
-      padding: 8px 10px; color: var(--text);
-      user-select: none;
-    }
-    .switch input { margin: 0; accent-color: var(--accent); }
-
-    /* Filters and data sources panels */
-    .panels {
-      display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: 16px;
-      margin-bottom: 18px;
-    }
-    .panel {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--r-lg);
-      box-shadow: 0 18px 40px var(--shadow);
-      padding: 12px;
-    }
-    .panel h2 {
-      margin: 4px 4px 8px 4px;
-      font-size: 1.05rem;
-      letter-spacing: .2px;
-    }
-    .panel .row {
-      display: grid;
-      grid-template-columns: repeat(12, 1fr);
-      gap: 8px;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-    .panel .row > label { grid-column: span 3; color: var(--text-dim); }
-    .panel .row > input[type="text"],
-    .panel .row > input[type="number"],
-    .panel .row > select {
-      grid-column: span 9;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: var(--r-sm);
-      padding: 8px 10px;
-      color: var(--text);
-      width: 100%;
-    }
-    .panel .row input[type="checkbox"] { transform: translateY(1px); margin-right: 6px; accent-color: var(--accent); }
-    .panel small { color: var(--muted); }
-    .inline { display: inline-flex; align-items: center; gap: 8px; }
-
-    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-    .chip {
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      padding: 4px 10px;
-      color: var(--text-dim);
-      font-size: 0.85rem;
-      cursor: default;
-    }
-
-    /* Tabs */
-    .tabs {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(120px, 1fr));
-      gap: 10px;
-      margin: 18px 0;
-    }
-    .tab {
-      background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
-      border: 1px solid var(--border);
-      border-radius: var(--r-sm);
-      text-align: center;
-      padding: 10px;
-      font-weight: 800;
-      letter-spacing: 0.2px;
-      cursor: pointer;
-      user-select: none;
-      color: var(--text);
-      white-space: nowrap;
-      box-shadow: 0 2px 0 var(--shadow) inset, 0 0 0 rgba(0,0,0,0);
-      transition: transform .04s ease, box-shadow .15s ease, border-color .15s ease, color .15s ease;
-    }
-    .tab:hover { transform: translateY(-1px); box-shadow: 0 6px 16px var(--shadow), 0 0 0 1px rgba(255,255,255,0.03) inset; }
-    .tab.active { color:#fff; border-color: var(--focus); text-shadow: 0 0 10px rgba(110,168,254,0.6); }
-
-    /* Section containers */
-    .section {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--r-lg);
-      padding: 10px;
-      margin-bottom: 24px;
-      box-shadow: 0 18px 40px var(--shadow);
-    }
-    .section.hidden { display: none; }
-
-    /* Table scroller for wide tables */
-    .table-scroller {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      border-radius: var(--r-md);
-    }
-    .table-scroller table { min-width: max-content; width: 100%; }
-
-    /* Tables */
-    table {
-      border-collapse: collapse;
-      border-spacing: 0;
-      font-size: calc(0.92rem * var(--density));
-      width: 100%;
-    }
-
-    thead th {
-      position: sticky; top: var(--sticky-top);
-      z-index: 2;
-      background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
-      color: var(--text);
-      font-weight: 800;
-      letter-spacing: 0.2px;
-      padding: 0.66rem 0.7rem;
-      border-bottom: 1px solid var(--border);
-      white-space: nowrap;
-      cursor: pointer;
-      user-select: none;
-      text-align: right;
-      font-variant-numeric: tabular-nums;
-      font-feature-settings: "tnum";
-    }
-    thead th.asc, thead th.desc {
-      color: #fff; text-shadow: 0 0 10px rgba(110,168,254,0.6);
-    }
-    thead th.asc::after, thead th.desc::after {
-      content: '';
-      display: inline-block; margin-left: 6px;
-      width: 0; height: 0; vertical-align: middle;
-      border-left: 5px solid transparent; border-right: 5px solid transparent;
-    }
-    thead th.asc::after { border-bottom: 7px solid var(--accent); }
-    thead th.desc::after { border-top: 7px solid var(--accent); }
-
-    thead th:first-child,
-    thead th:nth-child(2),
-    thead th:nth-child(3) { text-align: left; }
-
-    tbody td {
-      padding: 0.58rem 0.7rem;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      color: var(--text);
-      text-align: right;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      height: var(--row-height);
-      vertical-align: middle;
-      font-variant-numeric: tabular-nums;
-      font-feature-settings: "tnum";
-    }
-    tbody tr:nth-child(even) { background: rgba(255,255,255,0.025); }
-    tbody tr:hover { background: linear-gradient(90deg, rgba(110,168,254,0.08), rgba(110,168,254,0)); }
-    tbody td:first-child,
-    tbody td:nth-child(2),
-    tbody td:nth-child(3) { text-align: left; }
-
-    /* Bar cells (e.g., points bars) */
-    .bar {
-      display: inline-flex; align-items: center; gap: 8px; min-width: 140px;
-    }
-    .bar .track {
-      position: relative; width: 120px; height: 8px; border-radius: 999px;
-      background: var(--bar-bg); overflow: hidden;
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-    .bar .fill {
-      position: absolute; left: 0; top: 0; bottom: 0;
-      background: var(--bar-fg);
-      width: 0%;
-      transition: width .25s ease;
-    }
-
-    /* Inline links */
-    a.link, a.link:visited {
-      color: #fff; text-decoration: underline; text-decoration-color: rgba(255,255,255,0.9);
-      text-underline-offset: 2px;
-    }
-    a.link:hover { text-decoration-color: #fff; }
-    a.team, a.team:visited { color: #fff; text-decoration: underline; text-underline-offset: 2px; }
-    a.team:hover { text-decoration-color: #fff; }
-
-    /* Notes */
-    .note { color: var(--text-dim); font-size: 0.95rem; margin: 8px 0 0 2px; }
-    .note strong { color: var(--text); }
-
-    /* Footer summary */
-    .footer-summary {
-      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; color: var(--muted);
-    }
-
-    /* Modal (Inspect) */
-    .modal-backdrop {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.6);
-      display: none; align-items: center; justify-content: center; z-index: 50;
-    }
-    .modal-backdrop.active { display: flex; }
-    .modal {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--r-lg);
-      max-width: 900px; width: 96%;
-      max-height: 86vh; overflow: auto;
-      box-shadow: 0 30px 60px var(--shadow);
-      padding: 12px;
-    }
-    .modal h3 { margin: 0 0 8px 0; }
-    .modal pre {
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: var(--r-sm);
-      color: var(--text);
-      padding: 10px; overflow: auto;
-      font-family: var(--mono);
-      font-size: 0.88rem;
-    }
-    .modal .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    .modal .row {
-      display: grid; grid-template-columns: 1fr 2fr; gap: 6px;
-      background: var(--surface-2);
-      padding: 6px 8px; border-radius: var(--r-sm);
-      border: 1px solid var(--border);
-    }
-    .modal .row .label { color: var(--text-dim); }
-    .modal .actions { display:flex; gap:8px; justify-content:flex-end; margin-top: 10px; }
-
-    /* Pinned rows highlight */
-    tr.pinned { box-shadow: inset 0 0 0 9999px rgba(255,255,0,0.05); }
-
-    /* Mobile stacked-card layout */
-    @media (max-width: 900px) {
-      .panels { grid-template-columns: 1fr; }
-      .actions { grid-template-columns: 1fr; }
-      .tabs { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
-      table, thead, tbody, th, td, tr { display: block; }
-      thead { display: none; }
-      tr { margin-bottom: 12px; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; }
-      td {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.06);
-      }
-      td::before {
-        content: attr(data-label);
-        flex: 1 1 45%; color: var(--text-dim); font-weight: 800; text-transform: uppercase; padding-right: 8px;
-      }
-      td > span, td > a, td > div, td > button { flex: 1 1 55%; text-align: right; }
-      .bar { justify-content: flex-end; }
-    }
-
-    /* Accessibility */
-    :focus-visible { outline: 3px solid rgba(130,177,255,0.35); outline-offset: 2px; border-radius: 8px; }
-    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
-
-    /* Scrollbars */
-    ::-webkit-scrollbar { height: 12px; width: 12px; }
-    ::-webkit-scrollbar-track { background: var(--surface); }
-    ::-webkit-scrollbar-thumb {
-      background: linear-gradient(180deg, #3a4560, #2b344a);
-      border-radius: 10px; border: 2px solid var(--surface);
-    }
-    ::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #4b5a7c, #37415a); }
+    /* Modal */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none; align-items: center; justify-content: center; z-index: 50; }
+    .modal { width: min(960px, 92vw); background: var(--panel); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); max-height: 86vh; overflow: auto; }
+    .modal header { padding: 12px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .modal .content { padding: 12px 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .kv { background: #0e1220; border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+    .kv h4 { margin: 0 0 8px 0; font-size: 13px; color: var(--muted); }
+    .kv .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; font-size: 13px; }
+    .kv .grid div { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .close { cursor: pointer; border: 1px solid var(--border); padding: 6px 10px; border-radius: 8px; background: #0e1220; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header class="site">
-      <h1>Nitro Type Leaderboard Suite — Top 1000, Diffs, Races/Day, Event</h1>
-      <div class="sub">
-        <span class="links">
-          made by <a href="https://www.youtube.com/@InternetTyper" target="_blank" rel="noopener">InternetTyper</a>
-        </span>
-        • <span id="lastUpdated">Last updated: —</span>
-        • <span>Discord: <a href="https://discord.gg/3XVdxvKgAt" target="_blank" rel="noopener">invite</a></span>
+  <div class="wrap">
+    <header>
+      <div>
+        <div class="title">Nitro Type Top 1000 — Unified Leaderboards</div>
+        <div class="note">Last updated: 7AM daily CST • Contact: Discord</div>
       </div>
-
-      <div class="actions">
-        <div class="group">
-          <button class="btn primary" id="reloadBtn" title="Reload using current sources">⟳ Reload</button>
-          <button class="btn" id="exportVisibleCsvBtn" title="Export the active table as CSV">⤓ Export CSV</button>
-          <button class="btn" id="exportVisibleJsonBtn" title="Export the active table as JSON">⤓ Export JSON</button>
-          <button class="btn" id="exportStateBtn" title="Export all inputs, preferences, and toggles">⤓ Export State</button>
-          <button class="btn" id="importStateBtn" title="Import previously exported state">⇪ Import State</button>
-        </div>
-
-        <label class="switch" title="Dark/Light">
-          <input type="checkbox" id="themeToggle" />
-          Theme
-        </label>
-
-        <label class="switch" title="Show all sections on one page">
-          <input type="checkbox" id="showAllSections" />
-          Show all sections
-        </label>
-
-        <label class="switch" title="Compact density">
-          <input type="checkbox" id="densityToggle" />
-          Compact rows
-        </label>
+      <div class="chips">
+        <span class="chip">Audited metrics</span>
+        <span class="chip">NDJSON safe</span>
+        <span class="chip">Mobile fluent</span>
+        <span class="chip">Horizontal scroll</span>
+        <span class="chip">CSV export</span>
       </div>
     </header>
 
-    <!-- Panels -->
-    <div class="panels">
-      <!-- Data sources -->
-      <section class="panel" aria-labelledby="dataSourcesH2">
-        <h2 id="dataSourcesH2">Data sources and inputs</h2>
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="tab-leader">Leaderboard</button>
+      <button class="tab-btn" data-tab="tab-rpd">Races Per Day</button>
+      <button class="tab-btn" data-tab="tab-24h">24-Hour Leaderboard</button>
+      <button class="tab-btn" data-tab="tab-event">Event</button>
+    </nav>
 
+    <!-- Leaderboard -->
+    <section id="tab-leader" class="panel">
+      <div class="controls">
         <div class="row">
-          <label for="currentDataUrl"><strong>Current Data URL:</strong></label>
-          <input id="currentDataUrl" type="text" placeholder="e.g., sample_data.json (array or {racers})" />
+          <label>Source (API now, NDJSON or JSON array)</label>
+          <input id="leaderSrc" type="text" placeholder="Raw URL to API_now.ndjson or JSON" />
         </div>
         <div class="row">
-          <label for="previousDataUrl"><strong>Previous Data URL:</strong></label>
-          <input id="previousDataUrl" type="text" placeholder="e.g., sample_data_prev.json (optional)" />
+          <button id="leaderLoad" class="btn">Load leaderboard</button>
+          <button id="leaderExport" class="btn">Export CSV</button>
+          <span class="note">Use raw.githubusercontent.com links for GitHub files.</span>
         </div>
-
-        <div class="row">
-          <label><strong>Event files (4):</strong></label>
-          <div class="inline" style="gap:6px; flex-wrap:wrap;">
-            <input id="apiBeforeUrl" type="text" placeholder="API_before.ndjson" style="width: calc(50% - 4px);" />
-            <input id="apiNowUrl" type="text" placeholder="API_now.ndjson" style="width: calc(50% - 4px);" />
-            <input id="dataBeforeUrl" type="text" placeholder="BeforeEventData.json" style="width: calc(50% - 4px);" />
-            <input id="dataNowUrl" type="text" placeholder="AfterEventData.json" style="width: calc(50% - 4px);" />
-          </div>
-        </div>
-
-        <div class="row">
-          <label><strong>Local file inputs:</strong></label>
-          <div class="inline" style="gap:8px; flex-wrap:wrap;">
-            <input type="file" id="fileCurrentData" accept=".json,.ndjson,.txt" />
-            <input type="file" id="filePreviousData" accept=".json,.ndjson,.txt" />
-            <input type="file" id="fileApiBefore" accept=".json,.ndjson,.txt" />
-            <input type="file" id="fileApiNow" accept=".json,.ndjson,.txt" />
-            <input type="file" id="fileDataBefore" accept=".json,.ndjson,.txt" />
-            <input type="file" id="fileDataNow" accept=".json,.ndjson,.txt" />
-          </div>
-        </div>
-
-        <div class="row">
-          <label><strong>Quick presets:</strong></label>
-          <div class="group">
-            <button class="btn" id="loadDefaultPreset">Preset: defaults</button>
-            <button class="btn" id="clearInputs">Clear inputs</button>
-          </div>
-        </div>
-
-        <div class="chips">
-          <span class="chip">Supports JSON arrays and { racers: [...] }</span>
-          <span class="chip">NDJSON line-by-line parsing</span>
-          <span class="chip">Merges API/Data, Before/After</span>
-          <span class="chip">Auditable Inspect modal</span>
-        </div>
-      </section>
-
-      <!-- Filters / View options -->
-      <section class="panel" aria-labelledby="filtersH2">
-        <h2 id="filtersH2">Filters and view options</h2>
-
-        <div class="row">
-          <label for="searchBox"><strong>Search:</strong></label>
-          <input id="searchBox" type="text" placeholder="Filter by display name, username, or team tag…" />
-        </div>
-
-        <div class="row">
-          <label for="teamFilter"><strong>Team tag filter:</strong></label>
-          <input id="teamFilter" type="text" placeholder="e.g., NT or NT-XYZ (comma to OR)" />
-        </div>
-
-        <div class="row">
-          <label for="minRacesDelta"><strong>Min Δ races (24h/Event):</strong></label>
-          <input id="minRacesDelta" type="number" min="0" step="1" placeholder="e.g., 10" />
-        </div>
-
-        <div class="row">
-          <label><strong>Toggles:</strong></label>
-          <div class="inline" style="gap: 12px;">
-            <label class="inline"><input id="hideZeroChanges" type="checkbox" /> Hide zero-change rows</label>
-            <label class="inline"><input id="hideAnomalies" type="checkbox" /> Hide anomalies</label>
-            <label class="inline"><input id="showBars" type="checkbox" checked /> Show points bars</label>
-          </div>
-        </div>
-
-        <div class="row">
-          <label for="anomalyCutoff"><strong>Anomaly cutoff (24h Δ races):</strong></label>
-          <input id="anomalyCutoff" type="number" min="100" step="50" placeholder="2600" />
-        </div>
-
-        <div class="row">
-          <label for="wpmMethod"><strong>WPM method:</strong></label>
-          <select id="wpmMethod">
-            <option value="weighted">Weighted by played delta</option>
-            <option value="current">Use current avgWpm</option>
-          </select>
-        </div>
-
-        <div class="row">
-          <label><strong>Column visibility:</strong></label>
-          <div class="inline" id="columnToggles" style="flex-wrap: wrap; gap: 8px;"></div>
-        </div>
-
-        <small>All filters apply to the currently visible table. Sorting is preserved in exports.</small>
-      </section>
-    </div>
-
-    <!-- Tabs -->
-    <div class="tabs" role="tablist" aria-label="Leaderboard tabs">
-      <div class="tab active" data-target="leaderboardSec" role="tab" aria-selected="true" tabindex="0">Leaderboard</div>
-      <div class="tab" data-target="racesDaySec" role="tab" aria-selected="false" tabindex="-1">Races/Day</div>
-      <div class="tab" data-target="diff24Sec" role="tab" aria-selected="false" tabindex="-1">24h Diffs</div>
-      <div class="tab" data-target="eventSec" role="tab" aria-selected="false" tabindex="-1">Event</div>
-      <div class="tab" data-target="teamsSec" role="tab" aria-selected="false" tabindex="-1">Teams</div>
-    </div>
-
-    <!-- Sections -->
-    <section id="leaderboardSec" class="section">
-      <div class="table-scroller">
-        <table id="leaderboardTable" aria-label="Overall leaderboard table">
-          <thead>
-            <tr>
-              <th data-col="rank">Rank</th>
-              <th data-col="name">Display Name</th>
-              <th data-col="team">Team Tag</th>
-              <th data-col="username">Username</th>
-              <th data-col="title">Title</th>
-              <th data-col="races">Total Races</th>
-              <th data-col="avgWpm">Avg WPM</th>
-              <th data-col="topWpm">Top WPM</th>
-              <th data-col="views">Profile Views</th>
-              <th data-col="joinDate">Join Date</th>
-              <th data-col="days">Days Since Join</th>
-              <th data-col="racesDay">Races/Day</th>
-              <th data-col="cars">Garage Cars</th>
-              <th data-col="nitros">Nitros Used</th>
-              <th data-col="session">Longest Session</th>
-              <th data-col="league">League Tier</th>
-              <th data-col="inspect">Inspect</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
       </div>
-      <div class="footer-summary" id="leaderboardSummary"></div>
-      <p class="note" id="leaderboardNote"></p>
-    </section>
-
-    <section id="racesDaySec" class="section hidden">
-      <div class="table-scroller">
-        <table id="racesDayTable" aria-label="Races per day table">
+      <div class="status">
+        <div id="leaderStatus">Waiting to load…</div>
+        <div class="toolbar">
+          <span class="note hide-mobile">Sort by any header</span>
+        </div>
+      </div>
+      <div class="scroll">
+        <table id="leaderTable">
           <thead>
             <tr>
-              <th data-col="rank">Rank</th>
-              <th data-col="name">Display Name</th>
-              <th data-col="team">Team Tag</th>
-              <th data-col="username">Username</th>
-              <th data-col="totalRaces">Total Races</th>
-              <th data-col="joinDate">Join Date</th>
-              <th data-col="days">Days Active</th>
-              <th data-col="racesDay">Races/Day</th>
-              <th data-col="inspect">Inspect</th>
+              <th class="rank sortable" data-sort="rank"># <span class="arrow">▾</span></th>
+              <th class="sortable" data-sort="name">Name <span class="arrow">▾</span></th>
+              <th>Team</th>
+              <th class="sortable right" data-sort="lifetimeRaces">Lifetime Races <span class="arrow">▾</span></th>
+              <th class="sortable right" data-sort="avgWpm">Avg WPM <span class="arrow">▾</span></th>
+              <th class="sortable right" data-sort="highWpm">High WPM <span class="arrow">▾</span></th>
+              <th class="sortable right" data-sort="accuracy">Accuracy <span class="arrow">▾</span></th>
+              <th>Membership</th>
+              <th>Role</th>
+              <th class="sortable right" data-sort="played">Played (season) <span class="arrow">▾</span></th>
+              <th class="sortable right" data-sort="typed">Typed <span class="arrow">▾</span></th>
+              <th class="sortable right" data-sort="errs">Errs <span class="arrow">▾</span></th>
+              <th>Inspect</th>
             </tr>
           </thead>
-          <tbody></tbody>
+          <tbody id="leaderBody"></tbody>
         </table>
       </div>
     </section>
 
-    <section id="diff24Sec" class="section hidden">
-      <div class="table-scroller">
-        <table id="diff24Table" aria-label="24-hour changes table">
-          <thead>
-            <tr>
-              <th data-col="rank">Rank</th>
-              <th data-col="name">Display Name</th>
-              <th data-col="team">Team Tag</th>
-              <th data-col="username">Username</th>
-              <th data-col="dRaces">Δ Total Races</th>
-              <th data-col="dTopWpm">Δ Top WPM</th>
-              <th data-col="dViews">Δ Profile Views</th>
-              <th data-col="dNitros">Δ Nitros Used</th>
-              <th data-col="inspect">Inspect</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <p class="note" id="diff24Note"></p>
-    </section>
-
-    <section id="eventSec" class="section hidden">
-      <p class="note" id="eventInfo">Event metrics merge four files: API_before/now (NDJSON okay) and Before/After profile snapshots. Typed/errs deltas drive accuracy; WPM can be weighted by played deltas; Points derive from both. Data deltas supply nitros. Full audit per racer via Inspect.</p>
-      <p class="note" id="eventStatus">Loading…</p>
-      <div class="table-scroller">
-        <table id="eventTable" aria-label="Event period table">
-          <thead>
-            <tr>
-              <th data-col="rank">Rank</th>
-              <th data-col="name">Display Name</th>
-              <th data-col="team">Team Tag</th>
-              <th data-col="username">Username</th>
-              <th data-col="dRaces">Δ Total Races</th>
-              <th data-col="avgWpm">Avg WPM</th>
-              <th data-col="acc">Avg Accuracy</th>
-              <th data-col="points">Avg Points</th>
-              <th data-col="dNitros">Δ Nitros</th>
-              <th data-col="inspect">Inspect</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section id="teamsSec" class="section hidden">
-      <div class="table-scroller">
-        <table id="teamsTable" aria-label="Teams aggregate table">
-          <thead>
-            <tr>
-              <th data-col="rank">Rank</th>
-              <th data-col="team">Team Tag</th>
-              <th data-col="count">Racers</th>
-              <th data-col="sumRaces">Total Races</th>
-              <th data-col="avgRaces">Avg Races/Racer</th>
-              <th data-col="avgWpm">Avg WPM (mean)</th>
-              <th data-col="topWpm">Top WPM (max)</th>
-              <th data-col="sumViews">Total Views</th>
-              <th data-col="sumNitros">Total Nitros</th>
-              <th data-col="eventDRaces">Event Δ Races</th>
-              <th data-col="eventPoints">Event Avg Points (mean)</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <p class="note">Team aggregates respect current table filters where applicable. Event columns appear when event data is loaded.</p>
-    </section>
-
-    <!-- Inspect Modal -->
-    <div class="modal-backdrop" id="inspectModalBackdrop" aria-hidden="true">
-      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="inspectTitle">
-        <h3 id="inspectTitle">Inspect racer</h3>
-        <div class="grid" id="inspectGrid">
-          <!-- Populated dynamically: Left = Before, Right = After (API/Data) -->
+    <!-- Races Per Day -->
+    <section id="tab-rpd" class="panel" style="display:none;">
+      <div class="controls">
+        <div class="row">
+          <label>Source (API now with joinDate/createdAt)</label>
+          <input id="rpdSrc" type="text" placeholder="Raw URL to API_now.ndjson or JSON with join dates" />
         </div>
-        <h4>Raw merged fields</h4>
-        <pre id="inspectRaw"></pre>
-        <div class="actions">
-          <button class="btn" id="copyAuditBtn">Copy audit JSON</button>
-          <button class="btn" id="closeInspectBtn">Close</button>
+        <div class="row">
+          <button id="rpdLoad" class="btn">Load RPD</button>
+          <button id="rpdExport" class="btn">Export CSV</button>
+          <span class="note">Includes Join Date. RPD = Lifetime Races ÷ days since join (min 1 day).</span>
+        </div>
+      </div>
+      <div class="status">
+        <div id="rpdStatus">Waiting to load…</div>
+        <div class="toolbar">
+          <span class="note hide-mobile">Sort by any header</span>
+        </div>
+      </div>
+      <div class="scroll">
+        <table id="rpdTable">
+          <thead>
+            <tr>
+              <th class="rank sortable" data-sort="rank"># <span class="arrow">▾</span></th>
+              <th class="sortable" data-sort="name">Name <span class="arrow">▾</span></th>
+              <th>Team</th>
+              <th class="sortable" data-sort="joinDate">Join Date <span class="arrow">▾</span></th>
+              <th class="sortable right" data-sort="days">Days Since Join <span class="arrow">▾</span></th>
+              <th class="sortable right" data-sort="lifetimeRaces">Lifetime Races <span class="arrow">▾</span></th>
+              <th class="sortable right" data-sort="rpd">Races/Day <span class="arrow">▾</span></th>
+              <th class="sortable right" data-sort="avgWpm">Avg WPM <span class="arrow">▾</span></th>
+              <th class="sortable right" data-sort="accuracy">Accuracy <span class="arrow">▾</span></th>
+              <th>Inspect</th>
+            </tr>
+          </thead>
+          <tbody id="rpdBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 24-Hour Leaderboard -->
+    <section id="tab-24h" class="panel" style="display:none;">
+      <div class="controls">
+        <div class="row">
+          <label>API Before (NDJSON/JSON)</label>
+          <input id="h24Before" type="text" placeholder="Raw URL to snapshot before" />
+        </div>
+        <div class="row">
+          <label>API Now (NDJSON/JSON)</label>
+          <input id="h24Now" type="text" placeholder="Raw URL to snapshot now" />
+        </div>
+        <div class="row">
+          <button id="h24Load" class="btn">Load 24h</button>
+          <button id="h24Export" class="btn">Export CSV</button>
+          <span class="note">Computes Δ Races and, when possible, WPM/Accuracy/Points from deltas.</span>
+        </div>
+      </div>
+      <div class="status">
+        <div id="h24Status">Waiting to load…</div>
+        <div class="toolbar">
+          <button id="h24ToggleMethod" class="btn">WPM: weighted</button>
+          <span class="note hide-mobile">Sort by any header</span>
+        </div>
+      </div>
+      <div class="scroll">
+        <table id="h24Table">
+          <thead>
+            <tr>
+              <th class="rank sortable" data-sort="rank"># <span class="arrow">▾</span></th>
+              <th>Team</th>
+              <th class="sortable" data-sort="name">Name <span class="arrow">▾</span></th>
+              <th class="sortable right" data-sort="dRaces">Δ Races <span class="arrow">▾</span></th>
+              <th class="sortable right" data-sort="wpm">Avg WPM <span class="arrow">▾</span></th>
+              <th class="sortable right" data-sort="acc">Avg Accuracy <span class="arrow">▾</span></th>
+              <th class="sortable right" data-sort="points">Points/Race <span class="arrow">▾</span></th>
+              <th class="sortable right" data-sort="totalPoints">Total Points <span class="arrow">▾</span></th>
+              <th>Sources</th>
+              <th>Inspect</th>
+            </tr>
+          </thead>
+          <tbody id="h24Body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Event -->
+    <section id="tab-event" class="panel" style="display:none;">
+      <div class="controls">
+        <div class="row">
+          <label>API Before (.ndjson)</label>
+          <input id="eventApiBefore" type="text" placeholder="Raw URL to API_before.ndjson" />
+        </div>
+        <div class="row">
+          <label>API Now (.ndjson)</label>
+          <input id="eventApiNow" type="text" placeholder="Raw URL to API_now.ndjson" />
+        </div>
+        <div class="row">
+          <label>Data Before (.json)</label>
+          <input id="eventDataBefore" type="text" placeholder="Raw URL to BeforeEventData.json" />
+        </div>
+        <div class="row">
+          <label>Data Now (.json)</label>
+          <input id="eventDataNow" type="text" placeholder="Raw URL to AfterEventData.json" />
+        </div>
+        <div class="row">
+          <button id="eventLoad" class="btn">Load event</button>
+          <button id="eventExport" class="btn">Export CSV</button>
+          <span class="note">NDJSON safe. Points = 100 + (WPM/2) × (Accuracy/100).</span>
+        </div>
+      </div>
+      <div class="status">
+        <div id="eventStatus">Waiting to load…</div>
+        <div class="toolbar">
+          <button id="eventToggleMethod" class="btn">WPM: weighted</button>
+          <span class="note hide-mobile">Sort by any header</span>
+        </div>
+      </div>
+      <div class="scroll">
+        <table id="eventTable">
+          <thead>
+            <tr>
+              <th class="rank sortable" data-sort="rank"># <span class="arrow">▾</span></th>
+              <th>Team</th>
+              <th class="sortable" data-sort="name">Name <span class="arrow">▾</span></th>
+              <th class="sortable right" data-sort="dRaces">Δ Races <span class="arrow">▾</span></th>
+              <th class="sortable right" data-sort="wpm">Avg WPM <span class="arrow">▾</span></th>
+              <th class="sortable right" data-sort="acc">Avg Accuracy <span class="arrow">▾</span></th>
+              <th class="sortable right" data-sort="points">Points/Race <span class="arrow">▾</span></th>
+              <th class="sortable right" data-sort="totalPoints">Total Points <span class="arrow">▾</span></th>
+              <th class="sortable right" data-sort="nitrosDelta">Δ Nitros <span class="arrow">▾</span></th>
+              <th>Sources</th>
+              <th>Inspect</th>
+            </tr>
+          </thead>
+          <tbody id="eventBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- Shared Inspect Modal -->
+  <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal">
+      <header>
+        <div id="modalTitle">Inspect</div>
+        <button class="close" id="closeModal">Close</button>
+      </header>
+      <div class="content">
+        <div class="kv">
+          <h4>Before (API)</h4>
+          <div class="grid" id="apiBeforeGrid"></div>
+        </div>
+        <div class="kv">
+          <h4>Now (API)</h4>
+          <div class="grid" id="apiNowGrid"></div>
+        </div>
+        <div class="kv">
+          <h4>Before (Data)</h4>
+          <div class="grid" id="dataBeforeGrid"></div>
+        </div>
+        <div class="kv">
+          <h4>Now (Data)</h4>
+          <div class="grid" id="dataNowGrid"></div>
         </div>
       </div>
     </div>
-
   </div>
 
   <script>
-    /* ======================================================================
-       App State and Configuration
-       ====================================================================== */
-    const App = {
-      // DOM refs filled on init
-      dom: {},
-      // Data caches
-      data: {
-        current: { updatedAt: null, racers: [] },     // { updatedAt?, racers[] } or []
-        previous: { updatedAt: null, racers: [] },
-        event: { rows: [], beforeCount: 0, nowCount: 0, maps: null },
-        // Index maps for inspecting (API/Data, Before/After):
-        sources: {
-          apiBefore: {},
-          apiNow: {},
-          dataBefore: {},
-          dataNow: {}
-        }
-      },
-      // Preferences and filters (persist to localStorage)
-      prefs: {
-        themeDark: true,
-        showAllSections: false,
-        compactDensity: false,
-        showBars: true,
-        anomalyCutoff: 2600,
-        hideZeroChanges: false,
-        hideAnomalies: false,
-        wpmMethod: 'weighted',
-        search: '',
-        teamFilter: '',
-        minRacesDelta: 0,
-        columnVisibility: {
-          leaderboard: {},
-          racesDay: {},
-          diff24: {},
-          event: {},
-          teams: {}
-        }
-      },
-      // Column metadata per table (id, label, defaultVisible)
-      columns: {
-        leaderboard: [
-          { id: 'rank', label: 'Rank', v: true },
-          { id: 'name', label: 'Display Name', v: true },
-          { id: 'team', label: 'Team Tag', v: true },
-          { id: 'username', label: 'Username', v: true },
-          { id: 'title', label: 'Title', v: true },
-          { id: 'races', label: 'Total Races', v: true },
-          { id: 'avgWpm', label: 'Avg WPM', v: true },
-          { id: 'topWpm', label: 'Top WPM', v: true },
-          { id: 'views', label: 'Profile Views', v: true },
-          { id: 'joinDate', label: 'Join Date', v: true },
-          { id: 'days', label: 'Days Since Join', v: false },
-          { id: 'racesDay', label: 'Races/Day', v: true },
-          { id: 'cars', label: 'Garage Cars', v: false },
-          { id: 'nitros', label: 'Nitros Used', v: false },
-          { id: 'session', label: 'Longest Session', v: false },
-          { id: 'league', label: 'League Tier', v: false },
-          { id: 'inspect', label: 'Inspect', v: true }
-        ],
-        racesDay: [
-          { id: 'rank', label: 'Rank', v: true },
-          { id: 'name', label: 'Display Name', v: true },
-          { id: 'team', label: 'Team Tag', v: true },
-          { id: 'username', label: 'Username', v: true },
-          { id: 'totalRaces', label: 'Total Races', v: true },
-          { id: 'joinDate', label: 'Join Date', v: true },
-          { id: 'days', label: 'Days Active', v: true },
-          { id: 'racesDay', label: 'Races/Day', v: true },
-          { id: 'inspect', label: 'Inspect', v: true }
-        ],
-        diff24: [
-          { id: 'rank', label: 'Rank', v: true },
-          { id: 'name', label: 'Display Name', v: true },
-          { id: 'team', label: 'Team Tag', v: true },
-          { id: 'username', label: 'Username', v: true },
-          { id: 'dRaces', label: 'Δ Total Races', v: true },
-          { id: 'dTopWpm', label: 'Δ Top WPM', v: true },
-          { id: 'dViews', label: 'Δ Profile Views', v: true },
-          { id: 'dNitros', label: 'Δ Nitros Used', v: true },
-          { id: 'inspect', label: 'Inspect', v: true }
-        ],
-        event: [
-          { id: 'rank', label: 'Rank', v: true },
-          { id: 'name', label: 'Display Name', v: true },
-          { id: 'team', label: 'Team Tag', v: true },
-          { id: 'username', label: 'Username', v: true },
-          { id: 'dRaces', label: 'Δ Total Races', v: true },
-          { id: 'avgWpm', label: 'Avg WPM', v: true },
-          { id: 'acc', label: 'Avg Accuracy', v: true },
-          { id: 'points', label: 'Avg Points', v: true },
-          { id: 'dNitros', label: 'Δ Nitros', v: true },
-          { id: 'inspect', label: 'Inspect', v: true }
-        ],
-        teams: [
-          { id: 'rank', label: 'Rank', v: true },
-          { id: 'team', label: 'Team Tag', v: true },
-          { id: 'count', label: 'Racers', v: true },
-          { id: 'sumRaces', label: 'Total Races', v: true },
-          { id: 'avgRaces', label: 'Avg Races/Racer', v: true },
-          { id: 'avgWpm', label: 'Avg WPM (mean)', v: true },
-          { id: 'topWpm', label: 'Top WPM (max)', v: true },
-          { id: 'sumViews', label: 'Total Views', v: false },
-          { id: 'sumNitros', label: 'Total Nitros', v: false },
-          { id: 'eventDRaces', label: 'Event Δ Races', v: true },
-          { id: 'eventPoints', label: 'Event Avg Points (mean)', v: true }
-        ]
-      },
-      // Sorting state per table
-      sort: {
-        leaderboard: { colIndex: 5, asc: false }, // default sort by Total Races desc
-        racesDay: { colIndex: 7, asc: false },    // Races/Day desc
-        diff24: { colIndex: 4, asc: false },      // Δ races desc
-        event: { colIndex: 4, asc: false },       // Δ races desc
-        teams: { colIndex: 9, asc: false }        // Event Δ races desc
-      },
-      // Pinned usernames (highlight rows)
-      pinned: new Set()
+    // ---------------- Configuration defaults ----------------
+    const DEFAULTS = {
+      leaderSrc: 'https://raw.githubusercontent.com/Azrael131/nitro-type-top-1000/refs/heads/main/API_now.ndjson',
+      rpdSrc:    'https://raw.githubusercontent.com/Azrael131/nitro-type-top-1000/refs/heads/main/API_now.ndjson',
+      h24Before: 'https://raw.githubusercontent.com/Azrael131/nitro-type-top-1000/refs/heads/main/API_before.ndjson',
+      h24Now:    'https://raw.githubusercontent.com/Azrael131/nitro-type-top-1000/refs/heads/main/API_now.ndjson',
+      eventApiBefore: 'https://raw.githubusercontent.com/Azrael131/nitro-type-top-1000/refs/heads/main/API_before.ndjson',
+      eventApiNow:    'https://raw.githubusercontent.com/Azrael131/nitro-type-top-1000/refs/heads/main/API_now.ndjson',
+      eventDataBefore:'https://raw.githubusercontent.com/Azrael131/nitro-type-top-1000/refs/heads/main/BeforeEventData.json',
+      eventDataNow:   'https://raw.githubusercontent.com/Azrael131/nitro-type-top-1000/refs/heads/main/AfterEventData.json',
+    };
+    const WPM_CONFIG = {
+      methodEvent: 'weighted', // 'weighted' or 'chars'
+      method24h: 'weighted',
+      AVG_RACE_SECONDS: 28.47,
+      BAKE_ACCURACY_INTO_WPM: false
     };
 
-    /* ======================================================================
-       Utilities (formatting, parsing, safe ops)
-       ====================================================================== */
-    function escapeHTML(s) {
-      return String(s ?? '')
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    }
-    function escapeAttr(s) { return escapeHTML(s).replace(/"/g, '&quot;'); }
-
-    function safeNumber(x, dv = 0) {
-      const n = Number(x);
-      return Number.isFinite(n) ? n : dv;
-    }
-    function safeInt(x, dv = 0) {
-      const n = parseInt(x, 10);
-      return Number.isFinite(n) ? n : dv;
-    }
-    function clamp(min, v, max) { return Math.max(min, Math.min(max, v)); }
-
-    function parseLocalDate(input) {
-      const raw = String(input || '').trim();
-      if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-        const [y, m, d] = raw.split('-').map(n => parseInt(n, 10));
-        const dt = new Date(y, m - 1, d, 0, 0, 0, 0);
-        if (!isNaN(dt.getTime())) return dt;
-      }
-      const dt2 = new Date(raw);
-      if (!isNaN(dt2.getTime())) return dt2;
-      return new Date(NaN);
-    }
-    function daysBetween(start, end = new Date()) {
-      const a = start instanceof Date ? start : parseLocalDate(start);
-      const b = end instanceof Date ? end : parseLocalDate(end);
-      if (isNaN(a.getTime()) || isNaN(b.getTime())) return 0;
-      const diffMs = b - a;
-      return Math.max(0, Math.floor(diffMs / 86400000));
-    }
-
-    // Parse numbers from strings with commas, %, ±, etc.
-    function parseNumberSmart(s) {
-      const str = String(s || '').trim();
-      if (!str) return NaN;
-      if (str === '—' || str.toLowerCase() === 'na' || str.toLowerCase() === 'n/a') return NaN;
-      const pct = str.endsWith('%');
-      const cleaned = str.replace(/,/g, '').replace(/[^\d\.\-]/g, '');
-      const num = parseFloat(cleaned);
-      if (isNaN(num)) return NaN;
-      return pct ? num : num;
-    }
-
-    // Simple time formatting from minutes or seconds
-    function formatDurationMinutes(mins) {
-      const m = Math.floor(safeNumber(mins));
-      const h = Math.floor(m / 60);
-      const mm = m % 60;
-      if (h > 0) return `${h}h ${mm}m`;
-      return `${mm}m`;
-    }
-
-    function formatDeltaInt(n) {
-      const v = safeNumber(n);
-      const sign = v > 0 ? '+' : '';
-      return `${sign}${v.toLocaleString()}`;
-    }
-
-    function ntRacerURL(username) {
-      const slug = String(username || '').trim();
-      return slug ? `https://www.nitrotype.com/racer/${encodeURIComponent(slug)}` : '#';
-    }
-    function ntTeamURL(tag) {
-      const t = String(tag || '').trim();
-      return t ? `https://www.nitrotype.com/team/${encodeURIComponent(t)}` : '#';
-    }
-    function prettyNameFromSlug(slug) {
-      // If no displayName is provided in sources, best-effort fallback
-      return String(slug || '');
-    }
-
-    // Array helpers
-    function toArray(maybeArray) {
-      if (Array.isArray(maybeArray)) return maybeArray;
-      if (maybeArray && typeof maybeArray === 'object' && Array.isArray(maybeArray.racers)) return maybeArray.racers;
+    // ---------------- Utilities ----------------
+    const $ = s => document.querySelector(s);
+    function safeNumber(x) { const n = Number(x); return Number.isFinite(n) ? n : 0; }
+    function clamp(min, v, max) { return Math.max(min, Math.min(v, max)); }
+    function toArray(x) {
+      if (Array.isArray(x)) return x;
+      if (x && Array.isArray(x.racers)) return x.racers;
+      if (x && typeof x === 'object') return Object.values(x);
       return [];
     }
-    function indexByKey(arr, keyFn) {
-      const out = Object.create(null);
-      for (const item of arr || []) {
-        const k = String(keyFn(item) || '').toLowerCase();
-        if (!k) continue;
-        out[k] = item;
-      }
-      return out;
+    function normalizeData(x) {
+      if (!x) return { racers: [] };
+      if (Array.isArray(x)) return { racers: x };
+      if (Array.isArray(x.racers)) return { racers: x.racers };
+      return { racers: [] };
     }
-    function pickFirstNonEmpty(arr, fallback) {
+    function indexByKey(arr, keyFn) {
+      const m = Object.create(null);
+      for (const obj of arr) {
+        const k = keyFn(obj);
+        if (!k) continue;
+        if (!(k in m)) m[k] = obj;
+      }
+      return m;
+    }
+    function pickFirstNonEmpty(arr, fallback='') {
       for (const v of arr) {
-        if (v !== undefined && v !== null && String(v).trim() !== '') return String(v);
+        if (v === null || v === undefined) continue;
+        const s = String(v).trim();
+        if (s) return s;
       }
       return fallback;
     }
-    function groupBy(arr, keyFn) {
-      const map = new Map();
-      for (const x of arr || []) {
-        const k = keyFn(x);
-        if (!map.has(k)) map.set(k, []);
-        map.get(k).push(x);
-      }
-      return map;
+    function fmtInt(n) { return safeNumber(n).toLocaleString(); }
+    function fmtFloat(n, d=2) { return Number(n).toLocaleString(undefined, { maximumFractionDigits: d, minimumFractionDigits: 0 }); }
+    function fmtPct(n, d=2) { return Number(n).toLocaleString(undefined, { maximumFractionDigits: d, minimumFractionDigits: d }) + '%'; }
+    function parseDateLoose(x) {
+      if (x == null) return null;
+      if (typeof x === 'number') return new Date(x);
+      const t = Date.parse(String(x));
+      return Number.isFinite(t) ? new Date(t) : null;
+    }
+    function daysBetween(a, b) {
+      const ms = Math.abs(b.getTime() - a.getTime());
+      return Math.max(1, Math.round(ms / 86400000));
     }
 
-    // Debounce
-    function debounce(fn, ms = 200) {
-      let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
-    }
-
-    // Persist
-    const STORE_KEY = 'nt_leaderboard_suite_state_v1';
-    function saveState() {
-      const st = {
-        prefs: App.prefs,
-        inputs: {
-          currentDataUrl: App.dom.currentDataUrl.value,
-          previousDataUrl: App.dom.previousDataUrl.value,
-          apiBeforeUrl: App.dom.apiBeforeUrl.value,
-          apiNowUrl: App.dom.apiNowUrl.value,
-          dataBeforeUrl: App.dom.dataBeforeUrl.value,
-          dataNowUrl: App.dom.dataNowUrl.value
-        }
-      };
-      localStorage.setItem(STORE_KEY, JSON.stringify(st));
-    }
-    function loadState() {
+    // Bulletproof JSON/NDJSON fetcher
+    async function fetchJSONFlexible(url, allowEmpty = false) {
       try {
-        const raw = localStorage.getItem(STORE_KEY);
-        if (!raw) return;
-        const parsed = JSON.parse(raw);
-        if (parsed.inputs) {
-          App.dom.currentDataUrl.value = parsed.inputs.currentDataUrl || '';
-          App.dom.previousDataUrl.value = parsed.inputs.previousDataUrl || '';
-          App.dom.apiBeforeUrl.value = parsed.inputs.apiBeforeUrl || '';
-          App.dom.apiNowUrl.value = parsed.inputs.apiNowUrl || '';
-          App.dom.dataBeforeUrl.value = parsed.inputs.dataBeforeUrl || '';
-          App.dom.dataNowUrl.value = parsed.inputs.dataNowUrl || '';
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) {
+          if (allowEmpty && (res.status === 404 || res.status === 204)) return { racers: [] };
+          throw new Error(`${url}: HTTP ${res.status} ${res.statusText}`);
         }
-        if (parsed.prefs) {
-          // Merge preferences to keep future keys
-          App.prefs = Object.assign({}, App.prefs, parsed.prefs);
+        const text = await res.text();
+        const trimmed = text.trim();
+        if (!trimmed) return allowEmpty ? { racers: [] } : [];
+
+        // Strict JSON first
+        try {
+          return JSON.parse(trimmed);
+        } catch {
+          // NDJSON fallback
+          const lines = trimmed.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+          const arr = [];
+          for (const line of lines) {
+            try { arr.push(JSON.parse(line)); } catch { /* skip line */ }
+          }
+          if (arr.length > 0) return arr;
+          if (allowEmpty) return { racers: [] };
+          throw new Error(`Failed to parse ${url} as JSON or NDJSON`);
         }
-      } catch {}
+      } catch (e) {
+        if (allowEmpty) return { racers: [] };
+        throw e;
+      }
     }
 
-    //
+    // ---------------- Shared event/delta computation ----------------
+    function computeMetricsForEntry(aB, aN, dB, dN, method='weighted') {
+      const out = {
+        slug: '', tag: '', displayName: '',
+        dRaces: 0, wpm: null, acc: null, points: null, totalPoints: null, nitrosDelta: null,
+        flags: { hasAPI: !!(aB && aN), hasData: !!(dB && dN), dRacesFrom: '', wpmMethod: '', accSource: '' },
+        audit: { aB, aN, dB, dN, typedDelta: null, errsDelta: null, playedDelta: null }
+      };
+
+      // Identity
+      const slug = pickFirstNonEmpty([dN?.username, dB?.username, aN?.username, aB?.username], '').toLowerCase();
+      const tag  = pickFirstNonEmpty([dN?.tag, dB?.tag, aN?.teamTag, aB?.teamTag], '');
+      const displayName = pickFirstNonEmpty([aN?.displayName, aB?.displayName, dN?.username, dB?.username, slug], slug);
+      out.slug = slug; out.tag = tag; out.displayName = displayName;
+
+      // Δ races: prefer Data when non-zero; else API lifetime
+      const dataDR = (dB && dN) ? (safeNumber(dN.racesPlayed) - safeNumber(dB.racesPlayed)) : 0;
+      const apiDR  = (aB && aN) ? (safeNumber(aN.lifetimeRaces) - safeNumber(aB.lifetimeRaces)) : 0;
+      const dRaces = (dB && dN && dataDR !== 0) ? dataDR : apiDR;
+      out.dRaces = dRaces;
+      out.flags.dRacesFrom = (dB && dN && dataDR !== 0) ? 'data' : 'api';
+      if (dRaces <= 0) return out;
+
+      // Δ nitros from Data
+      out.nitrosDelta = (dB && dN) ? Math.max(0, safeNumber(dN.nitrosUsed) - safeNumber(dB.nitrosUsed)) : null;
+
+      // Accuracy via typed/errs deltas (API)
+      if (aB && aN) {
+        const typedDelta = Math.max(0, safeNumber(aN.typed) - safeNumber(aB.typed));
+        const errsDelta  = Math.max(0, safeNumber(aN.errs)  - safeNumber(aB.errs));
+        out.audit.typedDelta = typedDelta;
+        out.audit.errsDelta = errsDelta;
+        if (typedDelta > 0) {
+          out.acc = clamp(0, 100 * (1 - errsDelta / typedDelta), 100);
+          out.flags.accSource = 'typed_errs';
+        }
+      }
+
+      // WPM
+      if (aB && aN) {
+        const playedDelta = safeNumber(aN.played) - safeNumber(aB.played);
+        out.audit.playedDelta = playedDelta;
+
+        if (method === 'weighted' && playedDelta > 0) {
+          const num = safeNumber(aN.avgWpm) * safeNumber(aN.played) - safeNumber(aB.avgWpm) * safeNumber(aB.played);
+          const wpm = num / playedDelta;
+          out.wpm = Number.isFinite(wpm) && wpm >= 0 ? wpm : 0;
+          out.flags.wpmMethod = 'weighted';
+        } else {
+          // Fallback: estimate WPM by characters typed and avg race time
+          const typedDelta = out.audit.typedDelta ?? 0;
+          if (typedDelta > 0 && dRaces > 0) {
+            const minutes = (WPM_CONFIG.AVG_RACE_SECONDS / 60) * dRaces;
+            let wpm = (typedDelta / 5) / minutes;
+            if (method === 'chars' && WPM_CONFIG.BAKE_ACCURACY_INTO_WPM && out.acc != null) {
+              wpm = wpm * (out.acc / 100);
+              out.flags.wpmMethod = 'chars_acc';
+            } else {
+              out.flags.wpmMethod = 'chars';
+            }
+            out.wpm = wpm;
+          } else {
+            out.wpm = safeNumber(aN.avgWpm);
+            out.flags.wpmMethod = 'snapshot';
+          }
+        }
+      }
+
+      if (out.wpm != null && out.acc != null) {
+        out.points = 100 + (out.wpm / 2) * (out.acc / 100);
+        out.totalPoints = out.points * dRaces;
+      }
+
+      return out;
+    }
+
+    function computeDeltaTwoFiles(apiBeforeArr, apiNowArr, method) {
+      const aB = indexByKey(apiBeforeArr, o => String(o.username || '').toLowerCase());
+      const aN = indexByKey(apiNowArr, o => String(o.username || '').toLowerCase());
+      const keys = new Set([...Object.keys(aB), ...Object.keys(aN)]);
+      const rows = [];
+      for (const k of keys) {
+        const r = computeMetricsForEntry(aB[k], aN[k], null, null, method);
+        if (r.dRaces > 0) rows.push(r);
+      }
+      rows.sort((x, y) => (y.totalPoints ?? -1) - (x.totalPoints ?? -1) || y.dRaces - x.dRaces);
+      return rows;
+    }
+
+    function computeEventFourFiles(apiBeforeArr, apiNowArr, dataBeforeArr, dataNowArr, method) {
+      const apiB = indexByKey(apiBeforeArr, o => String(o.username || '').toLowerCase());
+      const apiN = indexByKey(apiNowArr, o => String(o.username || '').toLowerCase());
+      const dataB = indexByKey(dataBeforeArr, o => String(o.username || '').toLowerCase());
+      const dataN = indexByKey(dataNowArr, o => String(o.username || '').toLowerCase());
+      const keys = new Set([
+        ...Object.keys(apiB), ...Object.keys(apiN),
+        ...Object.keys(dataB), ...Object.keys(dataN)
+      ]);
+      const rows = [];
+      for (const k of keys) {
+        const row = computeMetricsForEntry(apiB[k], apiN[k], dataB[k], dataN[k], method);
+        if (row.dRaces > 0) rows.push(row);
+      }
+      rows.sort((x, y) => (y.totalPoints ?? -1) - (x.totalPoints ?? -1) || y.dRaces - x.dRaces);
+      return rows;
+    }
+
+    // ---------------- Tabs ----------------
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const id = btn.dataset.tab;
+        document.querySelectorAll('section.panel').forEach(sec => sec.style.display = (sec.id === id) ? '' : 'none');
+      });
+    });
+
+    // ---------------- Modal ----------------
+    function openInspect(title, aB, aN, dB, dN) {
+      $('#modalTitle').textContent = title;
+      fillGrid('#apiBeforeGrid', aB);
+      fillGrid('#apiNowGrid', aN);
+      fillGrid('#dataBeforeGrid', dB);
+      fillGrid('#dataNowGrid', dN);
+      $('#modalBackdrop').style.display = 'flex';
+    }
+    function fillGrid(sel, obj) {
+      const grid = document.querySelector(sel);
+      grid.innerHTML = '';
+      if (!obj) { grid.innerHTML = '<div class="muted">No data</div>'; return; }
+      const frag = document.createDocumentFragment();
+      const keys = Object.keys(obj).sort();
+      for (const k of keys) {
+        const kEl = document.createElement('div'); kEl.className = 'muted'; kEl.textContent = k;
+        const vEl = document.createElement('div'); vEl.textContent = String(obj[k]);
+        frag.appendChild(kEl); frag.appendChild(vEl);
+      }
+      grid.appendChild(frag);
+    }
+    $('#closeModal').addEventListener('click', () => $('#modalBackdrop').style.display = 'none');
+    $('#modalBackdrop').addEventListener('click', (e) => { if (e.target.id === 'modalBackdrop') $('#modalBackdrop').style.display = 'none'; });
+
+    // ---------------- Sorting helpers ----------------
+    function attachSort(table, rowsRef, renderFn, sortState) {
+      table.querySelectorAll('th.sortable').forEach(th => {
+        th.addEventListener('click', () => {
+          const key = th.dataset.sort;
+          const dir = (sortState.key === key && sortState.dir === 'desc') ? 'asc' : 'desc';
+          sortState.key = key; sortState.dir = dir;
+          sortRows(rowsRef.value, key, dir);
+          renderFn();
+        });
+      });
+      updateSortIndicators(table, sortState);
+    }
+    function sortRows(rows, key, dir) {
+      const mul = dir === 'asc' ? 1 : -1;
+      rows.sort((a, b) => {
+        const va = getKey(a, key), vb = getKey(b, key);
+        if (va == null && vb == null) return 0;
+        if (va == null) return 1;
+        if (vb == null) return -1;
+        if (typeof va === 'string') return mul * va.localeCompare(vb);
+        return mul * (va - vb);
+      });
+    }
+    function updateSortIndicators(table, state) {
+      table.querySelectorAll('th.sortable').forEach(th => {
+        const key = th.dataset.sort;
+        th.classList.toggle('active', state.key === key);
+        const arrow = th.querySelector('.arrow');
+        if (arrow) arrow.textContent = state.dir === 'asc' ? '▴' : '▾';
+      });
+    }
+    function getKey(r, key) {
+      switch (key) {
+        case 'rank': return 0;
+        case 'name': return r.displayName || r.slug || r.name;
+        case 'team': return r.tag || '';
+        case 'lifetimeRaces': return r.lifetimeRaces ?? 0;
+        case 'avgWpm': return r.avgWpm ?? r.wpm ?? 0;
+        case 'highWpm': return r.highWpm ?? 0;
+        case 'accuracy': return r.accuracy ?? r.acc ?? 0;
+        case 'played': return r.played ?? 0;
+        case 'typed': return r.typed ?? 0;
+        case 'errs': return r.errs ?? 0;
+        case 'joinDate': return r.joinMs ?? 0;
+        case 'days': return r.days ?? 0;
+        case 'rpd': return r.rpd ?? 0;
+        case 'dRaces': return r.dRaces ?? 0;
+        case 'wpm': return r.wpm ?? 0;
+        case 'acc': return r.acc ?? 0;
+        case 'points': return r.points ?? 0;
+        case 'totalPoints': return r.totalPoints ?? -1;
+        case 'nitrosDelta': return r.nitrosDelta ?? -1;
+        default: return 0;
+      }
+    }
+
+    // ---------------- Leaderboard tab ----------------
+    (function setupLeaderboard() {
+      $('#leaderSrc').value = DEFAULTS.leaderSrc;
+      const state = { rows: [] };
+      const sortState = { key: 'lifetimeRaces', dir: 'desc' };
+
+      async function load() {
+        $('#leaderStatus').textContent = 'Loading…';
+        try {
+          const raw = await fetchJSONFlexible($('#leaderSrc').value.trim(), true);
+          const arr = toArray(raw);
+          state.rows = arr.map((o, i) => ({
+            idx: i+1,
+            displayName: pickFirstNonEmpty([o.displayName, o.username], ''),
+            slug: String(o.username || '').toLowerCase(),
+            tag: o.teamTag || '',
+            lifetimeRaces: safeNumber(o.lifetimeRaces),
+            avgWpm: safeNumber(o.avgWpm),
+            highWpm: safeNumber(o.highWpm),
+            accuracy: Number.isFinite(Number(o.accuracy)) ? Number(o.accuracy) : null,
+            membership: o.membership || '',
+            role: o.role || '',
+            played: safeNumber(o.played),
+            typed: safeNumber(o.typed),
+            errs: safeNumber(o.errs),
+            _raw: o
+          }));
+          sortRows(state.rows, sortState.key, sortState.dir);
+          render();
+          $('#leaderStatus').innerHTML = `<strong>${fmtInt(state.rows.length)}</strong> racers loaded`;
+        } catch (e) {
+          $('#leaderStatus').innerHTML = `<span class="bad">Error:</span> ${e.message}`;
+          console.error(e);
+        }
+      }
+
+      function render() {
+        const tbody = $('#leaderBody');
+        tbody.innerHTML = '';
+        const frag = document.createDocumentFragment();
+        state.rows.forEach((r, i) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="rank num">${(i+1).toLocaleString()}</td>
+            <td class="name">${r.displayName || r.slug}</td>
+            <td>${r.tag ? `<span class="tag">[${r.tag}]</span>` : '<span class="muted">—</span>'}</td>
+            <td class="num">${fmtInt(r.lifetimeRaces)}</td>
+            <td class="num">${fmtFloat(r.avgWpm,2)}</td>
+            <td class="num">${fmtFloat(r.highWpm,2)}</td>
+            <td class="num">${r.accuracy != null ? fmtPct(r.accuracy,2) : '—'}</td>
+            <td>${r.membership || '—'}</td>
+            <td>${r.role || '—'}</td>
+            <td class="num">${fmtInt(r.played)}</td>
+            <td class="num">${fmtInt(r.typed)}</td>
+            <td class="num">${fmtInt(r.errs)}</td>
+            <td><button class="btn btn-small">Open</button></td>
+          `;
+          tr.querySelector('button').addEventListener('click', () => openInspect(r.displayName || r.slug, null, r._raw, null, null));
+          frag.appendChild(tr);
+        });
+        tbody.appendChild(frag);
+        updateSortIndicators($('#leaderTable'), sortState);
+      }
+
+      $('#leaderLoad').addEventListener('click', load);
+      $('#leaderExport').addEventListener('click', () => {
+        const cols = ['rank','name','team','lifetimeRaces','avgWpm','highWpm','accuracy','membership','role','played','typed','errs'];
+        const header = cols.join(',');
+        const lines = [header];
+        state.rows.forEach((r, i) => {
+          const vals = [
+            i+1,
+            (r.displayName || r.slug || '').replaceAll(',', ' '),
+            r.tag || '',
+            r.lifetimeRaces ?? '',
+            r.avgWpm?.toFixed(2) ?? '',
+            r.highWpm?.toFixed(2) ?? '',
+            r.accuracy != null ? r.accuracy.toFixed(2) : '',
+            r.membership || '',
+            r.role || '',
+            r.played ?? '',
+            r.typed ?? '',
+            r.errs ?? ''
+          ];
+          lines.push(vals.join(','));
+        });
+        const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'leaderboard.csv'; a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      attachSort($('#leaderTable'), { get value(){ return state.rows; } }, render, sortState);
+      // Autoload
+      load();
+    })();
+
+    // ---------------- RPD tab ----------------
+    (function setupRPD() {
+      $('#rpdSrc').value = DEFAULTS.rpdSrc;
+      const state = { rows: [] };
+      const sortState = { key: 'rpd', dir: 'desc' };
+
+      async function load() {
+        $('#rpdStatus').textContent = 'Loading…';
+        try {
+          const raw = await fetchJSONFlexible($('#rpdSrc').value.trim(), true);
+          const arr = toArray(raw);
+          const now = new Date();
+          state.rows = arr.map((o, i) => {
+            const displayName = pickFirstNonEmpty([o.displayName, o.username], '');
+            const slug = String(o.username || '').toLowerCase();
+            const tag = o.teamTag || '';
+            const join = parseDateLoose(o.joinDate ?? o.createdAt ?? o.registeredAt);
+            const joinMs = join ? join.getTime() : null;
+            const days = join ? daysBetween(join, now) : null;
+            const lifetime = safeNumber(o.lifetimeRaces);
+            const rpd = days ? lifetime / days : null;
+            return {
+              idx: i+1, displayName, slug, tag,
+              joinStr: join ? join.toISOString().slice(0,10) : '—',
+              joinMs,
+              days,
+              lifetimeRaces: lifetime,
+              rpd,
+              avgWpm: Number.isFinite(Number(o.avgWpm)) ? Number(o.avgWpm) : null,
+              accuracy: Number.isFinite(Number(o.accuracy)) ? Number(o.accuracy) : null,
+              _raw: o
+            };
+          });
+          sortRows(state.rows, sortState.key, sortState.dir);
+          render();
+          $('#rpdStatus').innerHTML = `<strong>${fmtInt(state.rows.length)}</strong> racers loaded`;
+        } catch (e) {
+          $('#rpdStatus').innerHTML = `<span class="bad">Error:</span> ${e.message}`;
+          console.error(e);
+        }
+      }
+
+      function render() {
+        const tbody = $('#rpdBody');
+        tbody.innerHTML = '';
+        const frag = document.createDocumentFragment();
+        state.rows.forEach((r, i) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="rank num">${(i+1).toLocaleString()}</td>
+            <td class="name">${r.displayName || r.slug}</td>
+            <td>${r.tag ? `<span class="tag">[${r.tag}]</span>` : '<span class="muted">—</span>'}</td>
+            <td>${r.joinStr}</td>
+            <td class="num">${r.days != null ? fmtInt(r.days) : '—'}</td>
+            <td class="num">${fmtInt(r.lifetimeRaces)}</td>
+            <td class="num">${r.rpd != null ? fmtFloat(r.rpd, 2) : '—'}</td>
+            <td class="num">${r.avgWpm != null ? fmtFloat(r.avgWpm, 2) : '—'}</td>
+            <td class="num">${r.accuracy != null ? fmtPct(r.accuracy, 2) : '—'}</td>
+            <td><button class="btn btn-small">Open</button></td>
+          `;
+          tr.querySelector('button').addEventListener('click', () => openInspect(r.displayName || r.slug, null, r._raw, null, null));
+          frag.appendChild(tr);
+        });
+        tbody.appendChild(frag);
+        updateSortIndicators($('#rpdTable'), sortState);
+      }
+
+      $('#rpdLoad').addEventListener('click', load);
+      $('#rpdExport').addEventListener('click', () => {
+        const cols = ['rank','name','team','joinDate','days','lifetimeRaces','rpd','avgWpm','accuracy'];
+        const header = cols.join(',');
+        const lines = [header];
+        state.rows.forEach((r, i) => {
+          const vals = [
+            i+1,
+            (r.displayName || r.slug || '').replaceAll(',', ' '),
+            r.tag || '',
+            r.joinStr,
+            r.days ?? '',
+            r.lifetimeRaces ?? '',
+            r.rpd != null ? r.rpd.toFixed(2) : '',
+            r.avgWpm != null ? r.avgWpm.toFixed(2) : '',
+            r.accuracy != null ? r.accuracy.toFixed(2) : ''
+          ];
+          lines.push(vals.join(','));
+        });
+        const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'races_per_day.csv'; a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      attachSort($('#rpdTable'), { get value(){ return state.rows; } }, render, sortState);
+      // Autoload
+      load();
+    })();
+
+    // ---------------- 24h tab ----------------
+    (function setup24h() {
+      $('#h24Before').value = DEFAULTS.h24Before;
+      $('#h24Now').value = DEFAULTS.h24Now;
+      const state = { rows: [] };
+      const sortState = { key: 'totalPoints', dir: 'desc' };
+
+      async function load() {
+        $('#h24Status').textContent = 'Loading…';
+        try {
+          const [rawB, rawN] = await Promise.all([
+            fetchJSONFlexible($('#h24Before').value.trim(), true),
+            fetchJSONFlexible($('#h24Now').value.trim(), true),
+          ]);
+          const arrB = toArray(rawB);
+          const arrN = toArray(rawN);
+          state.rows = computeDeltaTwoFiles(arrB, arrN, WPM_CONFIG.method24h);
+          sortRows(state.rows, sortState.key, sortState.dir);
+          render();
+          $('#h24Status').innerHTML = `<strong>Before:</strong> ${fmtInt(arrB.length)} • <strong>Now:</strong> ${fmtInt(arrN.length)} • <strong>Rows:</strong> ${fmtInt(state.rows.length)}`;
+        } catch (e) {
+          $('#h24Status').innerHTML = `<span class="bad">Error:</span> ${e.message}`;
+          console.error(e);
+        }
+      }
+
+      function render() {
+        const tbody = $('#h24Body');
+        tbody.innerHTML = '';
+        const frag = document.createDocumentFragment();
+        state.rows.forEach((r, i) => {
+          const badges = [];
+          if (r.flags.hasAPI) badges.push(`<span class="badge">API</span>`);
+          if (r.flags.dRacesFrom) badges.push(`<span class="badge">ΔR:${r.flags.dRacesFrom}</span>`);
+          if (r.flags.wpmMethod) badges.push(`<span class="badge">WPM:${r.flags.wpmMethod}</span>`);
+          if (r.flags.accSource) badges.push(`<span class="badge">ACC:${r.flags.accSource}</span>`);
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="rank num">${(i+1).toLocaleString()}</td>
+            <td>${r.tag ? `<span class="tag">[${r.tag}]</span>` : '<span class="muted">—</span>'}</td>
+            <td class="name">${r.displayName || r.slug}</td>
+            <td class="num">${fmtInt(r.dRaces)}</td>
+            <td class="num">${r.wpm != null ? fmtFloat(r.wpm, 2) : '—'}</td>
+            <td class="num">${r.acc != null ? fmtPct(r.acc, 2) : '—'}</td>
+            <td class="num">${r.points != null ? fmtFloat(r.points, 2) : '—'}</td>
+            <td class="num">${r.totalPoints != null ? Math.round(r.totalPoints).toLocaleString() : '—'}</td>
+            <td class="src">${badges.join(' ')}</td>
+            <td><button class="btn btn-small">Open</button></td>
+          `;
+          tr.querySelector('button').addEventListener('click', () => openInspect(r.displayName || r.slug, r.audit.aB, r.audit.aN, r.audit.dB, r.audit.dN));
+          frag.appendChild(tr);
+        });
+        tbody.appendChild(frag);
+        updateSortIndicators($('#h24Table'), sortState);
+      }
+
+      $('#h24Load').addEventListener('click', load);
+      $('#h24Export').addEventListener('click', () => {
+        const cols = ['rank','team','name','dRaces','wpm','acc','points','totalPoints','wpmMethod','dRacesFrom'];
+        const header = cols.join(',');
+        const lines = [header];
+        state.rows.forEach((r, i) => {
+          const vals = [
+            i+1,
+            r.tag || '',
+            (r.displayName || r.slug || '').replaceAll(',', ' '),
+            r.dRaces ?? '',
+            r.wpm != null ? r.wpm.toFixed(2) : '',
+            r.acc != null ? r.acc.toFixed(2) : '',
+            r.points != null ? r.points.toFixed(2) : '',
+            r.totalPoints != null ? Math.round(r.totalPoints) : '',
+            r.flags.wpmMethod || '',
+            r.flags.dRacesFrom || ''
+          ];
+          lines.push(vals.join(','));
+        });
+        const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'leaderboard_24h.csv'; a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      $('#h24ToggleMethod').addEventListener('click', () => {
+        WPM_CONFIG.method24h = WPM_CONFIG.method24h === 'weighted' ? 'chars' : 'weighted';
+        $('#h24ToggleMethod').textContent = `WPM: ${WPM_CONFIG.method24h}`;
+        $('#h24Load').click();
+      });
+
+      attachSort($('#h24Table'), { get value(){ return state.rows; } }, render, sortState);
+      // Autoload
+      load();
+    })();
+
+// ---------------- Event tab ----------------
+(function setupEvent() {
+  // DOM refs (scoped to Event tab)
+  const tab = document.getElementById('tab-event');
+  const elApiBefore   = tab.querySelector('#eventApiBefore');
+  const elApiNow      = tab.querySelector('#eventApiNow');
+  const elDataBefore  = tab.querySelector('#eventDataBefore');
+  const elDataNow     = tab.querySelector('#eventDataNow');
+  const btnLoad       = tab.querySelector('#eventLoad');
+  const btnExport     = tab.querySelector('#eventExport');
+  const btnToggle     = tab.querySelector('#eventToggleMethod');
+  const statusEl      = tab.querySelector('#eventStatus');
+  const table         = tab.querySelector('#eventTable');
+  const tbody         = tab.querySelector('#eventBody');
+  const toolbar       = tab.querySelector('.status .toolbar');
+
+  // Seed defaults
+  if (!elApiBefore.value)  elApiBefore.value  = DEFAULTS.eventApiBefore;
+  if (!elApiNow.value)     elApiNow.value     = DEFAULTS.eventApiNow;
+  if (!elDataBefore.value) elDataBefore.value = DEFAULTS.eventDataBefore;
+  if (!elDataNow.value)    elDataNow.value    = DEFAULTS.eventDataNow;
+
+  // --- Local state & caches ---
+  const cache = new Map(); // url -> parsed array/object
+  const state = {
+    rows: [],            // all computed rows (active only, dRaces > 0)
+    filtered: [],        // after filters/search
+    paged: [],           // current page slice
+    sort: { key: 'totalPoints', dir: 'desc' },
+    filters: {
+      q: '',
+      minRaces: 1,
+      src_api: true,
+      src_data: true,
+      src_both: true
+    },
+    pagination: {
+      page: 1,
+      pageSize: 100,
+      totalPages: 1
+    },
+    counts: {
+      apiBefore: 0, apiNow: 0, dataBefore: 0, dataNow: 0,
+      unionUsers: 0, activeRows: 0,
+      sumDRaces: 0, sumTotalPoints: 0
+    },
+    lastFiles: null,
+    lastLoadedAt: null
+  };
+
+  // --- Extra UI: filters, search, pagination, reload ---
+  const ui = buildExtraControls(toolbar);
+  hookExtraControls();
+
+  // Initial label for method toggle
+  btnToggle.textContent = `WPM: ${WPM_CONFIG.methodEvent}`;
+
+  // --- Event listeners ---
+  btnLoad.addEventListener('click', () => loadEvent({ force: false }));
+  btnExport.addEventListener('click', exportCSV);
+  btnToggle.addEventListener('click', () => {
+    WPM_CONFIG.methodEvent = (WPM_CONFIG.methodEvent === 'weighted') ? 'chars' : 'weighted';
+    btnToggle.textContent = `WPM: ${WPM_CONFIG.methodEvent}`;
+    // Recompute (no refetch) from already-fetched inputs using new method
+    recomputeFromCurrent();
+  });
+
+  // Auto-load once at tab init
+  loadEvent({ force: false });
+
+  // ============================================================
+  // UI Builders and Hooks
+  // ============================================================
+  function buildExtraControls(toolbarEl) {
+    // Create: search box, min races, source toggles, page size, pagination, force reload
+    const frag = document.createDocumentFragment();
+
+    const mk = (tag, cls, attrs = {}) => {
+      const el = document.createElement(tag);
+      if (cls) el.className = cls;
+      for (const [k, v] of Object.entries(attrs)) {
+        if (k === 'text') el.textContent = v;
+        else el.setAttribute(k, v);
+      }
+      return el;
+    };
+
+    const wrap = mk('div', 'hide-mobile'); // group large set
+    wrap.style.display = 'inline-flex';
+    wrap.style.gap = '8px';
+    wrap.style.alignItems = 'center';
+    wrap.style.flexWrap = 'wrap';
+
+    // Search
+    const q = mk('input', 'btn');
+    q.type = 'text';
+    q.placeholder = 'Filter name/team…';
+    q.style.minWidth = '180px';
+
+    // Min races
+    const minR = mk('input', 'btn');
+    minR.type = 'number';
+    minR.min = '0';
+    minR.step = '1';
+    minR.value = String(state.filters.minRaces);
+    minR.title = 'Minimum Δ races';
+
+    // Source toggles
+    const srcApi  = mk('input'); srcApi.type = 'checkbox'; srcApi.checked = true; srcApi.title = 'Include API-only';
+    const srcData = mk('input'); srcData.type = 'checkbox'; srcData.checked = true; srcData.title = 'Include Data-only';
+    const srcBoth = mk('input'); srcBoth.type = 'checkbox'; srcBoth.checked = true; srcBoth.title = 'Include API+Data';
+
+    const lbl = (text, el) => {
+      const l = mk('label', '');
+      l.style.display = 'inline-flex';
+      l.style.alignItems = 'center';
+      l.style.gap = '6px';
+      const span = mk('span', 'note', { text });
+      l.appendChild(el);
+      l.appendChild(span);
+      return l;
+    };
+
+    // Page size
+    const pageSize = mk('select', 'btn');
+    [25, 50, 100, 200, 500, 1000].forEach(n => {
+      const opt = mk('option', '', { value: String(n), text: String(n) });
+      if (n === state.pagination.pageSize) opt.selected = true;
+      pageSize.appendChild(opt);
+    });
+
+    // Pagination controls
+    const pgPrev = mk('button', 'btn', { text: 'Prev' });
+    const pgInfo = mk('span', 'note', { text: 'Page 1/1' });
+    const pgNext = mk('button', 'btn', { text: 'Next' });
+
+    // Force reload
+    const forceBtn = mk('button', 'btn', { text: 'Force reload' });
+    forceBtn.title = 'Refetch all four files and rebuild';
+
+    // Assemble
+    wrap.appendChild(q);
+    wrap.appendChild(lbl('Min Δ races', minR));
+    wrap.appendChild(lbl('API-only', srcApi));
+    wrap.appendChild(lbl('Data-only', srcData));
+    wrap.appendChild(lbl('Both', srcBoth));
+    wrap.appendChild(lbl('Rows/page', pageSize));
+    wrap.appendChild(pgPrev);
+    wrap.appendChild(pgInfo);
+    wrap.appendChild(pgNext);
+    wrap.appendChild(forceBtn);
+
+    frag.appendChild(wrap);
+    toolbarEl.appendChild(frag);
+
+    return { q, minR, srcApi, srcData, srcBoth, pageSize, pgPrev, pgNext, pgInfo, forceBtn };
+  }
+
+  function hookExtraControls() {
+    // Debounce helper
+    let qTimer = null;
+    const debounce = (fn, ms) => (...args) => {
+      clearTimeout(qTimer);
+      qTimer = setTimeout(() => fn(...args), ms);
+    };
+
+    ui.q.addEventListener('input', debounce(() => {
+      state.filters.q = ui.q.value.trim().toLowerCase();
+      refilterSortPaginateRender();
+    }, 180));
+
+    ui.minR.addEventListener('input', () => {
+      const v = Math.max(0, Math.floor(Number(ui.minR.value) || 0));
+      state.filters.minRaces = v;
+      ui.minR.value = String(v);
+      refilterSortPaginateRender();
+    });
+
+    ui.srcApi.addEventListener('change', () => { state.filters.src_api  = ui.srcApi.checked;  refilterSortPaginateRender(); });
+    ui.srcData.addEventListener('change', () => { state.filters.src_data = ui.srcData.checked; refilterSortPaginateRender(); });
+    ui.srcBoth.addEventListener('change', () => { state.filters.src_both = ui.srcBoth.checked; refilterSortPaginateRender(); });
+
+    ui.pageSize.addEventListener('change', () => {
+      state.pagination.pageSize = Math.max(1, Number(ui.pageSize.value) || 100);
+      state.pagination.page = 1;
+      paginate();
+      renderTablePage();
+      updateSortIndicators(table, state.sort);
+      updateStatus();
+    });
+
+    ui.pgPrev.addEventListener('click', () => {
+      if (state.pagination.page > 1) {
+        state.pagination.page--;
+        paginate();
+        renderTablePage();
+        updateSortIndicators(table, state.sort);
+        updateStatus();
+      }
+    });
+
+    ui.pgNext.addEventListener('click', () => {
+      if (state.pagination.page < state.pagination.totalPages) {
+        state.pagination.page++;
+        paginate();
+        renderTablePage();
+        updateSortIndicators(table, state.sort);
+        updateStatus();
+      }
+    });
+
+    ui.forceBtn.addEventListener('click', () => loadEvent({ force: true }));
+  }
+
+  // ============================================================
+  // Data loading and computation
+  // ============================================================
+  async function loadEvent({ force }) {
+    const files = {
+      apiBefore: elApiBefore.value.trim(),
+      apiNow: elApiNow.value.trim(),
+      dataBefore: elDataBefore.value.trim(),
+      dataNow: elDataNow.value.trim()
+    };
+
+    state.lastFiles = files;
+    statusEl.textContent = 'Loading…';
+
+    try {
+      const t0 = performance.now();
+
+      // Fetch all four with cache awareness
+      const [apiBeforeRaw, apiNowRaw, dataBeforeRaw, dataNowRaw] = await Promise.all([
+        fetchMaybeCached(files.apiBefore, force, true),
+        fetchMaybeCached(files.apiNow, force, true),
+        fetchMaybeCached(files.dataBefore, force, true),
+        fetchMaybeCached(files.dataNow, force, true)
+      ]);
+
+      // Normalize
+      const apiBefore = toArray(apiBeforeRaw);
+      const apiNow    = toArray(apiNowRaw);
+      const dataBefore= normalizeData(dataBeforeRaw).racers;
+      const dataNow   = normalizeData(dataNowRaw).racers;
+
+      // Compute rows
+      const rows = computeEventRows(apiBefore, apiNow, dataBefore, dataNow, WPM_CONFIG.methodEvent);
+
+      // Update state
+      state.rows = rows;
+      state.filtered = rows.slice();
+      state.sort = { key: 'totalPoints', dir: 'desc' };
+      state.pagination.page = 1;
+
+      // Update counts & diagnostics
+      state.counts.apiBefore = apiBefore.length;
+      state.counts.apiNow    = apiNow.length;
+      state.counts.dataBefore= dataBefore.length;
+      state.counts.dataNow   = dataNow.length;
+      state.counts.unionUsers= unionSize(apiBefore, apiNow, dataBefore, dataNow);
+      state.counts.activeRows= rows.length;
+      state.counts.sumDRaces = rows.reduce((a, r) => a + (r.dRaces || 0), 0);
+      state.counts.sumTotalPoints = Math.round(rows.reduce((a, r) => a + (r.totalPoints || 0), 0));
+
+      // Sort, paginate, render
+      sortRows(state.filtered, state.sort.key, state.sort.dir);
+      paginate();
+      renderTablePage();
+      attachSort(table, { get value(){ return state.filtered; } }, () => {
+        renderTablePage();
+        updateSortIndicators(table, state.sort);
+      }, state.sort);
+
+      const t1 = performance.now();
+      state.lastLoadedAt = new Date();
+
+      // Status
+      updateStatus(`Loaded in ${(t1 - t0).toFixed(0)} ms`);
+    } catch (e) {
+      statusEl.innerHTML = `<span class="bad">Error:</span> ${e.message}`;
+      console.error(e);
+    }
+  }
+
+  async function fetchMaybeCached(url, force, allowEmpty) {
+    if (!force && cache.has(url)) return cache.get(url);
+    const data = await fetchJSONFlexible(url, allowEmpty);
+    cache.set(url, data);
+    return data;
+  }
+
+  function unionSize(apiBefore, apiNow, dataBefore, dataNow) {
+    const s = new Set();
+    const add = arr => arr.forEach(o => s.add(String(o.username || '').toLowerCase()));
+    add(apiBefore); add(apiNow); add(dataBefore); add(dataNow);
+    s.delete(''); // remove blanks
+    return s.size;
+  }
+
+  function computeEventRows(apiBefore, apiNow, dataBefore, dataNow, method) {
+    // Index all four by username (lowercase)
+    const apiB = indexByKey(apiBefore, o => String(o.username || '').toLowerCase());
+    const apiN = indexByKey(apiNow,    o => String(o.username || '').toLowerCase());
+    const dataB= indexByKey(dataBefore,o => String(o.username || '').toLowerCase());
+    const dataN= indexByKey(dataNow,   o => String(o.username || '').toLowerCase());
+
+    // Union keys
+    const keys = new Set([
+      ...Object.keys(apiB), ...Object.keys(apiN),
+      ...Object.keys(dataB), ...Object.keys(dataN)
+    ]);
+
+    const rows = [];
+    for (const k of keys) {
+      const aB = apiB[k], aN = apiN[k], dB = dataB[k], dN = dataN[k];
+      const r = computeMetricsForEntry(aB, aN, dB, dN, method);
+      if (r.dRaces > 0) rows.push(r);
+    }
+
+    // Default sort by total points desc, then Δ races desc, then name
+    rows.sort((x, y) =>
+      (y.totalPoints ?? -1) - (x.totalPoints ?? -1) ||
+      y.dRaces - x.dRaces ||
+      (x.displayName || '').localeCompare(y.displayName || '')
+    );
+    return rows;
+  }
+
+  function recomputeFromCurrent() {
+    // If we haven't loaded yet, do nothing
+    if (!state.lastFiles) return;
+
+    // We have cached files; reuse to rebuild with new method
+    Promise.all([
+      fetchMaybeCached(state.lastFiles.apiBefore, false, true),
+      fetchMaybeCached(state.lastFiles.apiNow, false, true),
+      fetchMaybeCached(state.lastFiles.dataBefore, false, true),
+      fetchMaybeCached(state.lastFiles.dataNow, false, true),
+    ]).then(([apiBeforeRaw, apiNowRaw, dataBeforeRaw, dataNowRaw]) => {
+      const apiBefore = toArray(apiBeforeRaw);
+      const apiNow    = toArray(apiNowRaw);
+      const dataBefore= normalizeData(dataBeforeRaw).racers;
+      const dataNow   = normalizeData(dataNowRaw).racers;
+
+      const rows = computeEventRows(apiBefore, apiNow, dataBefore, dataNow, WPM_CONFIG.methodEvent);
+      state.rows = rows;
+      refilterSortPaginateRender();
+      updateStatus('Recomputed with new WPM method');
+    }).catch(e => {
+      statusEl.innerHTML = `<span class="bad">Error:</span> ${e.message}`;
+      console.error(e);
+    });
+  }
+
+  // ============================================================
+  // Filtering, sorting, pagination, rendering
+  // ============================================================
+  function applyFilters() {
+    const q = state.filters.q;
+    const minR = state.filters.minRaces;
+    const wantApi  = state.filters.src_api;
+    const wantData = state.filters.src_data;
+    const wantBoth = state.filters.src_both;
+
+    state.filtered = state.rows.filter(r => {
+      if (r.dRaces < minR) return false;
+
+      // Source triage
+      // API-only: hasAPI && !hasData
+      // Data-only: !hasAPI && hasData
+      // Both: hasAPI && hasData
+      const hasAPI = !!r.flags.hasAPI;
+      const hasData = !!r.flags.hasData;
+      const isAPIOnly = hasAPI && !hasData;
+      const isDataOnly = !hasAPI && hasData;
+      const isBoth = hasAPI && hasData;
+
+      if (isAPIOnly && !wantApi) return false;
+      if (isDataOnly && !wantData) return false;
+      if (isBoth && !wantBoth) return false;
+
+      if (!q) return true;
+      const needle = q;
+      const hay1 = (r.displayName || '').toLowerCase();
+      const hay2 = (r.slug || '').toLowerCase();
+      const hay3 = (r.tag || '').toLowerCase();
+      return hay1.includes(needle) || hay2.includes(needle) || hay3.includes(needle);
+    });
+  }
+
+  function refilterSortPaginateRender() {
+    applyFilters();
+    sortRows(state.filtered, state.sort.key, state.sort.dir);
+    state.pagination.page = 1;
+    paginate();
+    renderTablePage();
+    updateSortIndicators(table, state.sort);
+    updateStatus();
+  }
+
+  function paginate() {
+    const n = state.filtered.length;
+    const ps = state.pagination.pageSize;
+    const totalPages = Math.max(1, Math.ceil(n / ps));
+    state.pagination.totalPages = totalPages;
+    if (state.pagination.page > totalPages) state.pagination.page = totalPages;
+    const start = (state.pagination.page - 1) * ps;
+    const end = Math.min(n, start + ps);
+    state.paged = state.filtered.slice(start, end);
+
+    ui.pgInfo.textContent = `Page ${state.pagination.page}/${state.pagination.totalPages}`;
+  }
+
+  function renderTablePage() {
+    tbody.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    const offset = (state.pagination.page - 1) * state.pagination.pageSize;
+
+    state.paged.forEach((r, i) => {
+      const tr = document.createElement('tr');
+
+      // Badges
+      const badges = [];
+      if (r.flags.hasAPI) badges.push(`<span class="badge">API</span>`);
+      if (r.flags.hasData) badges.push(`<span class="badge">DATA</span>`);
+      if (r.flags.dRacesFrom) badges.push(`<span class="badge">ΔR:${r.flags.dRacesFrom}</span>`);
+      if (r.flags.wpmMethod) badges.push(`<span class="badge">WPM:${r.flags.wpmMethod}</span>`);
+      if (r.flags.accSource) badges.push(`<span class="badge">ACC:${r.flags.accSource}</span>`);
+
+      tr.innerHTML = `
+        <td class="rank num">${(offset + i + 1).toLocaleString()}</td>
+        <td>${r.tag ? `<span class="tag">[${r.tag}]</span>` : '<span class="muted">—</span>'}</td>
+        <td class="name">${r.displayName || r.slug}</td>
+        <td class="num">${fmtInt(r.dRaces)}</td>
+        <td class="num">${r.wpm != null ? fmtFloat(r.wpm, 2) : '—'}</td>
+        <td class="num">${r.acc != null ? fmtPct(r.acc, 2) : '—'}</td>
+        <td class="num">${r.points != null ? fmtFloat(r.points, 2) : '—'}</td>
+        <td class="num">${r.totalPoints != null ? Math.round(r.totalPoints).toLocaleString() : '—'}</td>
+        <td class="num">${r.nitrosDelta != null ? fmtInt(r.nitrosDelta) : '—'}</td>
+        <td class="src">${badges.join(' ')}</td>
+        <td><button class="btn btn-small">Open</button></td>
+      `;
+
+      tr.querySelector('button').addEventListener('click', () => {
+        openInspect(r.displayName || r.slug, r.audit.aB, r.audit.aN, r.audit.dB, r.audit.dN);
+      });
+
+      frag.appendChild(tr);
+    });
+
+    tbody.appendChild(frag);
+  }
+
+  function updateStatus(extra = '') {
+    const c = state.counts;
+    const meta = [];
+    if (state.lastLoadedAt) meta.push(`at ${state.lastLoadedAt.toLocaleTimeString()}`);
+    if (extra) meta.push(extra);
+
+    statusEl.innerHTML = `
+      <span>
+        <strong>API</strong> before ${fmtInt(c.apiBefore)}, now ${fmtInt(c.apiNow)}
+        &nbsp;|&nbsp; <strong>Data</strong> before ${fmtInt(c.dataBefore)}, now ${fmtInt(c.dataNow)}
+        &nbsp;|&nbsp; <strong>Union</strong> ${fmtInt(c.unionUsers)}
+        &nbsp;|&nbsp; <strong>Rows</strong> ${fmtInt(state.filtered.length)} / ${fmtInt(c.activeRows)}
+        &nbsp;|&nbsp; <strong>Σ ΔR</strong> ${fmtInt(c.sumDRaces)}
+        &nbsp;|&nbsp; <strong>Σ Total Points</strong> ${fmtInt(c.sumTotalPoints)}
+        ${meta.length ? `&nbsp;|&nbsp; <span class="note">${meta.join(' • ')}</span>` : ''}
+      </span>
+    `;
+  }
+
+  // ============================================================
+  // CSV Export
+  // ============================================================
+  function exportCSV() {
+    // Export the filtered view (not only current page)
+    const rows = state.filtered;
+    const cols = [
+      'rank','team','name','username','dRaces',
+      'wpm','acc','points','totalPoints','nitrosDelta',
+      'wpmMethod','dRacesFrom','sources',
+      // Audit-friendly extras:
+      'typedDelta','errsDelta','playedDelta',
+      'apiBefore_played','apiBefore_avgWpm','apiBefore_lifetimeRaces','apiBefore_typed','apiBefore_errs',
+      'apiNow_played','apiNow_avgWpm','apiNow_lifetimeRaces','apiNow_typed','apiNow_errs',
+      'dataBefore_racesPlayed','dataBefore_nitrosUsed',
+      'dataNow_racesPlayed','dataNow_nitrosUsed'
+    ];
+
+    const header = cols.join(',');
+    const lines = [header];
+
+    rows.forEach((r, i) => {
+      const sources = [
+        r.flags.hasAPI ? 'API' : '',
+        r.flags.hasData ? 'DATA' : ''
+      ].filter(Boolean).join('|');
+
+      const aB = r.audit.aB || {};
+      const aN = r.audit.aN || {};
+      const dB = r.audit.dB || {};
+      const dN = r.audit.dN || {};
+
+      const vals = [
+        i + 1,
+        r.tag || '',
+        (r.displayName || r.slug || '').replaceAll(',', ' '),
+        r.slug || '',
+        r.dRaces ?? '',
+        r.wpm != null ? r.wpm.toFixed(2) : '',
+        r.acc != null ? r.acc.toFixed(2) : '',
+        r.points != null ? r.points.toFixed(2) : '',
+        r.totalPoints != null ? Math.round(r.totalPoints) : '',
+        r.nitrosDelta ?? '',
+        r.flags.wpmMethod || '',
+        r.flags.dRacesFrom || '',
+        sources,
+        r.audit.typedDelta ?? '',
+        r.audit.errsDelta ?? '',
+        r.audit.playedDelta ?? '',
+        aB.played ?? '', aB.avgWpm ?? '', aB.lifetimeRaces ?? '', aB.typed ?? '', aB.errs ?? '',
+        aN.played ?? '', aN.avgWpm ?? '', aN.lifetimeRaces ?? '', aN.typed ?? '', aN.errs ?? '',
+        dB.racesPlayed ?? '', dB.nitrosUsed ?? '',
+        dN.racesPlayed ?? '', dN.nitrosUsed ?? ''
+      ];
+
+      lines.push(vals.join(','));
+    });
+
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'event_leaderboard.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+})();
