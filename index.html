@@ -387,6 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const SECONDS_PER_RACE = 28.47;      // assumed average race duration (s)
   const WPM_METHOD = 'typed';          // 'typed' | 'weighted' | 'current'
   const WPM_RESET_THRESHOLD = 160;     // cap: reset event WPM to API avgWpm if above this
+  const EVENT_DEFAULT_SORT = 'totalPoints'; // default sort for Event table
   const EVENT_FILES = {
     apiBefore: 'API_before.ndjson',     // NDJSON lines (API snapshot before)
     apiNow: 'API_now.ndjson',           // NDJSON lines (API snapshot after)
@@ -395,9 +396,10 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // -----------------------------
-  // Ensure "Total Points" tab/section exists (in case HTML not updated)
+  // Remove legacy "Total Points" section and ensure Event THEAD includes merged columns
   // -----------------------------
-  ensureTotalPointsTab();
+  removeTotalPointsSectionIfPresent();
+  ensureEventTableHasMergedColumns();
 
   // -----------------------------
   // Tabs
@@ -464,7 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // -----------------------------
-  // Event initialization
+  // Event initialization (single merged Event table)
   // -----------------------------
   function initEventTab() {
     loadEventFourFiles(EVENT_FILES)
@@ -478,20 +480,34 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!rows || rows.length === 0) {
           clearEventTable();
           setEventStatus(`Loaded ${beforeCount.toLocaleString()} (before API) and ${nowCount.toLocaleString()} (now API); 0 racers with Δ races > 0.`);
-          // Clear Total Points table as well
-          const tpt = document.querySelector('#eventTotalPointsTable tbody');
-          if (tpt) tpt.innerHTML = '';
-          setNote('eventTotalPointsNote', '0 racers ranked by total points.');
           return;
         }
-        // Render Event table (Δ races sort by default)
-        renderEventComputed(rows);
+
+        // Default sort for event table (pre-render)
+        const sorted = [...rows].sort((a, b) => {
+          if (EVENT_DEFAULT_SORT === 'totalPoints') {
+            const av = Number.isFinite(a.totalPoints) ? a.totalPoints : -Infinity;
+            const bv = Number.isFinite(b.totalPoints) ? b.totalPoints : -Infinity;
+            if (bv !== av) return bv - av;
+            if (b.dRaces !== a.dRaces) return b.dRaces - a.dRaces;
+            const aw = Number.isFinite(a.wpm) ? a.wpm : -Infinity;
+            const bw = Number.isFinite(b.wpm) ? b.wpm : -Infinity;
+            return bw - aw;
+          } else {
+            if (b.dRaces !== a.dRaces) return b.dRaces - a.dRaces;
+            const av = Number.isFinite(a.totalPoints) ? a.totalPoints : -Infinity;
+            const bv = Number.isFinite(b.totalPoints) ? b.totalPoints : -Infinity;
+            if (bv !== av) return bv - av;
+            const aw = Number.isFinite(a.wpm) ? a.wpm : -Infinity;
+            const bw = Number.isFinite(b.wpm) ? b.wpm : -Infinity;
+            return bw - aw;
+          }
+        });
+
+        // Render Event table (merged with Total Points)
+        renderEventComputed(sorted);
         enableSorting('eventTable');
         setEventStatus(`Loaded ${beforeCount.toLocaleString()} (before API) and ${nowCount.toLocaleString()} (now API); ${rows.length.toLocaleString()} racers with Δ races > 0.`);
-
-        // Render Total Points table (sorted by total points)
-        renderEventTotalPoints(rows);
-        enableSorting('eventTotalPointsTable');
       })
       .catch(err => {
         console.error('Event computation error:', err);
@@ -717,7 +733,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Normalize API (flat arrays) and Data (object or array)
     const apiBefore = toArray(apiBeforeRaw);
-    const apiNow = toArray(apiNowRaw);
+    the apiNow = toArray(apiNowRaw);
     const dataBefore = normalizeData(dataBeforeRaw).racers;
     const dataNow = normalizeData(dataNowRaw).racers;
 
@@ -829,14 +845,12 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    // Sort by Δ Total Races desc
-    rows.sort((a, b) => b.dRaces - a.dRaces);
-
+    // Do not sort here; let initEventTab decide default sort
     return { beforeCount, nowCount, rows };
   }
 
   // -----------------------------
-  // Event table render (Δ races sorted)
+  // Event table render (merged: includes Total Points)
   // -----------------------------
   function renderEventComputed(rows) {
     const tbody = document.querySelector('#eventTable tbody');
@@ -858,6 +872,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const pprStr = r.pointsPerRace != null
         ? safeNumber(r.pointsPerRace).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         : '—';
+      const totalStr = r.totalPoints != null
+        ? safeNumber(r.totalPoints).toLocaleString(undefined, { maximumFractionDigits: 2 })
+        : '—';
 
       const pointsTitle = (r.totalPoints != null)
         ? `title="Total Points: ${safeNumber(r.totalPoints).toLocaleString(undefined, { maximumFractionDigits: 2 })}"`
@@ -878,6 +895,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <td data-label="Δ Total Races">${formatDeltaInt(r.dRaces)}</td>
         <td data-label="Avg WPM"><span ${wpmTitle}>${wpmStr}</span></td>
         <td data-label="Avg Accuracy">${accStr}</td>
+        <td data-label="Total Points">${totalStr}</td>
         <td data-label="Avg Points"><span ${pointsTitle}>${pprStr}</span></td>
         <td data-label="Δ Nitros Used">${r.nitrosDelta != null ? formatDeltaInt(r.nitrosDelta) : '—'}</td>
       `.trim();
@@ -886,66 +904,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     tbody.appendChild(frag);
-  }
 
-  // -----------------------------
-  // Event Total Points render (sorted by total points)
-  // -----------------------------
-  function renderEventTotalPoints(rows) {
-    const tbody = document.querySelector('#eventTotalPointsTable tbody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-    const frag = document.createDocumentFragment();
-
-    const sorted = [...rows].sort((a, b) => {
-      const av = Number.isFinite(a.totalPoints) ? a.totalPoints : -Infinity;
-      const bv = Number.isFinite(b.totalPoints) ? b.totalPoints : -Infinity;
-      return bv - av;
-    });
-
-    sorted.forEach((r, i) => {
-      const tr = document.createElement('tr');
-      const racerUrl = ntRacerURL(r.slug);
-      const teamUrl = r.tag ? ntTeamURL(r.tag) : '#';
-
-      const wpmStr = r.wpm != null
-        ? safeNumber(r.wpm).toLocaleString(undefined, { maximumFractionDigits: 2 }) + (r.wpmReset ? ' *' : '')
-        : '—';
-      const accStr = r.acc != null
-        ? `${safeNumber(r.acc).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`
-        : '—';
-      const pprStr = r.pointsPerRace != null
-        ? safeNumber(r.pointsPerRace).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-        : '—';
-      const totalStr = r.totalPoints != null
-        ? safeNumber(r.totalPoints).toLocaleString(undefined, { maximumFractionDigits: 2 })
-        : '—';
-
-      const wpmTitle = r.wpmReset && r.wpmOriginal != null
-        ? `title="Reset from ${safeNumber(r.wpmOriginal).toLocaleString(undefined, { maximumFractionDigits: 2 })} (> ${WPM_RESET_THRESHOLD})"`
-        : '';
-
-      tr.innerHTML = `
-        <td data-label="Rank">${i + 1}</td>
-        <td data-label="Display Name">
-          <a class="link-quiet" href="${escapeAttr(racerUrl)}" target="_blank">${escapeHTML(r.displayName)}</a>
-        </td>
-        <td data-label="Team Tag">
-          ${r.tag ? `<a class="tag-link" href="${escapeAttr(teamUrl)}" target="_blank">${escapeHTML(r.tag)}</a>` : '<span>—</span>'}
-        </td>
-        <td data-label="Total Points">${totalStr}</td>
-        <td data-label="Avg Points">${pprStr}</td>
-        <td data-label="Δ Total Races">${formatDeltaInt(r.dRaces)}</td>
-        <td data-label="Avg WPM"><span ${wpmTitle}>${wpmStr}</span></td>
-        <td data-label="Avg Accuracy">${accStr}</td>
-        <td data-label="Δ Nitros Used">${r.nitrosDelta != null ? formatDeltaInt(r.nitrosDelta) : '—'}</td>
-      `.trim();
-
-      frag.appendChild(tr);
-    });
-
-    tbody.appendChild(frag);
-    setNote('eventTotalPointsNote', `${rows.length.toLocaleString()} racers ranked by total points.`);
+    // Optional legend for audit clarity
+    const legendId = 'eventLegend';
+    let legend = document.getElementById(legendId);
+    if (!legend) {
+      legend = document.createElement('div');
+      legend.id = legendId;
+      legend.className = 'table-note legend';
+      legend.textContent = '* = WPM reset to API avgWpm after exceeding threshold.';
+      const tableWrap = tbody.closest('.table-container') || tbody.parentElement;
+      if (tableWrap && !tableWrap.querySelector('#' + legendId)) {
+        tableWrap.appendChild(legend);
+      }
+    }
   }
 
   // -----------------------------
@@ -965,15 +937,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -----------------------------
-  // Sorting (numeric-aware + rank renumbering)
+  // Sorting (numeric-aware + rank renumbering + a11y)
   // -----------------------------
   function enableSorting(tableId) {
     const table = document.getElementById(tableId);
     if (!table) return;
     const headers = table.querySelectorAll('th');
     headers.forEach((th, idx) => {
-      th.addEventListener('click', () => {
+      th.tabIndex = 0;
+      th.setAttribute('role', 'columnheader');
+      th.setAttribute('aria-sort', 'none');
+
+      const activate = () => {
         const tbody = table.querySelector('tbody');
+        if (!tbody) return;
         const rows = Array.from(tbody.querySelectorAll('tr'));
         const asc = !th.classList.contains('asc');
 
@@ -986,8 +963,12 @@ document.addEventListener('DOMContentLoaded', () => {
           return asc ? aText.localeCompare(bText) : bText.localeCompare(aText);
         });
 
-        headers.forEach(h => h.classList.remove('asc', 'desc'));
+        headers.forEach(h => {
+          h.classList.remove('asc', 'desc');
+          h.setAttribute('aria-sort', 'none');
+        });
         th.classList.add(asc ? 'asc' : 'desc');
+        th.setAttribute('aria-sort', asc ? 'ascending' : 'descending');
 
         rows.forEach((row, i) => {
           if (row.children[0]) row.children[0].textContent = i + 1;
@@ -995,6 +976,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         tbody.innerHTML = '';
         rows.forEach(r => tbody.appendChild(r));
+      };
+
+      th.addEventListener('click', activate);
+      th.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          activate();
+        }
       });
     });
   }
@@ -1002,53 +991,41 @@ document.addEventListener('DOMContentLoaded', () => {
   // -----------------------------
   // Utilities
   // -----------------------------
-  function ensureTotalPointsTab() {
-    const tabsWrap = document.querySelector('.tabs');
-    const eventSection = document.getElementById('eventSection');
-    if (!tabsWrap || !eventSection) return;
+  function ensureEventTableHasMergedColumns() {
+    const table = document.getElementById('eventTable');
+    if (!table) return;
+    const theadRow = table.querySelector('thead tr');
+    if (!theadRow) return;
+    const headers = Array.from(theadRow.querySelectorAll('th'));
+    const texts = headers.map(h => h.textContent.trim().toLowerCase());
+    const hasTotalPoints = texts.includes('total points');
+    const hasAvgPoints = texts.includes('avg points');
 
-    const existingTab = tabsWrap.querySelector('.tab[data-target="eventTotalPointsSection"]');
-    const existingSection = document.getElementById('eventTotalPointsSection');
-    if (existingTab && existingSection) return;
+    // Insert before "Δ Nitros Used" if present; else append to end
+    const nitrosIndex = texts.findIndex(t =>
+      t === 'Δ nitros used' || t === 'delta nitros used' || t === 'Δ nitros' || t === 'Δ nitros used'
+    );
+    const insertBefore = nitrosIndex >= 0 ? headers[nitrosIndex] : null;
 
-    // Create tab
-    if (!existingTab) {
-      const tab = document.createElement('div');
-      tab.className = 'tab';
-      tab.dataset.target = 'eventTotalPointsSection';
-      tab.textContent = 'Total Points';
-      tabsWrap.appendChild(tab);
+    if (!hasTotalPoints) {
+      const th = document.createElement('th');
+      th.textContent = 'Total Points';
+      if (insertBefore) theadRow.insertBefore(th, insertBefore);
+      else theadRow.appendChild(th);
     }
-
-    // Create section with table
-    if (!existingSection) {
-      const sec = document.createElement('div');
-      sec.id = 'eventTotalPointsSection';
-      sec.className = 'table-container';
-      sec.innerHTML = `
-        <div class="table-note"><span id="eventTotalPointsNote"></span></div>
-        <div class="table-wrapper">
-          <table id="eventTotalPointsTable" class="data-table">
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>Display Name</th>
-                <th>Team Tag</th>
-                <th>Total Points</th>
-                <th>Avg Points</th>
-                <th>Δ Total Races</th>
-                <th>Avg WPM</th>
-                <th>Avg Accuracy</th>
-                <th>Δ Nitros Used</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      `.trim();
-      // Insert after event section
-      eventSection.parentNode.insertBefore(sec, eventSection.nextSibling);
+    if (!hasAvgPoints) {
+      const th = document.createElement('th');
+      th.textContent = 'Avg Points';
+      if (insertBefore) theadRow.insertBefore(th, insertBefore);
+      else theadRow.appendChild(th);
     }
+  }
+
+  function removeTotalPointsSectionIfPresent() {
+    const tab = document.querySelector('.tabs .tab[data-target="eventTotalPointsSection"]');
+    if (tab && tab.parentNode) tab.parentNode.removeChild(tab);
+    const sec = document.getElementById('eventTotalPointsSection');
+    if (sec && sec.parentNode) sec.parentNode.removeChild(sec);
   }
 
   function wpmFromTyped(typedDelta, racesDelta, secondsPerRace = SECONDS_PER_RACE) {
