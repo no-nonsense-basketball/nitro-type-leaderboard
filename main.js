@@ -1,22 +1,3 @@
-/* ============================================================================
-   main.js — Unified Nitro Type Leaderboards (Long, Auditable, NDJSON-safe)
-   - Uses ONLY the previously shared remote files (no local filenames)
-   - Endpoints (raw GitHub) for:
-       • API_before.ndjson
-       • API_now.ndjson
-       • BeforeEventData.json
-       • AfterEventData.json
-   - Renders four sections:
-       1) Leaderboard (from AfterEventData.json)
-       2) Races Per Day (from AfterEventData.json)
-       3) 24-Hour Leaderboard (from API_before/now.ndjson)
-       4) Event (Four-file merge: API_before/now + Data Before/After)
-   - Robust JSON/NDJSON parser with graceful fallback
-   - Weighted WPM and accuracy from typed/errs deltas
-   - Points per race = 100 + (WPM/2) * (Accuracy/100), Total Points = Points * Δ Races
-   - Sorting, status notes, and clean DOM rendering aligned with your index.html
-   ============================================================================ */
-
 document.addEventListener('DOMContentLoaded', () => {
   // ---------------------------------------------------------------------------
   // Remote file URLs (raw.githubusercontent.com) — no local files are used.
@@ -32,11 +13,16 @@ document.addEventListener('DOMContentLoaded', () => {
   // Configuration and thresholds
   // ---------------------------------------------------------------------------
   const CONFIG = {
-    MAX_24H_RACES: 2600,               // anomaly cutoff for 24h delta
-    EVENT_WPM_METHOD: 'weighted',      // 'weighted' | 'chars' (weighted by played (avgWpm*played))
-    H24_WPM_METHOD: 'weighted',        // same options for 24h tab
-    AVG_RACE_SECONDS: 28.47,           // used only for 'chars' fallback
-    BAKE_ACCURACY_INTO_WPM: false      // if using 'chars', optionally fold accuracy into WPM (not recommended w/ points formula)
+    MAX_24H_RACES: 2600,          
+    EVENT_WPM_METHOD: 'weighted',     
+    H24_WPM_METHOD: 'weighted',       
+    AVG_RACE_SECONDS: 28.47,         
+    BAKE_ACCURACY_INTO_WPM: false,    
+
+    // NEW: Event WPM sanity filtering
+    WPM_CEILING: 160,         
+    RESPECT_HIGH_WPM: true,         
+    WPM_FALLBACK: 'avgWpm'     
   };
 
   // ---------------------------------------------------------------------------
@@ -260,8 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------------------------------------------------------------------------
   // 24-Hour Leaderboard — computed from API NDJSON (before vs now)
   // Columns (in your HTML): Rank, Display Name, Δ Total Races, Δ Top WPM, Δ Profile Views, Δ Nitros Used
-  // We will compute deltas from API where available (views/nitros are not in API; left as 0).
-  // If you want Data-based views/nitros deltas for daily, you could switch to Data snapshots here.
+  // Note: views/nitros deltas unavailable from API; left as 0. (24h WPM not computed here)
   // ---------------------------------------------------------------------------
   function renderChanges24_fromAPI(apiBeforeArr, apiNowArr) {
     // Index by username
@@ -358,6 +343,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // WPM sanity helper (applies to Event tab only)
+  // ---------------------------------------------------------------------------
+  function sanitizeWpm(rawWpm, apiSnapshot, config) {
+    const w = Number(rawWpm);
+    if (!Number.isFinite(w) || w <= 0) return 0;
+
+    const ceiling = Number(config.WPM_CEILING ?? 160);
+    const high = Number(apiSnapshot?.highWpm);
+    const avg  = Number(apiSnapshot?.avgWpm);
+
+    let allowedMax = ceiling;
+    if (config.RESPECT_HIGH_WPM && Number.isFinite(high) && high > 0) {
+      allowedMax = Math.min(allowedMax, high);
+    }
+
+    if (w > allowedMax) {
+      if (config.WPM_FALLBACK === 'avgWpm' && Number.isFinite(avg) && avg > 0) {
+        return avg;
+      }
+      return allowedMax;
+    }
+
+    return w;
+  }
+
   function computeEvent(apiBeforeArr, apiNowArr, dataBeforeArr, dataNowArr, method) {
     const aB = indexByKey(apiBeforeArr, o => String(o.username || '').toLowerCase());
     const aN = indexByKey(apiNowArr,    o => String(o.username || '').toLowerCase());
@@ -396,6 +407,8 @@ document.addEventListener('DOMContentLoaded', () => {
       // Accuracy from typed/errs deltas (API)
       let acc = null, wpm = null, points = null;
       let typedDelta = null, errsDelta = null, playedDelta = null;
+      let wpmRaw = null; // for audit tooltip
+      let corrected = false;
 
       if (hasAPI) {
         typedDelta = Math.max(0, safeNumber(apiN.typed) - safeNumber(apiB.typed));
@@ -424,6 +437,14 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
 
+        // WPM sanity filter (audit-friendly)
+        if (wpm != null) {
+          wpmRaw = wpm;
+          const sanitized = sanitizeWpm(wpm, apiN, CONFIG);
+          corrected = sanitized !== wpm;
+          wpm = sanitized;
+        }
+
         if (wpm != null && acc != null) {
           points = 100 + (wpm / 2) * (acc / 100);
         }
@@ -435,7 +456,10 @@ document.addEventListener('DOMContentLoaded', () => {
         wpm: wpm != null ? wpm : null,
         acc: acc != null ? acc : null,
         points: points != null ? points : null,
-        nitrosDelta
+        nitrosDelta,
+        // audit extras
+        wpmRaw: wpmRaw != null ? wpmRaw : null,
+        corrected: !!corrected
       });
     });
 
@@ -459,6 +483,12 @@ document.addEventListener('DOMContentLoaded', () => {
     rows.forEach((r, i) => {
       const racerUrl = ntRacerURL(r.slug);
       const teamUrl = r.tag ? ntTeamURL(r.tag) : '#';
+      const tooltip = r.corrected
+        ? `Sanitized from ${safeNumber(r.wpmRaw).toLocaleString(undefined, { maximumFractionDigits: 2 })} using ${CONFIG.WPM_FALLBACK || 'clamp'}`
+        : '';
+      const wpmCell = (r.wpm != null)
+        ? `<span title="${escapeAttr(tooltip)}">${safeNumber(r.wpm).toLocaleString(undefined, { maximumFractionDigits: 2 })}${r.corrected ? ' ⚑' : ''}</span>`
+        : '—';
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td data-label="Rank">${i + 1}</td>
@@ -469,7 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ${r.tag ? `<a class="tag-link" href="${escapeAttr(teamUrl)}" target="_blank">${escapeHTML(r.tag)}</a>` : '<span>-</span>'}
         </td>
         <td data-label="Δ Total Races">${formatDeltaInt(r.dRaces)}</td>
-        <td data-label="Avg WPM">${r.wpm != null ? safeNumber(r.wpm).toLocaleString(undefined, { maximumFractionDigits: 2 }) : '—'}</td>
+        <td data-label="Avg WPM">${wpmCell}</td>
         <td data-label="Avg Accuracy">${r.acc != null ? safeNumber(r.acc).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%' : '—'}</td>
         <td data-label="Avg Points">${r.points != null ? safeNumber(r.points).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}</td>
         <td data-label="Δ Nitros Used">${r.nitrosDelta != null ? formatDeltaInt(r.nitrosDelta) : '—'}</td>
@@ -567,5 +597,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const v = safeNumber(n);
     const sign = v > 0 ? '+' : '';
     return `${sign}${v.toLocaleString()}`;
+  }
+  function setNote(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = String(text || '');
   }
 });
