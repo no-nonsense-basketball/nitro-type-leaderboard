@@ -378,20 +378,26 @@
     </div>
   </section>
 
-  <script>
+<script>
 document.addEventListener('DOMContentLoaded', () => {
   // -----------------------------
   // Constants and configuration
   // -----------------------------
-  const MAX_24H_RACES = 2600;        // anomaly cutoff for 24h diffs
-  const SECONDS_PER_RACE = 28.47;    // assumed average race duration (s)
-  const WPM_METHOD = 'typed';        // 'typed' | 'weighted' | 'current'
+  const MAX_24H_RACES = 2600;          // anomaly cutoff for 24h diffs
+  const SECONDS_PER_RACE = 28.47;      // assumed average race duration (s)
+  const WPM_METHOD = 'typed';          // 'typed' | 'weighted' | 'current'
+  const WPM_RESET_THRESHOLD = 160;     // cap: reset event WPM to API avgWpm if above this
   const EVENT_FILES = {
-    apiBefore: 'API_before.ndjson',   // NDJSON lines (API snapshot before)
-    apiNow: 'API_now.ndjson',         // NDJSON lines (API snapshot after)
+    apiBefore: 'API_before.ndjson',     // NDJSON lines (API snapshot before)
+    apiNow: 'API_now.ndjson',           // NDJSON lines (API snapshot after)
     dataBefore: 'BeforeEventData.json', // Profile snapshot before (Data)
     dataNow: 'AfterEventData.json'      // Profile snapshot after (Data)
   };
+
+  // -----------------------------
+  // Ensure "Total Points" tab/section exists (in case HTML not updated)
+  // -----------------------------
+  ensureTotalPointsTab();
 
   // -----------------------------
   // Tabs
@@ -472,11 +478,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!rows || rows.length === 0) {
           clearEventTable();
           setEventStatus(`Loaded ${beforeCount.toLocaleString()} (before API) and ${nowCount.toLocaleString()} (now API); 0 racers with Δ races > 0.`);
+          // Clear Total Points table as well
+          const tpt = document.querySelector('#eventTotalPointsTable tbody');
+          if (tpt) tpt.innerHTML = '';
+          setNote('eventTotalPointsNote', '0 racers ranked by total points.');
           return;
         }
+        // Render Event table (Δ races sort by default)
         renderEventComputed(rows);
         enableSorting('eventTable');
         setEventStatus(`Loaded ${beforeCount.toLocaleString()} (before API) and ${nowCount.toLocaleString()} (now API); ${rows.length.toLocaleString()} racers with Δ races > 0.`);
+
+        // Render Total Points table (sorted by total points)
+        renderEventTotalPoints(rows);
+        enableSorting('eventTotalPointsTable');
       })
       .catch(err => {
         console.error('Event computation error:', err);
@@ -564,6 +579,7 @@ document.addEventListener('DOMContentLoaded', () => {
     list.sort((a, b) => b.racesPlayed - a.racesPlayed);
 
     const tbody = document.querySelector('#leaderboardTable tbody');
+    if (!tbody) return;
     tbody.innerHTML = '';
     const frag = document.createDocumentFragment();
 
@@ -618,6 +634,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }).sort((a, b) => b.perDay - a.perDay);
 
     const tbody = document.querySelector('#racesPerDayTable tbody');
+    if (!tbody) return;
     tbody.innerHTML = '';
     const frag = document.createDocumentFragment();
 
@@ -664,6 +681,7 @@ document.addEventListener('DOMContentLoaded', () => {
     .sort((a, b) => b.dRaces - a.dRaces);
 
     const tbody = document.querySelector('#changes24Table tbody');
+    if (!tbody) return;
     tbody.innerHTML = '';
     const frag = document.createDocumentFragment();
 
@@ -751,10 +769,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Accuracy (% over the period)
       const acc = (hasAPI && typedDelta > 0)
-        ? clamp(0, 100 * (1 - (errsDelta / typedDelta)), 100)
+        ? clamp(0, 100 * (1 - (errsDelta / Math.max(1, typedDelta))), 100)
         : null;
 
-      // Period WPM
+      // Period WPM (with cap/reset above threshold)
       let wpm = null;
       if (hasAPI) {
         if (WPM_METHOD === 'typed') {
@@ -775,9 +793,22 @@ document.addEventListener('DOMContentLoaded', () => {
           wpm = safeNumber(aN.avgWpm);
         }
       }
-      if (!Number.isFinite(wpm) || wpm < 0) wpm = null;
 
-      // Points per race & total points for the period
+      // Apply reset if over threshold; preserve audit info
+      let wpmReset = false;
+      let wpmOriginal = null;
+      if (!Number.isFinite(wpm) || wpm < 0) {
+        wpm = null;
+      } else if (wpm > WPM_RESET_THRESHOLD) {
+        const apiAvg = hasAPI ? safeNumber(aN.avgWpm) : 0;
+        if (apiAvg > 0) {
+          wpmOriginal = wpm;
+          wpm = apiAvg;   // reset to API-stored average WPM
+          wpmReset = true;
+        }
+      }
+
+      // Points per race & total points for the period (use possibly reset WPM)
       const pointsPerRace = (wpm != null && acc != null)
         ? 100 + (wpm / 2) * (acc / 100)
         : null;
@@ -792,7 +823,9 @@ document.addEventListener('DOMContentLoaded', () => {
         slug, tag, displayName,
         dRaces, wpm, acc,
         pointsPerRace, totalPoints,
-        nitrosDelta
+        nitrosDelta,
+        wpmReset,        // audit flag
+        wpmOriginal      // pre-cap WPM for tooltip
       });
     });
 
@@ -803,11 +836,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -----------------------------
-  // Event table render
-  // (Uses "Avg Points" column to display pointsPerRace; totalPoints is computed for downstream use)
+  // Event table render (Δ races sorted)
   // -----------------------------
   function renderEventComputed(rows) {
     const tbody = document.querySelector('#eventTable tbody');
+    if (!tbody) return;
     tbody.innerHTML = '';
     const frag = document.createDocumentFragment();
 
@@ -817,7 +850,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const tr = document.createElement('tr');
 
       const wpmStr = r.wpm != null
-        ? safeNumber(r.wpm).toLocaleString(undefined, { maximumFractionDigits: 2 })
+        ? safeNumber(r.wpm).toLocaleString(undefined, { maximumFractionDigits: 2 }) + (r.wpmReset ? ' *' : '')
         : '—';
       const accStr = r.acc != null
         ? `${safeNumber(r.acc).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`
@@ -826,9 +859,12 @@ document.addEventListener('DOMContentLoaded', () => {
         ? safeNumber(r.pointsPerRace).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         : '—';
 
-      // Provide totalPoints as a title tooltip on Avg Points cell for visibility without changing headers
       const pointsTitle = (r.totalPoints != null)
         ? `title="Total Points: ${safeNumber(r.totalPoints).toLocaleString(undefined, { maximumFractionDigits: 2 })}"`
+        : '';
+
+      const wpmTitle = r.wpmReset && r.wpmOriginal != null
+        ? `title="Reset from ${safeNumber(r.wpmOriginal).toLocaleString(undefined, { maximumFractionDigits: 2 })} (> ${WPM_RESET_THRESHOLD})"`
         : '';
 
       tr.innerHTML = `
@@ -840,7 +876,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ${r.tag ? `<a class="tag-link" href="${escapeAttr(teamUrl)}" target="_blank">${escapeHTML(r.tag)}</a>` : '<span>—</span>'}
         </td>
         <td data-label="Δ Total Races">${formatDeltaInt(r.dRaces)}</td>
-        <td data-label="Avg WPM">${wpmStr}</td>
+        <td data-label="Avg WPM"><span ${wpmTitle}>${wpmStr}</span></td>
         <td data-label="Avg Accuracy">${accStr}</td>
         <td data-label="Avg Points"><span ${pointsTitle}>${pprStr}</span></td>
         <td data-label="Δ Nitros Used">${r.nitrosDelta != null ? formatDeltaInt(r.nitrosDelta) : '—'}</td>
@@ -850,6 +886,66 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     tbody.appendChild(frag);
+  }
+
+  // -----------------------------
+  // Event Total Points render (sorted by total points)
+  // -----------------------------
+  function renderEventTotalPoints(rows) {
+    const tbody = document.querySelector('#eventTotalPointsTable tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    const frag = document.createDocumentFragment();
+
+    const sorted = [...rows].sort((a, b) => {
+      const av = Number.isFinite(a.totalPoints) ? a.totalPoints : -Infinity;
+      const bv = Number.isFinite(b.totalPoints) ? b.totalPoints : -Infinity;
+      return bv - av;
+    });
+
+    sorted.forEach((r, i) => {
+      const tr = document.createElement('tr');
+      const racerUrl = ntRacerURL(r.slug);
+      const teamUrl = r.tag ? ntTeamURL(r.tag) : '#';
+
+      const wpmStr = r.wpm != null
+        ? safeNumber(r.wpm).toLocaleString(undefined, { maximumFractionDigits: 2 }) + (r.wpmReset ? ' *' : '')
+        : '—';
+      const accStr = r.acc != null
+        ? `${safeNumber(r.acc).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`
+        : '—';
+      const pprStr = r.pointsPerRace != null
+        ? safeNumber(r.pointsPerRace).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : '—';
+      const totalStr = r.totalPoints != null
+        ? safeNumber(r.totalPoints).toLocaleString(undefined, { maximumFractionDigits: 2 })
+        : '—';
+
+      const wpmTitle = r.wpmReset && r.wpmOriginal != null
+        ? `title="Reset from ${safeNumber(r.wpmOriginal).toLocaleString(undefined, { maximumFractionDigits: 2 })} (> ${WPM_RESET_THRESHOLD})"`
+        : '';
+
+      tr.innerHTML = `
+        <td data-label="Rank">${i + 1}</td>
+        <td data-label="Display Name">
+          <a class="link-quiet" href="${escapeAttr(racerUrl)}" target="_blank">${escapeHTML(r.displayName)}</a>
+        </td>
+        <td data-label="Team Tag">
+          ${r.tag ? `<a class="tag-link" href="${escapeAttr(teamUrl)}" target="_blank">${escapeHTML(r.tag)}</a>` : '<span>—</span>'}
+        </td>
+        <td data-label="Total Points">${totalStr}</td>
+        <td data-label="Avg Points">${pprStr}</td>
+        <td data-label="Δ Total Races">${formatDeltaInt(r.dRaces)}</td>
+        <td data-label="Avg WPM"><span ${wpmTitle}>${wpmStr}</span></td>
+        <td data-label="Avg Accuracy">${accStr}</td>
+        <td data-label="Δ Nitros Used">${r.nitrosDelta != null ? formatDeltaInt(r.nitrosDelta) : '—'}</td>
+      `.trim();
+
+      frag.appendChild(tr);
+    });
+
+    tbody.appendChild(frag);
+    setNote('eventTotalPointsNote', `${rows.length.toLocaleString()} racers ranked by total points.`);
   }
 
   // -----------------------------
@@ -906,6 +1002,55 @@ document.addEventListener('DOMContentLoaded', () => {
   // -----------------------------
   // Utilities
   // -----------------------------
+  function ensureTotalPointsTab() {
+    const tabsWrap = document.querySelector('.tabs');
+    const eventSection = document.getElementById('eventSection');
+    if (!tabsWrap || !eventSection) return;
+
+    const existingTab = tabsWrap.querySelector('.tab[data-target="eventTotalPointsSection"]');
+    const existingSection = document.getElementById('eventTotalPointsSection');
+    if (existingTab && existingSection) return;
+
+    // Create tab
+    if (!existingTab) {
+      const tab = document.createElement('div');
+      tab.className = 'tab';
+      tab.dataset.target = 'eventTotalPointsSection';
+      tab.textContent = 'Total Points';
+      tabsWrap.appendChild(tab);
+    }
+
+    // Create section with table
+    if (!existingSection) {
+      const sec = document.createElement('div');
+      sec.id = 'eventTotalPointsSection';
+      sec.className = 'table-container';
+      sec.innerHTML = `
+        <div class="table-note"><span id="eventTotalPointsNote"></span></div>
+        <div class="table-wrapper">
+          <table id="eventTotalPointsTable" class="data-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Display Name</th>
+                <th>Team Tag</th>
+                <th>Total Points</th>
+                <th>Avg Points</th>
+                <th>Δ Total Races</th>
+                <th>Avg WPM</th>
+                <th>Avg Accuracy</th>
+                <th>Δ Nitros Used</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      `.trim();
+      // Insert after event section
+      eventSection.parentNode.insertBefore(sec, eventSection.nextSibling);
+    }
+  }
+
   function wpmFromTyped(typedDelta, racesDelta, secondsPerRace = SECONDS_PER_RACE) {
     const typed = safeNumber(typedDelta);
     const races = safeNumber(racesDelta);
@@ -985,6 +1130,3 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 </script>
-</body>
-</html>
-
