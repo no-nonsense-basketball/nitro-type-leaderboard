@@ -733,7 +733,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Normalize API (flat arrays) and Data (object or array)
     const apiBefore = toArray(apiBeforeRaw);
-    the apiNow = toArray(apiNowRaw);
+    const apiNow = toArray(apiNowRaw);
     const dataBefore = normalizeData(dataBeforeRaw).racers;
     const dataNow = normalizeData(dataNowRaw).racers;
 
@@ -1109,3 +1109,4 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
