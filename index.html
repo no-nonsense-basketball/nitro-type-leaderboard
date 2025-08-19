@@ -396,10 +396,10 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // -----------------------------
-  // Remove legacy "Total Points" section and ensure Event THEAD includes merged columns
+  // Remove legacy "Total Points" tab/section and enforce Event header
   // -----------------------------
   removeTotalPointsSectionIfPresent();
-  ensureEventTableHasMergedColumns();
+  ensureEventHeaderExact(); // ensures exact column order for Event table THEAD
 
   // -----------------------------
   // Tabs
@@ -850,7 +850,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -----------------------------
-  // Event table render (merged: includes Total Points)
+  // Event table render (EXACT COLUMN ORDER)
+  // Desired headers:
+  // Rank | Display Name | Team Tag | Total Races | Avg WPM | Avg Accuracy | Avg Points | Nitros Used | Total Points
   // -----------------------------
   function renderEventComputed(rows) {
     const tbody = document.querySelector('#eventTable tbody');
@@ -875,13 +877,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const totalStr = r.totalPoints != null
         ? safeNumber(r.totalPoints).toLocaleString(undefined, { maximumFractionDigits: 2 })
         : '—';
-
-      const pointsTitle = (r.totalPoints != null)
-        ? `title="Total Points: ${safeNumber(r.totalPoints).toLocaleString(undefined, { maximumFractionDigits: 2 })}"`
-        : '';
+      const nitrosStr = r.nitrosDelta != null
+        ? formatDeltaInt(r.nitrosDelta)
+        : '—';
 
       const wpmTitle = r.wpmReset && r.wpmOriginal != null
         ? `title="Reset from ${safeNumber(r.wpmOriginal).toLocaleString(undefined, { maximumFractionDigits: 2 })} (> ${WPM_RESET_THRESHOLD})"`
+        : '';
+      const totalTitle = (r.totalPoints != null)
+        ? `title="Total Points: ${safeNumber(r.totalPoints).toLocaleString(undefined, { maximumFractionDigits: 2 })}"`
         : '';
 
       tr.innerHTML = `
@@ -892,12 +896,12 @@ document.addEventListener('DOMContentLoaded', () => {
         <td data-label="Team Tag">
           ${r.tag ? `<a class="tag-link" href="${escapeAttr(teamUrl)}" target="_blank">${escapeHTML(r.tag)}</a>` : '<span>—</span>'}
         </td>
-        <td data-label="Δ Total Races">${formatDeltaInt(r.dRaces)}</td>
+        <td data-label="Total Races">${formatDeltaInt(r.dRaces)}</td>
         <td data-label="Avg WPM"><span ${wpmTitle}>${wpmStr}</span></td>
         <td data-label="Avg Accuracy">${accStr}</td>
-        <td data-label="Total Points">${totalStr}</td>
-        <td data-label="Avg Points"><span ${pointsTitle}>${pprStr}</span></td>
-        <td data-label="Δ Nitros Used">${r.nitrosDelta != null ? formatDeltaInt(r.nitrosDelta) : '—'}</td>
+        <td data-label="Avg Points">${pprStr}</td>
+        <td data-label="Nitros Used">${nitrosStr}</td>
+        <td data-label="Total Points"><span ${totalTitle}>${totalStr}</span></td>
       `.trim();
 
       frag.appendChild(tr);
@@ -991,34 +995,34 @@ document.addEventListener('DOMContentLoaded', () => {
   // -----------------------------
   // Utilities
   // -----------------------------
-  function ensureEventTableHasMergedColumns() {
+  function ensureEventHeaderExact() {
+    // Enforce exact THEAD structure and order to match row generation and sorting indices.
     const table = document.getElementById('eventTable');
     if (!table) return;
-    const theadRow = table.querySelector('thead tr');
-    if (!theadRow) return;
-    const headers = Array.from(theadRow.querySelectorAll('th'));
-    const texts = headers.map(h => h.textContent.trim().toLowerCase());
-    const hasTotalPoints = texts.includes('total points');
-    const hasAvgPoints = texts.includes('avg points');
-
-    // Insert before "Δ Nitros Used" if present; else append to end
-    const nitrosIndex = texts.findIndex(t =>
-      t === 'Δ nitros used' || t === 'delta nitros used' || t === 'Δ nitros' || t === 'Δ nitros used'
-    );
-    const insertBefore = nitrosIndex >= 0 ? headers[nitrosIndex] : null;
-
-    if (!hasTotalPoints) {
-      const th = document.createElement('th');
-      th.textContent = 'Total Points';
-      if (insertBefore) theadRow.insertBefore(th, insertBefore);
-      else theadRow.appendChild(th);
+    let thead = table.querySelector('thead');
+    if (!thead) {
+      thead = document.createElement('thead');
+      table.insertBefore(thead, table.firstChild);
     }
-    if (!hasAvgPoints) {
+    const desired = [
+      'Rank',
+      'Display Name',
+      'Team Tag',
+      'Total Races',
+      'Avg WPM',
+      'Avg Accuracy',
+      'Avg Points',
+      'Nitros Used',
+      'Total Points'
+    ];
+    const tr = document.createElement('tr');
+    desired.forEach(text => {
       const th = document.createElement('th');
-      th.textContent = 'Avg Points';
-      if (insertBefore) theadRow.insertBefore(th, insertBefore);
-      else theadRow.appendChild(th);
-    }
+      th.textContent = text;
+      tr.appendChild(th);
+    });
+    thead.innerHTML = '';
+    thead.appendChild(tr);
   }
 
   function removeTotalPointsSectionIfPresent() {
@@ -1109,4 +1113,5 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
 
