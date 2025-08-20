@@ -386,7 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const MAX_24H_RACES = 2600;          // anomaly cutoff for 24h diffs
   const SECONDS_PER_RACE = 28.47;      // assumed average race duration (s)
   const WPM_METHOD = 'typed';          // 'typed' | 'weighted' | 'current'
-  const WPM_RESET_THRESHOLD = 179;     // cap: reset event WPM to API avgWpm if above this
+  const WPM_RESET_THRESHOLD = 169.6741;     // cap: reset event WPM to API avgWpm if above this
   const EVENT_DEFAULT_SORT = 'totalPoints'; // default sort for Event table
   const EVENT_FILES = {
     apiBefore: 'API_before.ndjson',     // NDJSON lines (API snapshot before)
@@ -1113,6 +1113,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
 
 
 
