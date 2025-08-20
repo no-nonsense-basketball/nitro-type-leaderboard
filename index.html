@@ -916,7 +916,7 @@ document.addEventListener('DOMContentLoaded', () => {
       legend = document.createElement('div');
       legend.id = legendId;
       legend.className = 'table-note legend';
-      legend.textContent = '* = WPM reset to API avgWpm after exceeding threshold.';
+      legend.textContent = '* = WPM reset due to WPM Mishandling';
       const tableWrap = tbody.closest('.table-container') || tbody.parentElement;
       if (tableWrap && !tableWrap.querySelector('#' + legendId)) {
         tableWrap.appendChild(legend);
@@ -1113,6 +1113,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
 
 
 
